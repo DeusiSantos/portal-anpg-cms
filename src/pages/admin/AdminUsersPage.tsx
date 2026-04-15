@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +11,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow } from '@/components/ui/table';
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -20,32 +20,39 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger } from '@/components/ui/dialog';
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue } from '@/components/ui/select';
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, Loader2, UserPlus } from 'lucide-react';
+import { Search, Loader2, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import api from '@/service/api';
 
-interface UserProfile {
+
+interface User {
   id: string;
-  user_id: string;
-  full_name: string;
+  fullName: string;
   email: string;
-  department: string | null;
-  avatar_url: string | null;
-  created_at: string;
+  position: string;
+  phoneNumber: string;
+  roles: string[];
+  status: string;
+  createdAt: string;
 }
 
-interface UserRole {
-  user_id: string;
-  role: string;
+interface UsersResponse {
+  pageIndex: number;
+  pageSize: number;
+  count: number;
+  data: User[];
 }
 
 const ROLES = [
@@ -56,21 +63,28 @@ const ROLES = [
   { value: 'viewer', label: 'Visualizador' },
 ];
 
-const DEPARTMENTS = [
-  { value: 'administracao', label: 'Administração' },
-  { value: 'comunicacao', label: 'Comunicação' },
-  { value: 'tecnico', label: 'Técnico / E&P' },
-  { value: 'investimentos', label: 'Investimentos' },
-  { value: 'ti', label: 'Tecnologias de Informação' },
+const POSITIONS = [
+  { value: 'gerente', label: 'Gerente' },
+  { value: 'coordenador', label: 'Coordenador' },
+  { value: 'analista', label: 'Analista' },
+  { value: 'tecnico', label: 'Técnico' },
+  { value: 'assistente', label: 'Assistente' },
 ];
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
+  const [users, setUsers] = useState<User[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ email: '', fullName: '', password: '', role: '', department: '' });
+  const [newUser, setNewUser] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    position: '',
+    phone: '',
+    role: '',
+  });
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
 
@@ -80,97 +94,81 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    
-    // Fetch profiles
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-    } else {
-      setUsers(profilesData || []);
-    }
-
-    // Fetch all roles
-    const { data: rolesData, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('user_id, role');
-
-    if (rolesError) {
-      console.error('Error fetching roles:', rolesError);
-    } else {
-      const rolesMap: Record<string, string[]> = {};
-      rolesData?.forEach((r) => {
-        if (!rolesMap[r.user_id]) {
-          rolesMap[r.user_id] = [];
-        }
-        rolesMap[r.user_id].push(r.role);
+    try {
+      const response = await api.get('/users?PageIndex=0&PageSize=10');
+      
+      // Acessar a estrutura correta: response.data.users.data
+      const usersData = response.data?.users?.data || [];
+      const count = response.data?.users?.count || 0;
+      
+      setUsers(usersData);
+      setTotalCount(count);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar os utilizadores.',
+        variant: 'destructive',
       });
-      setUserRoles(rolesMap);
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleCreateUser = async () => {
-    if (!newUser.email || !newUser.fullName || !newUser.password || !newUser.role) {
+    if (!newUser.fullName || !newUser.email || !newUser.password || !newUser.role) {
       toast({
         title: 'Erro',
         description: 'Por favor preencha todos os campos obrigatórios.',
-        variant: 'destructive' });
+        variant: 'destructive',
+      });
       return;
     }
 
     setCreating(true);
 
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: newUser.email,
-      password: newUser.password,
-      options: {
-        data: {
-          full_name: newUser.fullName } } });
-
-    if (authError) {
-      toast({
-        title: 'Erro ao criar utilizador',
-        description: authError.message,
-        variant: 'destructive' });
-      setCreating(false);
-      return;
-    }
-
-    if (authData.user) {
-      // Create profile
-      await supabase.from('profiles').insert([{
-        user_id: authData.user.id,
-        full_name: newUser.fullName,
+    try {
+      await api.post('/users', {
+        fullName: newUser.fullName,
         email: newUser.email,
-        department: (newUser.department || null) as 'administracao' | 'comunicacao' | 'tecnico' | 'investimentos' | 'ti' | null }]);
-
-      // Assign role
-      await supabase.from('user_roles').insert([{
-        user_id: authData.user.id,
-        role: newUser.role as 'admin' | 'editor_comunicacao' | 'editor_tecnico' | 'gestor_investidores' | 'viewer' }]);
+        password: newUser.password,
+        position: newUser.position,
+        phone: newUser.phone,
+        role: newUser.role,
+      });
 
       toast({
         title: 'Utilizador criado',
-        description: `${newUser.fullName} foi adicionado com sucesso.` });
+        description: `${newUser.fullName} foi adicionado com sucesso.`,
+      });
 
       setDialogOpen(false);
-      setNewUser({ email: '', fullName: '', password: '', role: '', department: '' });
+      setNewUser({
+        fullName: '',
+        email: '',
+        password: '',
+        position: '',
+        phone: '',
+        role: '',
+      });
       fetchUsers();
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: 'Erro ao criar utilizador',
+        description: error.response?.data?.message || 'Ocorreu um erro ao criar o utilizador.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
     }
-
-    setCreating(false);
   };
 
   const filteredUsers = users.filter(
     (user) =>
-      user.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
+      user.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+      user.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getRoleBadge = (role: string) => {
@@ -180,7 +178,8 @@ export default function AdminUsersPage() {
       editor_comunicacao: 'default',
       editor_tecnico: 'secondary',
       gestor_investidores: 'outline',
-      viewer: 'outline' };
+      viewer: 'outline',
+    };
     return (
       <Badge variant={variants[role] || 'outline'} className="text-xs">
         {roleConfig?.label || role}
@@ -189,6 +188,7 @@ export default function AdminUsersPage() {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return '?';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -197,9 +197,18 @@ export default function AdminUsersPage() {
       .slice(0, 2);
   };
 
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+      Ativo: { label: 'Ativo', variant: 'default' },
+      Inativo: { label: 'Inativo', variant: 'secondary' },
+      Suspenso: { label: 'Suspenso', variant: 'destructive' },
+    };
+    const config = statusConfig[status] || { label: status, variant: 'outline' };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
   return (
     <AdminLayout title="Gestão de Utilizadores" subtitle="Gerir contas e permissões">
-
       <main className="container mx-auto px-4 py-8">
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -219,7 +228,7 @@ export default function AdminUsersPage() {
                 Novo Utilizador
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Criar Novo Utilizador</DialogTitle>
                 <DialogDescription>
@@ -269,19 +278,28 @@ export default function AdminUsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Departamento</Label>
-                  <Select value={newUser.department} onValueChange={(v) => setNewUser({ ...newUser, department: v })}>
+                  <Label>Cargo/Posição</Label>
+                  <Select value={newUser.position} onValueChange={(v) => setNewUser({ ...newUser, position: v })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione um departamento" />
+                      <SelectValue placeholder="Seleccione um cargo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DEPARTMENTS.map((dept) => (
-                        <SelectItem key={dept.value} value={dept.value}>
-                          {dept.label}
+                      {POSITIONS.map((pos) => (
+                        <SelectItem key={pos.value} value={pos.value}>
+                          {pos.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input
+                    type="tel"
+                    value={newUser.phone}
+                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                    placeholder="+244 923 456 789"
+                  />
                 </div>
               </div>
               <DialogFooter>
@@ -308,47 +326,59 @@ export default function AdminUsersPage() {
               {search ? 'Nenhum utilizador encontrado.' : 'Ainda não existem utilizadores.'}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Utilizador</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Departamento</TableHead>
-                  <TableHead>Criado em</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar_url || undefined} />
-                          <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {userRoles[user.user_id]?.map((role) => (
-                          <span key={role}>{getRoleBadge(role)}</span>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="capitalize">
-                      {DEPARTMENTS.find((d) => d.value === user.department)?.label || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(user.created_at), "d MMM yyyy", { locale: pt })}
-                    </TableCell>
+            <>
+              <div className="p-4 border-b">
+                <p className="text-sm text-muted-foreground">
+                  Total de utilizadores: <span className="font-semibold">{totalCount}</span>
+                </p>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Utilizador</TableHead>
+                    <TableHead>Roles</TableHead>
+                    <TableHead>Posição</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Criado em</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{user.fullName}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {user.roles?.map((role) => (
+                            <span key={role}>{getRoleBadge(role)}</span>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {POSITIONS.find((p) => p.value === user.position)?.label || user.position || '-'}
+                      </TableCell>
+                      <TableCell>{user.phoneNumber || '-'}</TableCell>
+                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      <TableCell>
+                        {user.createdAt
+                          ? format(new Date(user.createdAt), "d MMM yyyy", { locale: pt })
+                          : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
         </div>
       </main>

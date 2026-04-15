@@ -10,8 +10,10 @@ import {
   Twitter, 
   Linkedin,
   ChevronRight,
-  Newspaper
+  Newspaper,
+  Loader2
 } from "lucide-react";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,32 +21,192 @@ import { SectionTransition } from "@/components/layout/SectionTransition";
 import { WPContent } from "@/components/wordpress/WPContent";
 import { StaggerContainer, StaggerItem } from "@/components/layout/StaggerContainer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNewsArticleBySlug, useNewsArticles } from "@/hooks/useCMSData";
-import { newsItems as fallbackNews, getCategoryLabel, getCategoryColor } from "@/data/newsData";
 import { cn } from "@/lib/utils";
+import api from "@/service/api";
+
+// Interfaces baseadas na resposta da API
+interface Attachment {
+  id: string;
+  fileName: string;
+  storedFileName: string;
+  contentType: string;
+  size: number;
+}
+
+interface NewsDocument {
+  id: string;
+  titlePt: string;
+  slugOrURL: string | null;
+  excerptPt: string;
+  contentPt: string;
+  titleEn: string;
+  excerptEn: string;
+  contentEn: string;
+  publicationDate: string;
+  category: string;
+  contentCode: string;
+  status: string;
+  attachments: Attachment[];
+}
+
+interface ApiNewsResponse {
+  news: NewsDocument;
+}
+
+// Interface para o formato que o componente espera
+interface FormattedNews {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  date: string;
+  image: string;
+  category: string;
+  slug: string;
+  author?: string;
+  tags?: string[];
+  attachmentId?: string;
+}
+
+// Funções auxiliares para categorias
+const getCategoryLabel = (category: string): string => {
+  const categories: Record<string, string> = {
+    geral: "Geral",
+    producao: "Produção",
+    exploracao: "Exploração",
+    licitacao: "Licitação",
+    institucional: "Institucional",
+    sustentabilidade: "Sustentabilidade",
+  };
+  return categories[category] || category;
+};
+
+const getCategoryColor = (category: string): string => {
+  const colors: Record<string, string> = {
+    geral: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    producao: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    exploracao: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    licitacao: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+    institucional: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    sustentabilidade: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300",
+  };
+  return colors[category] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+};
+
+// Função para formatar a data
+const formatDate = (isoDateString: string): string => {
+  const date = new Date(isoDateString);
+  return date.toLocaleDateString('pt-PT', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+// Função para obter a URL da imagem
+const getImageUrl = (newsId: string, attachment: Attachment | undefined): string => {
+  if (attachment && attachment.id) {
+    return `https://mwangobrainsa-001-site6.mtempurl.com/api/news/${newsId}/attachments/${attachment.id}`;
+  }
+  return '/placeholder-image.jpg';
+};
+
+// Hook para buscar uma notícia específica
+function useNewsArticle(newsId: string | undefined) {
+  return useQuery({
+    queryKey: ['news-article', newsId],
+    queryFn: async () => {
+      if (!newsId) throw new Error('News ID is required');
+      
+      const response = await api.get<ApiNewsResponse>(`/news/${newsId}`);
+      const document = response.data.news;
+      
+      // Encontrar o primeiro attachment de imagem
+      const imageAttachment = document.attachments.find(att => 
+        att.contentType?.startsWith('image/')
+      );
+      
+      // Formatar os dados para o formato esperado pelo componente
+      const formattedNews: FormattedNews = {
+        id: document.id,
+        title: document.titlePt,
+        excerpt: document.excerptPt,
+        content: document.contentPt,
+        date: formatDate(document.publicationDate),
+        image: getImageUrl(document.id, imageAttachment),
+        category: document.category,
+        slug: document.slugOrURL || document.id,
+        attachmentId: imageAttachment?.id,
+        author: undefined, // A API não retorna autor no momento
+        tags: [], // A API não retorna tags no momento
+      };
+      
+      return formattedNews;
+    },
+    enabled: !!newsId,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+}
+
+// Hook para buscar notícias relacionadas
+function useRelatedNews(currentNewsId: string, category: string, limit: number = 3) {
+  return useQuery({
+    queryKey: ['related-news', currentNewsId, category, limit],
+    queryFn: async () => {
+      // Buscar todas as notícias e filtrar as relacionadas
+      const response = await api.get<{ news: { data: NewsDocument[] } }>('/news', {
+        params: {
+          PageIndex: 0,
+          PageSize: 50, // Buscar um número razoável para filtrar
+        },
+      });
+      
+      const allNews = response.data.news.data;
+      
+      // Filtrar notícias da mesma categoria, excluindo a atual
+      const related = allNews
+        .filter(item => item.id !== currentNewsId && item.category === category)
+        .slice(0, limit);
+      
+      // Se não houver notícias da mesma categoria, pegar as mais recentes
+      const fallbackNews = related.length === 0
+        ? allNews.filter(item => item.id !== currentNewsId).slice(0, limit)
+        : related;
+      
+      // Formatar as notícias relacionadas
+      return fallbackNews.map(item => {
+        const imageAttachment = item.attachments.find(att => 
+          att.contentType?.startsWith('image/')
+        );
+        
+        return {
+          id: item.id,
+          title: item.titlePt,
+          excerpt: item.excerptPt,
+          date: formatDate(item.publicationDate),
+          image: getImageUrl(item.id, imageAttachment),
+          category: item.category,
+          slug: item.slugOrURL || item.id,
+        };
+      });
+    },
+    enabled: !!currentNewsId && !!category,
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 export default function NewsDetailPage() {
   const { newsId } = useParams<{ newsId: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Try CMS first
-  const { data: cmsArticle, isLoading } = useNewsArticleBySlug(newsId);
-  const { data: cmsAllNews } = useNewsArticles({ limit: 20 });
+  // Buscar a notícia atual
+  const { data: news, isLoading, isError, error } = useNewsArticle(newsId);
+  
+  // Buscar notícias relacionadas
+  const { data: relatedNews = [] } = useRelatedNews(newsId || '', news?.category || '', 3);
 
-  // Fallback to local data
-  const fallbackArticle = fallbackNews.find((item) => item.id === newsId);
-  const news = cmsArticle || fallbackArticle;
-
-  // Related news
-  const allNews = cmsAllNews?.length ? cmsAllNews : fallbackNews;
-  const relatedNews = allNews
-    .filter((item) => (item.slug || item.id) !== newsId && item.category === news?.category)
-    .slice(0, 3);
-  const displayRelated = relatedNews.length > 0 
-    ? relatedNews 
-    : allNews.filter((item) => (item.slug || item.id) !== newsId).slice(0, 3);
-
+  // Estado de loading
   if (isLoading) {
     return (
       <PageLayout
@@ -64,7 +226,8 @@ export default function NewsDetailPage() {
     );
   }
 
-  if (!news) {
+  // Estado de erro
+  if (isError || !news) {
     return (
       <PageLayout
         title="Notícia não encontrada"
@@ -91,6 +254,7 @@ export default function NewsDetailPage() {
     );
   }
 
+  // Funções de compartilhamento
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = news.title;
 
@@ -143,12 +307,6 @@ export default function NewsDetailPage() {
                 <Calendar className="w-4 h-4" />
                 {news.date}
               </span>
-              {news.author && (
-                <span className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {news.author}
-                </span>
-              )}
             </div>
           </div>
         </SectionTransition>
@@ -160,6 +318,7 @@ export default function NewsDetailPage() {
               src={news.image}
               alt={news.title}
               className="w-full h-auto object-cover"
+              onError={(e) => { e.currentTarget.src = '/placeholder-image.jpg'; }}
             />
           </div>
         </SectionTransition>
@@ -203,22 +362,6 @@ export default function NewsDetailPage() {
           </article>
         </SectionTransition>
 
-        {/* Tags */}
-        {'tags' in news && news.tags && news.tags.length > 0 && (
-          <SectionTransition delay={0.4}>
-            <div className="mt-8 pt-8 border-t border-border">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Tag className="w-4 h-4 text-muted-foreground" />
-                {news.tags.map((tag: string) => (
-                  <Badge key={tag} variant="secondary" className="rounded-full">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </SectionTransition>
-        )}
-
         {/* Share Section */}
         <SectionTransition delay={0.5}>
           <div className="mt-8 pt-8 border-t border-border">
@@ -244,44 +387,51 @@ export default function NewsDetailPage() {
       </div>
 
       {/* Related News */}
-      <SectionTransition delay={0.6}>
-        <div className="mt-16 pt-16 border-t border-border">
-          <h2 className="text-2xl font-bold text-foreground mb-8">Notícias Relacionadas</h2>
-          
-          <StaggerContainer className="grid md:grid-cols-3 gap-6">
-            {displayRelated.map((item) => (
-              <StaggerItem key={item.id}>
-                <Link to={`/news/${item.slug || item.id}`} className="group block h-full">
-                  <div className="bg-secondary/50 border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-lg h-full flex flex-col">
-                    <div className="aspect-video overflow-hidden">
-                      <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    </div>
-                    <div className="p-5 flex flex-col flex-1">
-                      <Badge className={cn("w-fit mb-3", getCategoryColor(item.category))}>
-                        {getCategoryLabel(item.category)}
-                      </Badge>
-                      <h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2 flex-1">
-                        {item.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-auto pt-3 border-t border-border">
-                        <Calendar className="w-4 h-4" />
-                        {item.date}
+      {relatedNews.length > 0 && (
+        <SectionTransition delay={0.6}>
+          <div className="mt-16 pt-16 border-t border-border">
+            <h2 className="text-2xl font-bold text-foreground mb-8">Notícias Relacionadas</h2>
+            
+            <StaggerContainer className="grid md:grid-cols-3 gap-6">
+              {relatedNews.map((item) => (
+                <StaggerItem key={item.id}>
+                  <Link to={`/news/${item.slug}`} className="group block h-full">
+                    <div className="bg-secondary/50 border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-lg h-full flex flex-col">
+                      <div className="aspect-video overflow-hidden">
+                        <img 
+                          src={item.image} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => { e.currentTarget.src = '/placeholder-image.jpg'; }}
+                        />
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
+                        <Badge className={cn("w-fit mb-3", getCategoryColor(item.category))}>
+                          {getCategoryLabel(item.category)}
+                        </Badge>
+                        <h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2 flex-1">
+                          {item.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-auto pt-3 border-t border-border">
+                          <Calendar className="w-4 h-4" />
+                          {item.date}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-          
-          <div className="mt-8 text-center">
-            <Button variant="outline" size="lg" onClick={() => navigate("/media")}>
-              Ver Todas as Notícias
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
+                  </Link>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+            
+            <div className="mt-8 text-center">
+              <Button variant="outline" size="lg" onClick={() => navigate("/media")}>
+                Ver Todas as Notícias
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </SectionTransition>
+        </SectionTransition>
+      )}
     </PageLayout>
   );
 }

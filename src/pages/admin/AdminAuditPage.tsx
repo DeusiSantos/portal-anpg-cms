@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -27,133 +26,141 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
-  ArrowLeft,
   Search,
-  History,
   Filter,
   Loader2,
   Eye,
-  Plus,
-  Pencil,
-  Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import type { Tables } from '@/integrations/supabase/types';
+import api from '@/service/api';
 
-type AuditLog = Tables<'audit_logs'>;
+interface WorkflowHistory {
+  id: string;
+  entityId: string;
+  entityName: string;
+  fromStatus: string;
+  toStatus: string;
+  comment: string | null;
+  changedBy: string | null;
+  userName: string | null;
+  ipAddress: string;
+  createdAt: string;
+}
 
-const ACTIONS = [
-  { value: 'INSERT', label: 'Criação', icon: Plus, color: 'bg-status-success' },
-  { value: 'UPDATE', label: 'Actualização', icon: Pencil, color: 'bg-status-info' },
-  { value: 'DELETE', label: 'Eliminação', icon: Trash2, color: 'bg-destructive' },
+interface HistoryResponse {
+  pageIndex: number;
+  pageSize: number;
+  count: number;
+  data: WorkflowHistory[];
+}
+
+const ENTITY_TYPES = [
+  { value: 'Identity', label: 'Identidade' },
+  { value: 'News', label: 'Notícias' },
+  { value: 'PetroleumBlock', label: 'Bloco Petrolífero' },
+  { value: 'ProductionStatistics', label: 'Estatísticas de Produção' },
+  { value: 'InvestorDocument', label: 'Documentos Investidor' },
+  { value: 'ExpressionOfInterest', label: 'EOI' },
 ];
 
-const TABLES = [
-  { value: 'news_articles', label: 'Notícias' },
-  { value: 'cms_pages', label: 'Páginas CMS' },
-  { value: 'petroleum_blocks', label: 'Blocos Petrolíferos' },
-  { value: 'production_statistics', label: 'Estatísticas de Produção' },
-  { value: 'investor_documents', label: 'Documentos' },
-  { value: 'investor_registrations', label: 'Registos Investidor' },
-  { value: 'expressions_of_interest', label: 'EOIs' },
-  { value: 'profiles', label: 'Perfis' },
-  { value: 'user_roles', label: 'Roles' },
-  { value: 'site_settings', label: 'Configurações' },
-];
+const STATUS_COLORS: Record<string, string> = {
+  Draft: 'bg-gray-500',
+  PendingReview: 'bg-yellow-500',
+  Reviewed: 'bg-blue-500',
+  Approved: 'bg-green-500',
+  Published: 'bg-purple-500',
+  RequestCorrection: 'bg-red-500',
+  Rejected: 'bg-red-700',
+  Archived: 'bg-gray-700',
+};
+
+const getStatusBadge = (status: string) => {
+  const color = STATUS_COLORS[status] || 'bg-gray-500';
+  return (
+    <Badge className={`${color} text-white`}>
+      {status}
+    </Badge>
+  );
+};
 
 export default function AdminAuditPage() {
   const [search, setSearch] = useState('');
-  const [filterAction, setFilterAction] = useState<string>('all');
-  const [filterTable, setFilterTable] = useState<string>('all');
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [filterEntity, setFilterEntity] = useState<string>('all');
+  const [pageIndex, setPageIndex] = useState(0);
+  const [selectedHistory, setSelectedHistory] = useState<WorkflowHistory | null>(null);
+  const pageSize = 20;
 
-  // Fetch audit logs
-  const { data: logs, isLoading } = useQuery({
-    queryKey: ['admin-audit-logs', filterAction, filterTable],
+  // Fetch workflow history
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['workflow-history', filterEntity, pageIndex],
     queryFn: async () => {
-      let query = supabase
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(500);
+      const params = new URLSearchParams({
+        PageIndex: pageIndex.toString(),
+        PageSize: pageSize.toString(),
+      });
       
-      if (filterAction !== 'all') {
-        query = query.eq('action', filterAction);
-      }
-      if (filterTable !== 'all') {
-        query = query.eq('table_name', filterTable);
-      }
+      const response = await api.get(`/workflow/history?${params}`);
       
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as AuditLog[];
+      // Acessar a estrutura correta: response.data.histories
+      const historyData = response.data?.histories || response.data;
+      
+      return {
+        items: historyData?.data || [],
+        totalCount: historyData?.count || 0,
+        pageIndex: historyData?.pageIndex || 0,
+        pageSize: historyData?.pageSize || pageSize,
+      };
     },
   });
 
-  // Fetch user profiles for display
-  const { data: profiles } = useQuery({
-    queryKey: ['admin-profiles-map'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, email');
-      if (error) throw error;
-      return data.reduce((map, profile) => {
-        map[profile.user_id] = profile;
-        return map;
-      }, {} as Record<string, { full_name: string; email: string }>);
-    },
-  });
+  const histories = data?.items || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
-  const filteredLogs = logs?.filter((log) => {
+  // Filtrar por entidade (client-side filter)
+  const filteredHistories = histories.filter((history) => {
     const searchLower = search.toLowerCase();
-    const tableName = TABLES.find(t => t.value === log.table_name)?.label || log.table_name;
-    const userName = profiles?.[log.user_id || '']?.full_name || '';
-    return (
-      tableName.toLowerCase().includes(searchLower) ||
-      userName.toLowerCase().includes(searchLower) ||
-      log.record_id?.toLowerCase().includes(searchLower)
-    );
+    const matchesSearch = 
+      history.entityName?.toLowerCase().includes(searchLower) ||
+      history.entityId?.toLowerCase().includes(searchLower) ||
+      history.userName?.toLowerCase().includes(searchLower) ||
+      history.ipAddress?.includes(searchLower) ||
+      history.comment?.toLowerCase().includes(searchLower);
+    
+    const matchesEntity = filterEntity === 'all' || history.entityName === filterEntity;
+    
+    return matchesSearch && matchesEntity;
   });
 
-  const getActionBadge = (action: string) => {
-    const actionConfig = ACTIONS.find((a) => a.value === action) || ACTIONS[0];
-    const Icon = actionConfig.icon;
-    return (
-      <Badge variant="secondary" className={`${actionConfig.color} text-white`}>
-        <Icon className="h-3 w-3 mr-1" />
-        {actionConfig.label}
-      </Badge>
-    );
+  const getEntityLabel = (entityName: string) => {
+    return ENTITY_TYPES.find(e => e.value === entityName)?.label || entityName;
   };
 
-  const getTableLabel = (tableName: string) => {
-    return TABLES.find(t => t.value === tableName)?.label || tableName;
+  const handlePreviousPage = () => {
+    if (pageIndex > 0) {
+      setPageIndex(pageIndex - 1);
+    }
   };
 
-  const getUserName = (userId: string | null) => {
-    if (!userId) return 'Sistema';
-    return profiles?.[userId]?.full_name || 'Desconhecido';
-  };
-
-  const formatJson = (data: unknown) => {
-    if (!data) return null;
-    return JSON.stringify(data, null, 2);
+  const handleNextPage = () => {
+    if (pageIndex + 1 < totalPages) {
+      setPageIndex(pageIndex + 1);
+    }
   };
 
   return (
-    <AdminLayout title="Audit Logs" subtitle="Histórico de acções no sistema">
-
+    <AdminLayout title="Workflow History" subtitle="Histórico de alterações de estado do workflow">
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Histórico de Alterações</CardTitle>
+            <CardTitle>Histórico de Workflow</CardTitle>
             <CardDescription>
-              Registo de todas as alterações efectuadas no sistema
+              Registo de todas as alterações de estado das entidades no sistema
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -162,157 +169,182 @@ export default function AdminAuditPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Pesquisar por tabela, utilizador ou ID..."
+                  placeholder="Pesquisar por entidade, ID, utilizador, IP ou comentário..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Select value={filterAction} onValueChange={setFilterAction}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Acção" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as Acções</SelectItem>
-                  {ACTIONS.map((action) => (
-                    <SelectItem key={action.value} value={action.value}>
-                      {action.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterTable} onValueChange={setFilterTable}>
+              <Select value={filterEntity} onValueChange={setFilterEntity}>
                 <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Tabela" />
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Tipo de Entidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as Tabelas</SelectItem>
-                  {TABLES.map((table) => (
-                    <SelectItem key={table.value} value={table.value}>
-                      {table.label}
+                  <SelectItem value="all">Todas as Entidades</SelectItem>
+                  {ENTITY_TYPES.map((entity) => (
+                    <SelectItem key={entity.value} value={entity.value}>
+                      {entity.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Table */}
-            {isLoading ? (
+            {/* Loading State */}
+            {(isLoading || isFetching) && (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Acção</TableHead>
-                      <TableHead>Tabela</TableHead>
-                      <TableHead>Utilizador</TableHead>
-                      <TableHead>ID do Registo</TableHead>
-                      <TableHead className="text-right">Detalhes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredLogs?.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          Nenhum registo encontrado
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredLogs?.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell className="font-mono text-sm">
-                            {format(new Date(log.created_at), "dd/MM/yyyy HH:mm:ss", { locale: pt })}
-                          </TableCell>
-                          <TableCell>{getActionBadge(log.action)}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{getTableLabel(log.table_name)}</Badge>
-                          </TableCell>
-                          <TableCell>{getUserName(log.user_id)}</TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">
-                            {log.record_id?.slice(0, 8)}...
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setSelectedLog(log)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
             )}
 
-            {/* Stats */}
-            <div className="mt-4 text-sm text-muted-foreground">
-              {filteredLogs?.length || 0} registo(s) encontrado(s)
-            </div>
+            {/* Table */}
+            {!isLoading && (
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data/Hora</TableHead>
+                        <TableHead>Entidade</TableHead>
+                        <TableHead>Status Anterior</TableHead>
+                        <TableHead>Novo Status</TableHead>
+                        <TableHead>Utilizador</TableHead>
+                        <TableHead>IP Address</TableHead>
+                        <TableHead className="text-right">Detalhes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredHistories.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            Nenhum registo encontrado
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredHistories.map((history) => (
+                          <TableRow key={history.id}>
+                            <TableCell className="font-mono text-sm whitespace-nowrap">
+                              {format(new Date(history.createdAt), "dd/MM/yyyy HH:mm:ss", { locale: pt })}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {getEntityLabel(history.entityName)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(history.fromStatus)}</TableCell>
+                            <TableCell>{getStatusBadge(history.toStatus)}</TableCell>
+                            <TableCell>
+                              {history.userName || history.changedBy || 'Sistema'}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {history.ipAddress}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setSelectedHistory(history)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                {totalCount > 0 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      Mostrando {pageIndex * pageSize + 1} - {Math.min((pageIndex + 1) * pageSize, totalCount)} de {totalCount} registos
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePreviousPage}
+                        disabled={pageIndex === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleNextPage}
+                        disabled={pageIndex + 1 >= totalPages}
+                      >
+                        Próxima
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </main>
 
       {/* Detail Dialog */}
-      <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <Dialog open={!!selectedHistory} onOpenChange={() => setSelectedHistory(null)}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Detalhes do Log</DialogTitle>
+            <DialogTitle>Detalhes da Transição</DialogTitle>
             <DialogDescription>
-              {selectedLog && (
+              {selectedHistory && (
                 <>
-                  {getTableLabel(selectedLog.table_name)} • {format(new Date(selectedLog.created_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: pt })}
+                  {getEntityLabel(selectedHistory.entityName)} • {format(new Date(selectedHistory.createdAt), "dd/MM/yyyy 'às' HH:mm:ss", { locale: pt })}
                 </>
               )}
             </DialogDescription>
           </DialogHeader>
-          {selectedLog && (
+          {selectedHistory && (
             <div className="space-y-6 py-4">
-              {/* Meta Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Acção</p>
-                  <div className="mt-1">{getActionBadge(selectedLog.action)}</div>
+              {/* Status Transition */}
+              <div className="flex items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg">
+                <div className="text-center flex-1">
+                  <p className="text-sm text-muted-foreground mb-2">De</p>
+                  {getStatusBadge(selectedHistory.fromStatus)}
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Utilizador</p>
-                  <p className="font-medium mt-1">{getUserName(selectedLog.user_id)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">ID do Registo</p>
-                  <p className="font-mono text-xs mt-1">{selectedLog.record_id}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">IP Address</p>
-                  <p className="font-mono text-xs mt-1">{selectedLog.ip_address || '—'}</p>
+                <div className="text-2xl text-muted-foreground">→</div>
+                <div className="text-center flex-1">
+                  <p className="text-sm text-muted-foreground mb-2">Para</p>
+                  {getStatusBadge(selectedHistory.toStatus)}
                 </div>
               </div>
 
-              {/* Old Data */}
-              {selectedLog.old_data && (
-                <div className="space-y-2">
-                  <p className="font-semibold text-sm">Dados Anteriores</p>
-                  <pre className="bg-destructive/5 dark:bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-xs overflow-x-auto">
-                    {formatJson(selectedLog.old_data)}
-                  </pre>
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">ID da Entidade</p>
+                  <p className="font-mono text-xs mt-1 break-all">{selectedHistory.entityId}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-muted-foreground">Entidade</p>
+                  <p className="font-medium mt-1">{getEntityLabel(selectedHistory.entityName)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Utilizador</p>
+                  <p className="font-medium mt-1">{selectedHistory.userName || selectedHistory.changedBy || 'Sistema'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">IP Address</p>
+                  <p className="font-mono text-xs mt-1">{selectedHistory.ipAddress}</p>
+                </div>
+              </div>
 
-              {/* New Data */}
-              {selectedLog.new_data && (
+              {/* Comment */}
+              {selectedHistory.comment && (
                 <div className="space-y-2">
-                  <p className="font-semibold text-sm">Dados Novos</p>
-                  <pre className="bg-status-success/5 dark:bg-status-success/10 border border-status-success/20 rounded-lg p-4 text-xs overflow-x-auto">
-                    {formatJson(selectedLog.new_data)}
-                  </pre>
+                  <p className="text-muted-foreground text-sm">Comentário</p>
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <p className="text-sm">{selectedHistory.comment}</p>
+                  </div>
                 </div>
               )}
             </div>

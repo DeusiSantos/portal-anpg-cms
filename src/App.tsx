@@ -96,6 +96,7 @@ import AdminInvestorsPage from "./pages/admin/AdminInvestorsPage";
 import AdminSitePagesPage from "./pages/admin/AdminSitePagesPage";
 import AdminPageEditorPage from "./pages/admin/AdminPageEditorPage";
 import { SobaWidget } from "./components/chat/SobaWidget";
+import { ScrollToTop } from "./components/ScrollToTop";
 const queryClient = new QueryClient();
 
 function AnimatedRoutes() {
@@ -103,6 +104,7 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence mode="wait">
+      <ScrollToTop />
       <PageTransition key={location.pathname}>
         <Routes location={location}>
           <Route path="/" element={<Index />} />

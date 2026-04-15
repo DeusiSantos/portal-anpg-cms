@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +11,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow } from '@/components/ui/table';
+  TableRow,
+} from '@/components/ui/table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle } from '@/components/ui/alert-dialog';
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Pagination,
@@ -30,77 +31,77 @@ import {
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious } from '@/components/ui/pagination';
-import { Plus, Search, Pencil, Trash2, Eye, Loader2, Newspaper } from 'lucide-react';
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import { Plus, Search, Pencil, Trash2, Eye, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { toast } from 'sonner';
-import type { Tables } from '@/integrations/supabase/types';
+import api from '@/service/api';
 
-type NewsArticle = Tables<'news_articles'>;
+
+interface NewsItem {
+  id: string;
+  titlePt: string;
+  slugOrURL: string | null;
+  excerptPt: string;
+  contentPt: string;
+  titleEn: string;
+  excerptEn: string;
+  contentEn: string;
+  publicationDate: string;
+  category: string;
+  contentCode: string;
+  status: string;
+}
+
+interface NewsResponse {
+  pageIndex: number;
+  pageSize: number;
+  count: number;
+  data: NewsItem[];
+}
 
 const PAGE_SIZE = 10;
 
 export default function AdminNewsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [deleteArticle, setDeleteArticle] = useState<NewsArticle | null>(null);
+  const [deleteArticle, setDeleteArticle] = useState<NewsItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch total count for pagination
-  const { data: totalCount = 0 } = useQuery({
-    queryKey: ['admin-articles-count', search],
-    queryFn: async () => {
-      let query = supabase
-        .from('news_articles')
-        .select('*', { count: 'exact', head: true });
-      
-      if (search) {
-        query = query.ilike('title', `%${search}%`);
-      }
-      
-      const { count, error } = await query;
-      if (error) throw error;
-      return count ?? 0;
-    } });
-
   // Fetch paginated news articles
-  const { data: articles, isLoading } = useQuery({
-    queryKey: ['admin-articles', currentPage, search],
+  const { data: newsData, isLoading } = useQuery({
+    queryKey: ['admin-news', currentPage, search],
     queryFn: async () => {
-      const from = (currentPage - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      
-      let query = supabase
-        .from('news_articles')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .range(from, to);
-      
-      if (search) {
-        query = query.ilike('title', `%${search}%`);
-      }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as NewsArticle[];
-    } });
+      const response = await api.get<{ news: NewsResponse }>('/news', {
+        params: {
+          PageIndex: currentPage - 1, // API uses 0-based index
+          PageSize: PAGE_SIZE,
+          ...(search && { search }), // Add search param if needed
+        },
+      });
+      return response.data.news;
+    },
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('news_articles').delete().eq('id', id);
-      if (error) throw error;
+      await api.delete(`/news/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-articles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-news'] });
       toast.success('Notícia eliminada com sucesso');
       setDeleteArticle(null);
     },
-    onError: (error) => {
-      toast.error(`Erro ao eliminar: ${error.message}`);
-    } });
+    onError: (error: any) => {
+      toast.error(`Erro ao eliminar: ${error.response?.data?.message || error.message}`);
+    },
+  });
 
+  const totalCount = newsData?.count || 0;
+  const articles = newsData?.data || [];
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   // Reset to page 1 when search changes
@@ -110,21 +111,53 @@ export default function AdminNewsPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'published':
-        return <Badge className="bg-status-success text-white">Publicado</Badge>;
-      case 'draft':
-        return <Badge variant="secondary">Rascunho</Badge>;
-      case 'archived':
-        return <Badge variant="outline">Arquivado</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  switch (status?.toLowerCase()) {
+    case 'draft':
+      return <Badge variant="secondary">Rascunho</Badge>;
+
+    case 'pendingreview':
+      return <Badge className="bg-yellow-500 text-white">Revisão</Badge>;
+
+    case 'reviewed':
+      return <Badge className="bg-blue-500 text-white">Revisado</Badge>;
+
+    case 'approved':
+      return <Badge className="bg-emerald-600 text-white">Aprovado</Badge>;
+
+    case 'published':
+      return <Badge className="bg-green-600 text-white">Publicado</Badge>;
+
+    case 'archived':
+      return <Badge variant="outline">Arquivado</Badge>;
+
+    case 'rejected':
+      return <Badge className="bg-red-600 text-white">Rejeitado</Badge>;
+
+    case 'deleted':
+      return <Badge className="bg-gray-800 text-white">Eliminado</Badge>;
+
+    case 'requestcorrection':
+      return <Badge className="bg-orange-500 text-white">Correção Solicitada</Badge>;
+
+    default:
+      return <Badge variant="outline">{status || 'Rascunho'}</Badge>;
+  }
+};
+
+  const getCategoryLabel = (category: string) => {
+    const categories: Record<string, string> = {
+      geral: 'Geral',
+      producao: 'Produção',
+      exploracao: 'Exploração',
+      licitacao: 'Licitação',
+      institucional: 'Institucional',
+      sustentabilidade: 'Sustentabilidade',
+    };
+    return categories[category] || category;
   };
 
   return (
     <AdminLayout title="Notícias" subtitle="Gerir artigos e publicações">
-
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
@@ -168,7 +201,8 @@ export default function AdminNewsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Título</TableHead>
+                      <TableHead>Título (PT)</TableHead>
+                      <TableHead>Código</TableHead>
                       <TableHead>Estado</TableHead>
                       <TableHead>Categoria</TableHead>
                       <TableHead>Data</TableHead>
@@ -176,26 +210,31 @@ export default function AdminNewsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {articles?.length === 0 ? (
+                    {articles.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                           {search ? 'Nenhuma notícia encontrada.' : 'Ainda não existem notícias. Crie a primeira!'}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      articles?.map((article) => (
+                      articles.map((article) => (
                         <TableRow key={article.id}>
-                          <TableCell className="font-medium">{article.title}</TableCell>
+                          <TableCell className="font-medium">{article.titlePt}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {article.contentCode}
+                          </TableCell>
                           <TableCell>{getStatusBadge(article.status)}</TableCell>
-                          <TableCell className="capitalize">{article.category}</TableCell>
+                          <TableCell className="capitalize">
+                            {getCategoryLabel(article.category)}
+                          </TableCell>
                           <TableCell>
-                            {format(new Date(article.created_at), "d MMM yyyy", { locale: pt })}
+                            {format(new Date(article.publicationDate), "d MMM yyyy", { locale: pt })}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              {article.status === 'published' && (
+                              {article.status?.toLowerCase() === 'published' && (
                                 <Button variant="ghost" size="icon" asChild>
-                                  <Link to={`/news/${article.slug}`} target="_blank">
+                                  <Link to={`/news/${article.slugOrURL || article.id}`} target="_blank">
                                     <Eye className="h-4 w-4" />
                                   </Link>
                                 </Button>
@@ -239,7 +278,6 @@ export default function AdminNewsPage() {
                     </PaginationItem>
                     
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                      // Show first page, last page, current page, and pages around current
                       if (
                         page === 1 ||
                         page === totalPages ||
@@ -294,7 +332,7 @@ export default function AdminNewsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar Notícia</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem a certeza que deseja eliminar "{deleteArticle?.title}"?
+              Tem a certeza que deseja eliminar "{deleteArticle?.titlePt}"?
               Esta acção não pode ser revertida.
             </AlertDialogDescription>
           </AlertDialogHeader>
