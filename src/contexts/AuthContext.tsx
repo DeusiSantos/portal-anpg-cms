@@ -1,178 +1,195 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import api from "@/service/api";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-interface UserProfile {
+// ─── API client ───────────────────────────────────────────────────────────────
+
+export const apiClient = api;
+
+// Inject access token automatically on every request
+apiClient.interceptors.request.use((config) => {
+  const tokens = loadTokens();
+  if (tokens?.accessToken) {
+    config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+  }
+  return config;
+});
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+/** Dados mínimos extraídos do JWT */
+export interface AuthUser {
   id: string;
-  user_id: string;
-  full_name: string;
   email: string;
-  department: string | null;
-  avatar_url: string | null;
+  fullName: string;
+  role: string;
 }
 
-interface UserRole {
-  role: 'admin' | 'editor_comunicacao' | 'editor_tecnico' | 'gestor_investidores' | 'viewer';
+/** Dados completos do utilizador retornados por GET /users/{id} */
+export interface UserAllData {
+  id: string;
+  fullName: string;
+  email: string;
+  position: string | null;
+  phoneNumber: string | null;
+  organizationalUnitId: string | null;
+  roles: string[];
+  status: number | string;
+  createdAt: string;
+}
+
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
 }
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  profile: UserProfile | null;
-  roles: UserRole[];
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  /** Dados básicos do JWT (sempre disponíveis quando autenticado) */
+  user: AuthUser | null;
+  /** Dados completos do utilizador vindos da API (pode ser null enquanto carrega) */
+  userAllData: UserAllData | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  isAdmin: boolean;
-  canManageContent: boolean;
-  canManageOperations: boolean;
-  canManageInvestors: boolean;
-  hasBackofficeAccess: boolean;
+  getAccessToken: () => string | null;
+  /** Força um novo fetch dos dados completos do utilizador */
+  refreshUserAllData: () => Promise<void>;
 }
+
+// ─── JWT helpers ──────────────────────────────────────────────────────────────
+
+function parseJwt(token: string): Record<string, unknown> | null {
+  try {
+    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    // TextDecoder lida corretamente com caracteres UTF-8 multi-byte (é, ã, ç…)
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+  } catch {
+    return null;
+  }
+}
+
+function extractUser(token: string): AuthUser | null {
+  const payload = parseJwt(token);
+  if (!payload) return null;
+
+  const id =
+    (payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] as string) ?? "";
+  const email =
+    (payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as string) ??
+    (payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] as string) ??
+    "";
+  const fullName = (payload["full_name"] as string) ?? email;
+  const role =
+    (payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] as string) ?? "";
+
+  return { id, email, fullName, role };
+}
+
+// ─── Storage helpers ──────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "auth_tokens";
+
+function saveTokens(tokens: AuthTokens) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
+}
+
+function loadTokens(): AuthTokens | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as AuthTokens) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearTokens() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+// ─── Fetch full user data ────────────────────────────────────────────────────
+
+async function fetchUserAllData(userId: string): Promise<UserAllData | null> {
+  try {
+    const { data } = await apiClient.get<{ user: UserAllData }>(`/users/${userId}`);
+    return data.user;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Context ──────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [roles, setRoles] = useState<UserRole[]>([]);
-  const [loading, setLoading] = useState(true);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [userAllData, setUserAllData] = useState<UserAllData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile and roles
-  const fetchUserData = async (userId: string) => {
-    try {
-      // Fetch profile and roles in parallel
-      const [profileResult, rolesResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
-        supabase.from('user_roles').select('role').eq('user_id', userId),
-      ]);
-
-      if (profileResult.data) {
-        setProfile(profileResult.data as UserProfile);
-      }
-
-      if (rolesResult.data) {
-        setRoles(rolesResult.data as UserRole[]);
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    }
-  };
-
+  // Restaurar sessão a partir do localStorage no mount
   useEffect(() => {
-    let isMounted = true;
-
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          // Set loading true so ProtectedRoute waits for roles before evaluating access
-          setLoading(true);
-          // Use setTimeout to avoid Supabase deadlock
-          setTimeout(async () => {
-            await fetchUserData(session.user.id);
-            if (isMounted) setLoading(false);
-          }, 0);
-        } else {
-          setProfile(null);
-          setRoles([]);
-          setLoading(false);
+    const tokens = loadTokens();
+    if (tokens) {
+      const isExpired = new Date(tokens.expiresAt) <= new Date();
+      if (!isExpired) {
+        const authUser = extractUser(tokens.accessToken);
+        setUser(authUser);
+        // Buscar dados completos em segundo plano — não bloqueia o render
+        if (authUser) {
+          fetchUserAllData(authUser.id).then(setUserAllData);
         }
+      } else {
+        clearTokens();
       }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!isMounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
+    }
+    setIsLoading(false);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    if (!error && data.user) {
-      // Create profile for new user
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: data.user.id,
-          full_name: fullName,
-          email: email,
-        });
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-      }
+  const login = async (email: string, password: string) => {
+    const { data } = await apiClient.post<AuthTokens>("/auth/login", { email, password });
+    saveTokens(data);
+    const authUser = extractUser(data.accessToken);
+    setUser(authUser);
+    // Buscar dados completos logo após login
+    if (authUser) {
+      const allData = await fetchUserAllData(authUser.id);
+      setUserAllData(allData);
     }
-
-    return { error: error as Error | null };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
-    setRoles([]);
+    try {
+      await apiClient.post("/auth/logout");
+    } catch {
+      // Ignorar erros de rede — limpar estado local de qualquer forma
+    } finally {
+      clearTokens();
+      setUser(null);
+      setUserAllData(null);
+    }
   };
 
-  // Role-based access helpers
-  const roleSet = new Set(roles.map((r) => r.role));
-  const isAdmin = roleSet.has('admin');
-  const canManageContent = isAdmin || roleSet.has('editor_comunicacao');
-  const canManageOperations = isAdmin || roleSet.has('editor_tecnico');
-  const canManageInvestors = isAdmin || roleSet.has('gestor_investidores');
-  const hasBackofficeAccess = roles.length > 0;
+  const refreshUserAllData = async () => {
+    if (!user) return;
+    const allData = await fetchUserAllData(user.id);
+    setUserAllData(allData);
+  };
+
+  const getAccessToken = (): string | null => loadTokens()?.accessToken ?? null;
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        session,
-        profile,
-        roles,
-        loading,
-        signIn,
-        signUp,
+        userAllData,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
         signOut,
-        isAdmin,
-        canManageContent,
-        canManageOperations,
-        canManageInvestors,
-        hasBackofficeAccess,
+        getAccessToken,
+        refreshUserAllData,
       }}
     >
       {children}
@@ -183,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

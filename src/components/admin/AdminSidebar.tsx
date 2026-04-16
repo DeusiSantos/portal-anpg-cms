@@ -85,7 +85,7 @@ export function AdminSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { isAdmin, canManageContent, canManageOperations, canManageInvestors, signOut } = useAuth();
+  const { userAllData, signOut } = useAuth();
   const { data: pending } = usePendingCounts();
 
   const badgeCounts: Record<string, number> = {
@@ -93,6 +93,13 @@ export function AdminSidebar() {
     pendingInvestors: pending?.pendingInvestors ?? 0,
     pendingEois: pending?.pendingEois ?? 0,
   };
+
+
+const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
+const isAdmin = roles.includes('admin');
+const canManageContent = isAdmin || roles.includes('contentmanager');
+const canManageOperations = isAdmin || roles.includes('operationsmanager');
+const canManageInvestors = isAdmin || roles.includes('investorsmanager');
 
   const hasPermission = (permission: string) => {
     switch (permission) {

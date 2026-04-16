@@ -8,10 +8,45 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteProps) {
-  const { user, loading, hasBackofficeAccess, isAdmin, canManageContent, canManageOperations, canManageInvestors } = useAuth();
+  const { user, isLoading, userAllData } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  // Funções auxiliares para verificar permissões baseadas nos roles do userAllData
+  // ProtectedRoute.tsx
+
+  const hasBackofficeAccess = (): boolean => {
+    if (!userAllData?.roles || userAllData.roles.length === 0) return false;
+    const normalized = userAllData.roles.map(r => r.toLowerCase());
+    return normalized.some(role =>
+      ['admin', 'editor_comunicacao', 'editor_tecnico', 'gestor_investidores' , 'viewer'].includes(role)
+    );
+  };
+
+  const isAdmin = (): boolean => {
+    return userAllData?.roles?.map(r => r.toLowerCase()).includes('admin') ?? false;
+  };
+
+  const canManageContent = (): boolean => {
+    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
+    return roles.includes('editor_comunicacao') || roles.includes('admin');
+  };
+
+  const canManageOperations = (): boolean => {
+    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
+    return roles.includes('editor_tecnico') || roles.includes('admin');
+  };
+
+  const canManageInvestors = (): boolean => {
+    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
+    return roles.includes('gestor_investidores') || roles.includes('admin');
+  };
+  const canView = (): boolean => {
+    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
+    return roles.includes('viewer') || roles.includes('admin');
+    }
+
+  // Loading state - aguarda o carregamento do user e dos dados completos
+  if (isLoading || (!userAllData && user)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -19,13 +54,13 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
     );
   }
 
-  // Not logged in
+  // Not logged in - redireciona para login
   if (!user) {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  // No backoffice access
-  if (!hasBackofficeAccess) {
+  // No backoffice access - redireciona para home
+  if (!hasBackofficeAccess()) {
     return <Navigate to="/" replace />;
   }
 
@@ -34,16 +69,16 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
     let hasPermission = false;
     switch (requiredPermission) {
       case 'admin':
-        hasPermission = isAdmin;
+        hasPermission = isAdmin();
         break;
       case 'content':
-        hasPermission = canManageContent;
+        hasPermission = canManageContent();
         break;
       case 'operations':
-        hasPermission = canManageOperations;
+        hasPermission = canManageOperations();
         break;
       case 'investors':
-        hasPermission = canManageInvestors;
+        hasPermission = canManageInvestors();
         break;
     }
 

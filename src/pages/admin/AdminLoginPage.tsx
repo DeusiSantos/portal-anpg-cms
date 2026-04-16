@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,21 +41,37 @@ export default function AdminLoginPage() {
       return;
     }
 
-    const { error } = await signIn(email, password);
-
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
+    try {
+      await login(email, password);
+      // Se o login for bem-sucedido, redireciona para o admin
+      navigate('/admin');
+    } catch (err: any) {
+      // Tratamento de erro baseado no formato da API
+      // A API retorna: { title: "Exception", status: 500, detail: "Email ou password inválidos", ... }
+      const errorDetail = err?.response?.data?.detail || err?.response?.data?.message || err?.message || '';
+      const errorTitle = err?.response?.data?.title || '';
+      const errorStatus = err?.response?.status;
+      
+      console.error('Erro no login:', { errorTitle, errorDetail, errorStatus });
+      
+      // Verificar se é erro de credenciais (baseado no status ou na mensagem)
+      if (errorStatus === 401 || errorStatus === 500 || 
+          errorDetail.includes('Email') || errorDetail.includes('password') ||
+          errorDetail.includes('inválidos') || errorDetail.includes('incorrectos')) {
         setError('Email ou palavra-passe incorretos.');
-      } else if (error.message.includes('Email not confirmed')) {
+      } else if (errorDetail.includes('confirmado') || errorDetail.includes('confirmed')) {
         setError('Por favor confirme o seu email antes de entrar.');
+      } else if (errorDetail.includes('encontrado') || errorDetail.includes('not found')) {
+        setError('Utilizador não encontrado.');
+      } else if (errorDetail) {
+        // Mostrar a mensagem detalhada da API se disponível
+        setError(errorDetail);
       } else {
-        setError(error.message);
+        setError('Erro ao tentar fazer login. Tente novamente.');
       }
+    } finally {
       setLoading(false);
-      return;
     }
-
-    navigate('/admin');
   };
 
   const handleQuickAccess = (user: typeof quickAccessUsers[0]) => {
@@ -140,8 +156,11 @@ export default function AdminLoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="animate-in fade-in-50 duration-300">
+                <AlertDescription className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -155,7 +174,7 @@ export default function AdminLoginPage() {
                   placeholder="seu.email@anpg.co.ao"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || authLoading}
                   autoComplete="email"
                   className="pl-10 h-12"
                 />
@@ -172,15 +191,19 @@ export default function AdminLoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || authLoading}
                   autoComplete="current-password"
                   className="pl-10 h-12"
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={loading}>
-              {loading ? (
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base font-semibold" 
+              disabled={loading || authLoading}
+            >
+              {loading || authLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   A entrar...
@@ -198,36 +221,38 @@ export default function AdminLoginPage() {
             </div>
           </form>
 
-          {/* Quick Access */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Acesso Rápido</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
+          {/* Quick Access - Apenas para desenvolvimento */}
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Acesso Rápido (Dev)</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
 
-            <div className="space-y-2">
-              {quickAccessUsers.map((user) => (
-                <button
-                  key={user.email}
-                  type="button"
-                  onClick={() => handleQuickAccess(user)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30 transition-all text-left group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
-                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                    {user.role}
-                  </span>
-                </button>
-              ))}
+              <div className="space-y-2">
+                {quickAccessUsers.map((user) => (
+                  <button
+                    key={user.email}
+                    type="button"
+                    onClick={() => handleQuickAccess(user)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30 transition-all text-left group"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Shield className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                      {user.role}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground pt-4">

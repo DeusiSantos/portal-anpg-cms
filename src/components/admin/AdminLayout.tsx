@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
-import { OnboardingWizard } from './OnboardingWizard';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -12,12 +9,14 @@ import { Settings } from 'lucide-react';
 function getRoleBadge(role: string) {
   const roleLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
     admin: { label: 'Admin', variant: 'destructive' },
-    editor_comunicacao: { label: 'Comunicação', variant: 'default' },
+    contentmanager: { label: 'Conteúdo', variant: 'default' },
+    operationsmanager: { label: 'Operações', variant: 'secondary' },
+    investorsmanager: { label: 'Investidores', variant: 'outline' },
     editor_tecnico: { label: 'Técnico', variant: 'secondary' },
-    gestor_investidores: { label: 'Investidores', variant: 'outline' },
-    viewer: { label: 'Viewer', variant: 'outline' },
+    editor_comunicacao: { label: 'Comunicação', variant: 'default' },
   };
-  return roleLabels[role] || { label: role, variant: 'outline' as const };
+  const key = role.toLowerCase();
+  return roleLabels[key] || { label: role, variant: 'outline' as const };
 }
 
 interface AdminLayoutProps {
@@ -27,24 +26,7 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
-  const { profile, roles, user } = useAuth();
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-
-  useEffect(() => {
-    if (!user || onboardingChecked) return;
-    supabase
-      .from('profiles')
-      .select('onboarding_completed')
-      .eq('user_id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data && !(data as any).onboarding_completed) {
-          setShowOnboarding(true);
-        }
-        setOnboardingChecked(true);
-      });
-  }, [user, onboardingChecked]);
+  const { userAllData } = useAuth();
 
   return (
     <SidebarProvider>
@@ -56,21 +38,21 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
           <header className="bg-background border-b sticky top-0 z-50 h-14 flex items-center px-4 gap-4">
             <SidebarTrigger />
 
-            {title && (
+            {title ? (
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg font-semibold truncate">{title}</h1>
                 {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
               </div>
+            ) : (
+              <div className="flex-1" />
             )}
-
-            {!title && <div className="flex-1" />}
 
             <div className="flex items-center gap-3 shrink-0">
               <div className="text-right hidden md:block">
-                <p className="text-sm font-medium">{profile?.full_name}</p>
-                <div className="flex gap-1 justify-end">
-                  {roles.map((r, i) => {
-                    const { label, variant } = getRoleBadge(r.role);
+                <p className="text-sm font-medium">{userAllData?.fullName ?? '—'}</p>
+                <div className="flex gap-1 justify-end flex-wrap">
+                  {userAllData?.roles?.map((r, i) => {
+                    const { label, variant } = getRoleBadge(r);
                     return (
                       <Badge key={i} variant={variant} className="text-[10px] px-1.5 py-0">
                         {label}
@@ -93,11 +75,6 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
           </main>
         </div>
       </div>
-
-      <OnboardingWizard
-        open={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
-      />
     </SidebarProvider>
   );
 }
