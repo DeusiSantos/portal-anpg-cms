@@ -241,7 +241,7 @@ export default function AdminUsersPage() {
                   <Input
                     value={newUser.fullName}
                     onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
-                    placeholder="João Silva"
+                    placeholder="Nome do utilizador"
                   />
                 </div>
                 <div className="space-y-2">
@@ -250,7 +250,7 @@ export default function AdminUsersPage() {
                     type="email"
                     value={newUser.email}
                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="joao.silva@anpg.co.ao"
+                    placeholder="email@dominio.com"
                   />
                 </div>
                 <div className="space-y-2">
