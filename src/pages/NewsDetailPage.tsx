@@ -154,7 +154,7 @@ function useRelatedNews(currentNewsId: string, category: string, limit: number =
     queryKey: ['related-news', currentNewsId, category, limit],
     queryFn: async () => {
       // Buscar todas as notícias e filtrar as relacionadas
-      const response = await api.get<{ news: { data: NewsDocument[] } }>('/news', {
+      const response = await api.get<{ news: { data: NewsDocument[] } }>('/news/published', {
         params: {
           PageIndex: 0,
           PageSize: 50, // Buscar um número razoável para filtrar

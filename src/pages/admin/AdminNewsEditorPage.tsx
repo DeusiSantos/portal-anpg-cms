@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
   Save, 
@@ -31,7 +34,16 @@ import {
   Edit,
   FileCheck,
   AlertCircle,
-  RotateCcw
+  History,
+  ChevronRight,
+  Calendar,
+  User,
+  Globe,
+  FileText,
+  ThumbsUp,
+  RotateCcw,
+  MessageSquare,
+  AlertTriangle
 } from 'lucide-react';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { cn } from '@/lib/utils';
@@ -46,7 +58,6 @@ const CATEGORIES = [
   { value: 'sustentabilidade', label: 'Sustentabilidade' },
 ];
 
-// Definição dos estados possíveis (exatamente como no backend)
 type NewsStatus = 
   | 'Draft' 
   | 'PendingReview' 
@@ -57,17 +68,6 @@ type NewsStatus =
   | 'Rejected' 
   | 'Deleted' 
   | 'RequestCorrection';
-
-// Fluxo de transições baseado no backend
-// Draft → PendingReview
-// PendingReview → Reviewed | RequestCorrection | Rejected
-// Reviewed → Approved | RequestCorrection
-// RequestCorrection → Draft
-// Approved → Published
-// Published → Archived
-// Rejected → (terminal)
-// Archived → (terminal)
-// Deleted → (terminal)
 
 const STATUS_TRANSITIONS: Record<NewsStatus, NewsStatus[]> = {
   Draft: ['PendingReview'],
@@ -80,6 +80,9 @@ const STATUS_TRANSITIONS: Record<NewsStatus, NewsStatus[]> = {
   Rejected: [],
   Deleted: []
 };
+
+// Status que exigem comentário obrigatório
+const REQUIRED_COMMENT_STATUSES: NewsStatus[] = ['Rejected', 'RequestCorrection', 'Approved', 'Archived'];
 
 const STATUS_CONFIG: Record<NewsStatus, { label: string; color: string; icon: any; description: string }> = {
   Draft: {
@@ -109,7 +112,7 @@ const STATUS_CONFIG: Record<NewsStatus, { label: string; color: string; icon: an
   Approved: {
     label: 'Aprovado',
     color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    icon: CheckCircle,
+    icon: ThumbsUp,
     description: 'Notícia aprovada. Pronta para publicação.'
   },
   Published: {
@@ -146,6 +149,19 @@ interface Attachment {
   size: number;
 }
 
+interface HistoryItem {
+  id: string;
+  entityId: string;
+  entityName: string;
+  fromStatus: string;
+  toStatus: string;
+  comment: string | null;
+  changedBy: string | null;
+  userName: string | null;
+  ipAddress: string;
+  createdAt: string;
+}
+
 interface NewsDocument {
   id: string;
   titlePt: string;
@@ -176,6 +192,113 @@ interface NewsFormData {
   uploadDocs?: File[];
 }
 
+// Componente de Timeline de Histórico
+function HistoryTimeline({ history, isLoading }: { history: HistoryItem[]; isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-20 bg-secondary/50 rounded-lg" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!history || history.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <History className="w-12 h-12 mx-auto mb-3 opacity-50" />
+        <p>Nenhum histórico de tramitação encontrado</p>
+      </div>
+    );
+  }
+
+  const sortedHistory = [...history].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  return (
+    <div className="relative pl-8 space-y-4">
+      <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
+      
+      {sortedHistory.map((item) => {
+        const fromConfig = STATUS_CONFIG[item.fromStatus as NewsStatus];
+        const toConfig = STATUS_CONFIG[item.toStatus as NewsStatus];
+        const FromIcon = fromConfig?.icon || FileText;
+        const ToIcon = toConfig?.icon || FileText;
+        
+        return (
+          <div key={item.id} className="relative group">
+            <div className="absolute -left-8 top-2 w-3 h-3 rounded-full bg-primary border-2 border-background" />
+            
+            <div className="bg-secondary/30 rounded-lg p-4 hover:bg-secondary/50 transition-colors">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary text-xs">
+                    <FromIcon className="w-3 h-3" />
+                    <span>{fromConfig?.label || item.fromStatus}</span>
+                  </div>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-xs">
+                    <ToIcon className="w-3 h-3" />
+                    <span>{toConfig?.label || item.toStatus}</span>
+                  </div>
+                </div>
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(item.createdAt).toLocaleString('pt-PT')}
+                </span>
+              </div>
+              
+              {item.comment && (
+                <div className="mt-2 pt-2 border-t border-border/50">
+                  <div className="flex items-start gap-2">
+                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
+                    <p className="text-sm text-muted-foreground">{item.comment}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/60">
+                {item.ipAddress && (
+                  <span className="flex items-center gap-1">
+                    <Globe className="w-3 h-3" />
+                    {item.ipAddress}
+                  </span>
+                )}
+                {item.userName && (
+                  <span className="flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    {item.userName}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Componente de Status Badge
+function StatusBadge({ status, size = 'default' }: { status: NewsStatus; size?: 'sm' | 'default' }) {
+  const config = STATUS_CONFIG[status];
+  const Icon = config?.icon || Edit;
+  return (
+    <div className={cn(
+      "inline-flex items-center gap-1.5 font-medium",
+      size === 'sm' ? 'text-xs px-2 py-0.5 rounded-full' : 'text-sm px-3 py-1.5 rounded-full',
+      config?.color
+    )}>
+      <Icon className={size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'} />
+      {config?.label || status}
+    </div>
+  );
+}
+
 export default function AdminNewsEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -204,8 +327,22 @@ export default function AdminNewsEditorPage() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedNextStatus, setSelectedNextStatus] = useState<NewsStatus | null>(null);
   const [statusComment, setStatusComment] = useState('');
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('pt');
 
-  // Fetch article if editing
+  // Buscar histórico
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ['news-history', id],
+    queryFn: async () => {
+      if (!id || isNew) return null;
+      const response = await api.get(`/workflow/history`, {
+        params: { entityId: id, PageIndex: 0, PageSize: 50 }
+      });
+      return response.data.histories;
+    },
+    enabled: !isNew && !!id,
+  });
+
   useEffect(() => {
     if (!isNew && id) {
       fetchArticle();
@@ -269,7 +406,6 @@ export default function AdminNewsEditorPage() {
     }
   };
 
-  // Mutation para mudar o status
   const statusChangeMutation = useMutation({
     mutationFn: async ({ status, comment }: { status: NewsStatus; comment?: string }) => {
       if (!id) throw new Error('ID da notícia não encontrado');
@@ -279,8 +415,6 @@ export default function AdminNewsEditorPage() {
         payload.comment = comment.trim();
       }
       
-      console.log('Enviando para API:', payload);
-      
       const response = await api.post(`/workflow/news/${id}/status`, payload);
       return response.data;
     },
@@ -288,6 +422,7 @@ export default function AdminNewsEditorPage() {
       toast.success(`Estado alterado para ${STATUS_CONFIG[variables.status].label}`);
       fetchArticle();
       queryClient.invalidateQueries({ queryKey: ['admin-news'] });
+      queryClient.invalidateQueries({ queryKey: ['news-history', id] });
       setShowStatusModal(false);
       setSelectedNextStatus(null);
       setStatusComment('');
@@ -306,9 +441,7 @@ export default function AdminNewsEditorPage() {
       formDataToSend.append('uploadDocs', file);
       
       const response = await api.post(`/news/${id}/attachments?documentId=${id}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       
       return response.data;
@@ -379,9 +512,7 @@ export default function AdminNewsEditorPage() {
         }
         
         const response = await api.post('/news', formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         
         return response.data;
@@ -402,9 +533,7 @@ export default function AdminNewsEditorPage() {
         };
         
         const response = await api.put('/news', updateData, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
         
         return response.data;
@@ -486,37 +615,20 @@ export default function AdminNewsEditorPage() {
     }
   };
 
-  const StatusBadge = ({ status }: { status: NewsStatus }) => {
-    const config = STATUS_CONFIG[status];
-    const Icon = config?.icon || Edit;
-    return (
-      <div className={cn("inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium", config?.color)}>
-        <Icon className="w-4 h-4" />
-        {config?.label || status}
-      </div>
-    );
-  };
-
-  // Obter os próximos estados baseado no fluxo do backend
   const availableNextStates = STATUS_TRANSITIONS[currentStatus] || [];
-
-  // Verificar se o usuário pode editar baseado no status
   const canEdit = !['Rejected', 'Deleted', 'Archived'].includes(currentStatus);
-  
-  // Verificar se precisa de comentário obrigatório
-  const requiresComment = selectedNextStatus === 'RequestCorrection' || selectedNextStatus === 'Rejected';
+  const requiresComment = selectedNextStatus ? REQUIRED_COMMENT_STATUSES.includes(selectedNextStatus) : false;
 
-  // Obter a mensagem de descrição para o próximo estado
   const getTransitionDescription = (from: NewsStatus, to: NewsStatus): string => {
     const descriptions: Record<string, string> = {
-      'Draft_PendingReview': 'Enviar notícia para revisão',
+      'Draft_PendingReview': 'Submeter para revisão',
       'PendingReview_Reviewed': 'Marcar como revisado',
       'PendingReview_RequestCorrection': 'Solicitar correções ao autor',
       'PendingReview_Rejected': 'Rejeitar notícia',
-      'Reviewed_Approved': 'Aprovar notícia para publicação',
+      'Reviewed_Approved': 'Aprovar para publicação',
       'Reviewed_RequestCorrection': 'Solicitar correções adicionais',
-      'RequestCorrection_Draft': 'Voltar para rascunho para correções',
-      'Approved_Published': 'Publicar notícia no site',
+      'RequestCorrection_Draft': 'Voltar para rascunho',
+      'Approved_Published': 'Publicar no site',
       'Published_Archived': 'Arquivar notícia'
     };
     return descriptions[`${from}_${to}`] || `Mover para ${STATUS_CONFIG[to].label}`;
@@ -535,131 +647,167 @@ export default function AdminNewsEditorPage() {
   return (
     <AdminLayout title="Editor de Notícias">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <Button
             variant="outline"
             onClick={() => navigate('/admin/news')}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Voltar para notícias
+            Voltar
           </Button>
           
-          {!isNew && (
-            <StatusBadge status={currentStatus} />
-          )}
+          <div className="flex items-center gap-3">
+            {!isNew && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowHistoryModal(true)}
+                  className="gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  Histórico
+                </Button>
+                <StatusBadge status={currentStatus} />
+              </>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
+          {/* Coluna Principal - Conteúdo */}
           <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Conteúdo (Português)</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="titlePt">Título (PT) *</Label>
-                  <Input
-                    id="titlePt"
-                    value={formData.titlePt}
-                    onChange={(e) => {
-                      const title = e.target.value;
-                      setFormData({
-                        ...formData,
-                        titlePt: title,
-                        slugOrURL: formData.slugOrURL || generateSlug(title),
-                      });
-                    }}
-                    placeholder="Título da notícia"
-                    required
-                    disabled={!canEdit}
-                  />
-                </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="pt" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Português
+                </TabsTrigger>
+                <TabsTrigger value="en" className="gap-2">
+                  <Globe className="h-4 w-4" />
+                  English
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="pt" className="mt-4 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Conteúdo em Português</CardTitle>
+                    <CardDescription>Preencha os detalhes da notícia em português</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="titlePt">Título *</Label>
+                      <Input
+                        id="titlePt"
+                        value={formData.titlePt}
+                        onChange={(e) => {
+                          const title = e.target.value;
+                          setFormData({
+                            ...formData,
+                            titlePt: title,
+                            slugOrURL: formData.slugOrURL || generateSlug(title),
+                          });
+                        }}
+                        placeholder="Digite o título da notícia"
+                        disabled={!canEdit}
+                        className="text-lg"
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="slugOrURL">Slug (URL)</Label>
-                  <Input
-                    id="slugOrURL"
-                    value={formData.slugOrURL}
-                    onChange={(e) => setFormData({ ...formData, slugOrURL: e.target.value })}
-                    placeholder="titulo-da-noticia"
-                    disabled={!canEdit}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Deixe em branco para gerar automaticamente
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="slugOrURL">Slug (URL amigável)</Label>
+                      <Input
+                        id="slugOrURL"
+                        value={formData.slugOrURL}
+                        onChange={(e) => setFormData({ ...formData, slugOrURL: e.target.value })}
+                        placeholder="exemplo-de-url"
+                        disabled={!canEdit}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Deixe em branco para gerar automaticamente a partir do título
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="excerptPt">Excerto (PT)</Label>
-                  <Textarea
-                    id="excerptPt"
-                    value={formData.excerptPt}
-                    onChange={(e) => setFormData({ ...formData, excerptPt: e.target.value })}
-                    placeholder="Breve descrição da notícia..."
-                    rows={3}
-                    disabled={!canEdit}
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="excerptPt">Excerto / Resumo</Label>
+                      <Textarea
+                        id="excerptPt"
+                        value={formData.excerptPt}
+                        onChange={(e) => setFormData({ ...formData, excerptPt: e.target.value })}
+                        placeholder="Breve resumo da notícia que aparecerá nas listagens..."
+                        rows={3}
+                        disabled={!canEdit}
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>Conteúdo (PT)</Label>
-                  <RichTextEditor
-                    content={formData.contentPt}
-                    onChange={(html) => setFormData({ ...formData, contentPt: html })}
-                    placeholder="Escreva o conteúdo da notícia..."
-                    
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="space-y-2">
+                      <Label>Conteúdo Completo</Label>
+                      <RichTextEditor
+                        content={formData.contentPt}
+                        onChange={(html) => setFormData({ ...formData, contentPt: html })}
+                        placeholder="Escreva o conteúdo da notícia aqui..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="en" className="mt-4 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Content in English</CardTitle>
+                    <CardDescription>
+                      Optional translations — if empty, Portuguese content will be displayed
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="titleEn">Title</Label>
+                      <Input
+                        id="titleEn"
+                        value={formData.titleEn}
+                        onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
+                        placeholder="Enter the article title in English"
+                        disabled={!canEdit}
+                      />
+                    </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Conteúdo em Inglês (EN)</CardTitle>
-                <CardDescription>Traduções opcionais — se vazias, será exibido o conteúdo em Português</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="titleEn">Title (EN)</Label>
-                  <Input
-                    id="titleEn"
-                    value={formData.titleEn}
-                    onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
-                    placeholder="Article title in English"
-                    disabled={!canEdit}
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="excerptEn">Excerpt</Label>
+                      <Textarea
+                        id="excerptEn"
+                        value={formData.excerptEn}
+                        onChange={(e) => setFormData({ ...formData, excerptEn: e.target.value })}
+                        placeholder="Brief summary of the article..."
+                        rows={3}
+                        disabled={!canEdit}
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="excerptEn">Excerpt (EN)</Label>
-                  <Textarea
-                    id="excerptEn"
-                    value={formData.excerptEn}
-                    onChange={(e) => setFormData({ ...formData, excerptEn: e.target.value })}
-                    placeholder="Brief description in English..."
-                    rows={3}
-                
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Content (EN)</Label>
-                  <RichTextEditor
-                    content={formData.contentEn}
-                    onChange={(html) => setFormData({ ...formData, contentEn: html })}
-                    placeholder="Write the article content in English..."
-                
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="space-y-2">
+                      <Label>Full Content</Label>
+                      <RichTextEditor
+                        content={formData.contentEn}
+                        onChange={(html) => setFormData({ ...formData, contentEn: html })}
+                        placeholder="Write the article content in English here..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
 
+          {/* Coluna Lateral - Configurações */}
           <div className="space-y-6">
+            {/* Card de Publicação */}
             <Card>
-              <CardHeader>
-                <CardTitle>Publicação</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Configurações</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -697,65 +845,91 @@ export default function AdminNewsEditorPage() {
               </CardContent>
             </Card>
 
-            {/* Workflow Status Card */}
+            {/* Card de Workflow - Apenas para edição */}
             {!isNew && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Send className="w-5 h-5" />
-                    Workflow da Notícia
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <RotateCcw className="w-4 h-4" />
+                    Fluxo de Aprovação
                   </CardTitle>
                   <CardDescription>
                     {STATUS_CONFIG[currentStatus]?.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Status atual em destaque */}
                   <div className="p-4 bg-secondary/30 rounded-lg">
-                    <div className="text-sm text-muted-foreground mb-2">Estado Actual</div>
-                    <StatusBadge status={currentStatus} />
+                    <div className="text-xs text-muted-foreground mb-2">Estado Actual</div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={currentStatus} size="default" />
+                    </div>
                   </div>
 
+                  {/* Próximos estados disponíveis */}
                   {availableNextStates.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="text-sm font-medium text-foreground">Próximos Estados</div>
-                      <div className="grid gap-2">
-                        {availableNextStates.map((nextState) => {
-                          const config = STATUS_CONFIG[nextState];
-                          const Icon = config.icon;
-                          return (
-                            <Button
-                              key={nextState}
-                              type="button"
-                              variant="outline"
-                              onClick={() => handleStatusChange(nextState)}
-                              className="justify-start gap-3 h-auto py-3 px-4"
-                              disabled={statusChangeMutation.isPending}
-                            >
-                              <Icon className="w-5 h-5" />
-                              <div className="text-left">
-                                <div className="font-medium">{config.label}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {getTransitionDescription(currentStatus, nextState)}
+                    <>
+                      <Separator />
+                      <div>
+                        <div className="text-sm font-medium text-foreground mb-3">
+                          Ações disponíveis
+                        </div>
+                        <div className="grid gap-2">
+                          {availableNextStates.map((nextState) => {
+                            const config = STATUS_CONFIG[nextState];
+                            const Icon = config.icon;
+                            const isDanger = nextState === 'Rejected';
+                            const isWarning = nextState === 'RequestCorrection';
+                            
+                            return (
+                              <Button
+                                key={nextState}
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleStatusChange(nextState)}
+                                className={cn(
+                                  "justify-start gap-3 h-auto py-3 px-4",
+                                  isDanger && "hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950/20",
+                                  isWarning && "hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                                )}
+                                disabled={statusChangeMutation.isPending}
+                              >
+                                <Icon className={cn(
+                                  "w-5 h-5",
+                                  isDanger && "text-red-500",
+                                  isWarning && "text-orange-500"
+                                )} />
+                                <div className="text-left flex-1">
+                                  <div className={cn(
+                                    "font-medium",
+                                    isDanger && "text-red-600 dark:text-red-400",
+                                    isWarning && "text-orange-600 dark:text-orange-400"
+                                  )}>
+                                    {config.label}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {getTransitionDescription(currentStatus, nextState)}
+                                  </div>
                                 </div>
-                              </div>
-                            </Button>
-                          );
-                        })}
+                              </Button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
 
                   {/* Mensagens contextuais */}
                   {currentStatus === 'RequestCorrection' && (
                     <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
                       <div className="flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5" />
+                        <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5" />
                         <div>
                           <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
-                            Esta notícia necessita de correções
+                            Correções necessárias
                           </p>
                           <p className="text-xs text-orange-700 dark:text-orange-400 mt-1">
-                            Faça as alterações necessárias e submeta novamente para revisão.
+                            Faça as alterações solicitadas e submeta novamente para revisão.
                           </p>
                         </div>
                       </div>
@@ -778,22 +952,6 @@ export default function AdminNewsEditorPage() {
                     </div>
                   )}
 
-                  {currentStatus === 'Deleted' && (
-                    <div className="mt-4 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
-                      <div className="flex items-start gap-2">
-                        <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-rose-800 dark:text-rose-300">
-                            Notícia Eliminada
-                          </p>
-                          <p className="text-xs text-rose-700 dark:text-rose-400 mt-1">
-                            Esta notícia foi eliminada permanentemente.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {currentStatus === 'Published' && (
                     <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
                       <div className="flex items-start gap-2">
@@ -803,23 +961,7 @@ export default function AdminNewsEditorPage() {
                             Notícia Publicada
                           </p>
                           <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
-                            Esta notícia está visível no site. Pode ser arquivada se necessário.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {currentStatus === 'Archived' && (
-                    <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <div className="flex items-start gap-2">
-                        <Archive className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-purple-800 dark:text-purple-300">
-                            Notícia Arquivada
-                          </p>
-                          <p className="text-xs text-purple-700 dark:text-purple-400 mt-1">
-                            Esta notícia está arquivada e não está visível no site principal.
+                            A notícia está visível no site. Pode ser arquivada se necessário.
                           </p>
                         </div>
                       </div>
@@ -829,13 +971,14 @@ export default function AdminNewsEditorPage() {
               </Card>
             )}
 
+            {/* Card de Imagem */}
             <Card>
-              <CardHeader>
-                <CardTitle>Imagem de Destaque</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Imagem de Destaque</CardTitle>
                 <CardDescription>
                   {isNew 
                     ? 'Envie uma imagem para a notícia (opcional)' 
-                    : 'Gerir imagem de destaque da notícia'}
+                    : 'Gerencie a imagem principal da notícia'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -852,12 +995,12 @@ export default function AdminNewsEditorPage() {
                   />
                 ) : (
                   <>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleFileSelect}
-                        className="w-full p-2 border rounded-md"
+                        className="w-full p-2 border rounded-md text-sm"
                         disabled={!canEdit}
                       />
                       
@@ -867,6 +1010,7 @@ export default function AdminNewsEditorPage() {
                           onClick={handleImageUpload}
                           disabled={uploadImageMutation.isPending}
                           className="w-full gap-2"
+                          size="sm"
                         >
                           {uploadImageMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -879,22 +1023,22 @@ export default function AdminNewsEditorPage() {
                     </div>
                     
                     {(currentImageUrl || selectedImageFile) && (
-                      <div className="mt-4 relative">
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {selectedImageFile ? 'Nova imagem (aguardando envio):' : 'Imagem atual:'}
+                      <div className="relative">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {selectedImageFile ? 'Pré-visualização (aguardando envio):' : 'Imagem actual:'}
                         </p>
-                        <div className="relative inline-block w-full">
+                        <div className="relative rounded-md overflow-hidden border">
                           <img 
                             src={currentImageUrl} 
                             alt="Preview" 
-                            className="w-full h-48 object-cover rounded-md"
+                            className="w-full h-40 object-cover"
                           />
                           {!selectedImageFile && existingAttachments.length > 0 && canEdit && (
                             <Button
                               type="button"
                               variant="destructive"
                               size="icon"
-                              className="absolute -top-2 -right-2 h-6 w-6"
+                              className="absolute top-2 right-2 h-7 w-7"
                               onClick={handleRemoveImage}
                               disabled={deleteImageMutation.isPending}
                             >
@@ -910,7 +1054,7 @@ export default function AdminNewsEditorPage() {
                     )}
 
                     {isImageLoading && (
-                      <div className="flex justify-center">
+                      <div className="flex justify-center py-4">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
                     )}
@@ -919,7 +1063,8 @@ export default function AdminNewsEditorPage() {
               </CardContent>
             </Card>
 
-            <div className="flex gap-4">
+            {/* Botões de Ação */}
+            <div className="flex gap-3">
               <Button
                 type="submit"
                 className="flex-1 gap-2"
@@ -941,17 +1086,17 @@ export default function AdminNewsEditorPage() {
                 disabled={!formData.titlePt}
               >
                 <Eye className="h-4 w-4" />
-                Pré-visualizar
+                Ver
               </Button>
             </div>
           </div>
         </form>
       </div>
 
-      {/* Modal de Confirmação de Mudança de Estado */}
+      {/* Modal de Mudança de Estado */}
       {showStatusModal && selectedNextStatus && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg shadow-xl w-full max-w-md mx-4">
+          <div className="bg-background rounded-xl shadow-xl w-full max-w-md mx-4">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className={cn("p-2 rounded-full", STATUS_CONFIG[selectedNextStatus].color)}>
@@ -972,26 +1117,34 @@ export default function AdminNewsEditorPage() {
               
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="comment">
-                    Comentário {requiresComment && <span className="text-red-500">*</span>}
+                  <Label htmlFor="comment" className="flex items-center gap-1">
+                    Comentário
+                    {requiresComment && (
+                      <span className="text-red-500 text-xs">* obrigatório</span>
+                    )}
                   </Label>
                   <Textarea
                     id="comment"
                     value={statusComment}
                     onChange={(e) => setStatusComment(e.target.value)}
-                    placeholder="Adicione um comentário sobre esta alteração..."
+                    placeholder={requiresComment 
+                      ? "Por favor, justifique esta alteração de estado..." 
+                      : "Comentário sobre esta alteração (opcional)"
+                    }
                     rows={3}
-                    className="mt-1"
-                    required={requiresComment}
+                    className={cn(
+                      "mt-1",
+                      requiresComment && !statusComment.trim() && "border-red-300 focus-visible:ring-red-500"
+                    )}
                   />
-                  {requiresComment && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                  {requiresComment && !statusComment.trim() && (
+                    <p className="text-xs text-red-500 mt-1">
                       Este comentário é obrigatório para esta transição
                     </p>
                   )}
                 </div>
                 
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-3 justify-end pt-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -1015,6 +1168,52 @@ export default function AdminNewsEditorPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Histórico */}
+      {showHistoryModal && !isNew && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <History className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Histórico de Tramitação</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Acompanhe todas as alterações de estado desta notícia
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowHistoryModal(false)}
+                  className="h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <ScrollArea className="flex-1 p-6">
+              <HistoryTimeline 
+                history={historyData?.data || []} 
+                isLoading={historyLoading} 
+              />
+            </ScrollArea>
+            
+            {historyData && historyData.count > 0 && (
+              <div className="p-4 border-t bg-secondary/20">
+                <div className="text-xs text-muted-foreground text-center">
+                  Total de {historyData.count} registros
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
