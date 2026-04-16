@@ -21,7 +21,10 @@ import {
   FileText,
   Loader2,
   Upload,
+  User as UserIcon,
+  ShieldCheck,
 } from 'lucide-react';
+import api from '@/service/api';
 
 interface LogoSettings {
   light: string;
@@ -49,12 +52,15 @@ interface FooterSettings {
 }
 
 export default function AdminSettingsPage() {
-  const { user } = useAuth();
+  const { user, userAllData } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('logo');
+  const [activeTab, setActiveTab] = useState('profile');
   const [uploading, setUploading] = useState<'light' | 'dark' | null>(null);
 
   // Form states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [logoData, setLogoData] = useState<LogoSettings>({ light: '', dark: '' });
   const [contactData, setContactData] = useState<ContactSettings>({
     address: '',
@@ -161,6 +167,41 @@ export default function AdminSettingsPage() {
     updateMutation.mutate({ key, value });
   };
 
+  const updatePasswordMutation = useMutation({
+  mutationFn: async () => {
+    const response = await api.post('auth/change-password', {
+      userId: userAllData?.id,
+      currentPassword: currentPassword,
+      newPassword: newPassword
+    });
+    return response.data;
+  },
+  onSuccess: () => {
+    toast.success('Senha alterada com sucesso');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  },
+  onError: (error: any) => {
+    // Extrair mensagem de erro da resposta da API
+    const errorMessage = error.response?.data?.detail || error.message || 'Erro ao alterar senha';
+    toast.error(`Erro ao alterar senha: ${errorMessage}`);
+  },
+});
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    updatePasswordMutation.mutate(); // Já não passas parâmetro
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -174,8 +215,12 @@ export default function AdminSettingsPage() {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="logo" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-5 mb-6 overflow-x-auto h-auto min-w-max p-1">
+            <TabsTrigger value="profile" className="flex items-center gap-2 py-2">
+              <UserIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Minha Conta</span>
+            </TabsTrigger>
+            <TabsTrigger value="logo" className="flex items-center gap-2 py-2">
               <ImageIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Logotipos</span>
             </TabsTrigger>
@@ -475,6 +520,101 @@ export default function AdminSettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Profile Settings */}
+          <TabsContent value="profile">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserIcon className="h-5 w-5 text-primary" />
+                    Detalhes do Perfil
+                  </CardTitle>
+                  <CardDescription>Informações atuais da tua conta e permissões</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">Nome Completo</Label>
+                    <p className="font-medium text-base">{userAllData?.fullName || 'Não definido'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">Email Principal</Label>
+                    <p className="font-medium text-base">{userAllData?.email || user?.email || 'Não definido'}</p>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-muted-foreground text-xs uppercase tracking-wider block">Permissões do Sistema</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {userAllData?.roles && userAllData.roles.length > 0 ? (
+                        userAllData.roles.map((r, i) => (
+                          <div key={i} className="bg-primary/10 text-primary uppercase text-xs font-semibold px-2 py-1 rounded">
+                            {r}
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Sem privilégios especiais atríbuidos</span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-destructive" />
+                    Segurança de Conta
+                  </CardTitle>
+                  <CardDescription>Atualiza a tua senha de acesso ao Backoffice</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Senha Atual</Label>
+                      <Input
+                        id="current-password"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Digite sua senha atual"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">Nova Senha</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Mínimo de 6 caracteres"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Reescreve a senha"
+                      />
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        type="submit"
+                        disabled={updatePasswordMutation.isPending || !currentPassword || !newPassword || !confirmPassword}
+                      >
+                        {updatePasswordMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        <Save className="h-4 w-4 mr-2" />
+                        Atualizar Senha
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>

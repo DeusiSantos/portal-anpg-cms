@@ -100,7 +100,7 @@ export default function AdminLoginPage() {
             className="space-y-6"
           >
             <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
-              Sistema de Gestão
+              <span className='text-primary-foreground'>Sistema de Gestão</span>
               <br />
               <span className="text-primary">Backoffice</span>
             </h1>

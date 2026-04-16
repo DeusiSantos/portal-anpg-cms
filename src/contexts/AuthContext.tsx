@@ -57,6 +57,8 @@ interface AuthContextType {
   refreshUserAllData: () => Promise<void>;
 }
 
+let refreshTokenMemory: string | null = null;
+
 // ─── JWT helpers ──────────────────────────────────────────────────────────────
 
 function parseJwt(token: string): Record<string, unknown> | null {
@@ -92,13 +94,23 @@ function extractUser(token: string): AuthUser | null {
 const STORAGE_KEY = "auth_tokens";
 
 function saveTokens(tokens: AuthTokens) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
+  // guardar apenas accessToken no localStorage
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      accessToken: tokens.accessToken,
+      expiresAt: tokens.expiresAt,
+    })
+  );
+
+  // refreshToken só em memória
+  refreshTokenMemory = tokens.refreshToken;
 }
 
-function loadTokens(): AuthTokens | null {
+function loadTokens(): { accessToken: string; expiresAt: string } | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as AuthTokens) : null;
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
@@ -106,7 +118,32 @@ function loadTokens(): AuthTokens | null {
 
 function clearTokens() {
   localStorage.removeItem(STORAGE_KEY);
+  refreshTokenMemory = null;
 }
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && refreshTokenMemory) {
+      try {
+        const { data } = await apiClient.post<AuthTokens>("/auth/refresh", {
+          refreshToken: refreshTokenMemory,
+        });
+
+        saveTokens(data);
+
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        return apiClient(originalRequest);
+      } catch {
+        clearTokens();
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // ─── Fetch full user data ────────────────────────────────────────────────────
 

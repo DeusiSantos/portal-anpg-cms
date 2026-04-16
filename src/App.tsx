@@ -205,6 +205,7 @@ function AnimatedRoutes() {
   );
 }
 
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
