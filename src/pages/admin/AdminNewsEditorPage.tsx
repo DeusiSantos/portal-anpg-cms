@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
@@ -26,7 +25,6 @@ import {
   X, 
   Upload,
   Send,
-  CheckCircle,
   XCircle,
   Archive,
   Trash2,
@@ -43,7 +41,8 @@ import {
   ThumbsUp,
   RotateCcw,
   MessageSquare,
-  AlertTriangle
+  AlertTriangle,
+  Mail
 } from 'lucide-react';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { cn } from '@/lib/utils';
@@ -162,6 +161,13 @@ interface HistoryItem {
   createdAt: string;
 }
 
+interface HistoryResponse {
+  pageIndex: number;
+  pageSize: number;
+  count: number;
+  data: HistoryItem[];
+}
+
 interface NewsDocument {
   id: string;
   titlePt: string;
@@ -192,9 +198,34 @@ interface NewsFormData {
   uploadDocs?: File[];
 }
 
-// Componente de Timeline de Histórico
-function HistoryTimeline({ history, isLoading }: { history: HistoryItem[]; isLoading: boolean }) {
-  if (isLoading) {
+// Componente de Timeline de Histórico com scroll e paginação
+function HistoryTimeline({ 
+  history, 
+  isLoading, 
+  onLoadMore, 
+  hasMore, 
+  isFetchingMore,
+  totalCount 
+}: { 
+  history: HistoryItem[]; 
+  isLoading: boolean;
+  onLoadMore: () => void;
+  hasMore: boolean;
+  isFetchingMore: boolean;
+  totalCount: number;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const bottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 100;
+    
+    if (bottom && hasMore && !isFetchingMore && !isLoading) {
+      onLoadMore();
+    }
+  };
+
+  if (isLoading && history.length === 0) {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
@@ -215,70 +246,98 @@ function HistoryTimeline({ history, isLoading }: { history: HistoryItem[]; isLoa
     );
   }
 
+  // Ordenar do mais recente para o mais antigo
   const sortedHistory = [...history].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   return (
-    <div className="relative pl-8 space-y-4">
-      <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
-      
-      {sortedHistory.map((item) => {
-        const fromConfig = STATUS_CONFIG[item.fromStatus as NewsStatus];
-        const toConfig = STATUS_CONFIG[item.toStatus as NewsStatus];
-        const FromIcon = fromConfig?.icon || FileText;
-        const ToIcon = toConfig?.icon || FileText;
+    <div className="flex flex-col h-full">
+      <div 
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="relative pl-8 space-y-4 flex-1 overflow-y-auto pr-2"
+        style={{ maxHeight: 'calc(85vh - 180px)' }}
+      >
+        <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
         
-        return (
-          <div key={item.id} className="relative group">
-            <div className="absolute -left-8 top-2 w-3 h-3 rounded-full bg-primary border-2 border-background" />
-            
-            <div className="bg-secondary/30 rounded-lg p-4 hover:bg-secondary/50 transition-colors">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary text-xs">
-                    <FromIcon className="w-3 h-3" />
-                    <span>{fromConfig?.label || item.fromStatus}</span>
-                  </div>
-                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-xs">
-                    <ToIcon className="w-3 h-3" />
-                    <span>{toConfig?.label || item.toStatus}</span>
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {new Date(item.createdAt).toLocaleString('pt-PT')}
-                </span>
-              </div>
+        {sortedHistory.map((item) => {
+          const fromConfig = STATUS_CONFIG[item.fromStatus as NewsStatus];
+          const toConfig = STATUS_CONFIG[item.toStatus as NewsStatus];
+          const FromIcon = fromConfig?.icon || FileText;
+          const ToIcon = toConfig?.icon || FileText;
+          
+          return (
+            <div key={item.id} className="relative group">
+              <div className="absolute -left-8 top-2 w-3 h-3 rounded-full bg-primary border-2 border-background" />
               
-              {item.comment && (
-                <div className="mt-2 pt-2 border-t border-border/50">
-                  <div className="flex items-start gap-2">
-                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
-                    <p className="text-sm text-muted-foreground">{item.comment}</p>
+              <div className="bg-secondary/30 rounded-lg p-4 hover:bg-secondary/50 transition-colors">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary text-xs">
+                      <FromIcon className="w-3 h-3" />
+                      <span>{fromConfig?.label || item.fromStatus}</span>
+                    </div>
+                    <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-xs">
+                      <ToIcon className="w-3 h-3" />
+                      <span>{toConfig?.label || item.toStatus}</span>
+                    </div>
                   </div>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(item.createdAt).toLocaleString('pt-PT')}
+                  </span>
                 </div>
-              )}
-              
-              <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/60">
-                {item.ipAddress && (
-                  <span className="flex items-center gap-1">
-                    <Globe className="w-3 h-3" />
-                    {item.ipAddress}
-                  </span>
+                
+                {item.comment && (
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    <div className="flex items-start gap-2">
+                      <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
+                      <p className="text-sm text-muted-foreground">{item.comment}</p>
+                    </div>
+                  </div>
                 )}
-                {item.userName && (
-                  <span className="flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    {item.userName}
-                  </span>
-                )}
+                
+                <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/60">
+                  {item.ipAddress && (
+                    <span className="flex items-center gap-1">
+                      <Globe className="w-3 h-3" />
+                      {item.ipAddress}
+                    </span>
+                  )}
+                  {item.userName && (
+                    <span className="flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      {item.userName}
+                    </span>
+                  )}
+                  {item.changedBy && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      {item.changedBy}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+          );
+        })}
+        
+        {(isFetchingMore || (isLoading && history.length > 0)) && (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        );
-      })}
+        )}
+        
+        {!hasMore && history.length > 0 && (
+          <div className="text-center py-4">
+            <p className="text-xs text-muted-foreground">
+              — Fim do histórico ({totalCount} registros) —
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -330,18 +389,67 @@ export default function AdminNewsEditorPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [activeTab, setActiveTab] = useState('pt');
 
-  // Buscar histórico
-  const { data: historyData, isLoading: historyLoading } = useQuery({
-    queryKey: ['news-history', id],
+  // Estados para paginação do histórico
+  const [historyPage, setHistoryPage] = useState(0);
+  const [allHistoryItems, setAllHistoryItems] = useState<HistoryItem[]>([]);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const [isFetchingMoreHistory, setIsFetchingMoreHistory] = useState(false);
+  const [totalHistoryCount, setTotalHistoryCount] = useState(0);
+
+  // Query para buscar histórico com paginação
+  const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
+    queryKey: ['news-history', id, historyPage],
     queryFn: async () => {
       if (!id || isNew) return null;
       const response = await api.get(`/workflow/history`, {
-        params: { entityId: id, PageIndex: 0, PageSize: 50 }
+        params: { 
+          entityId: id, 
+          PageIndex: historyPage, 
+          PageSize: 10 
+        }
       });
-      return response.data.histories;
+      // A API retorna { histories: { pageIndex, pageSize, count, data } }
+      return response.data.histories as HistoryResponse;
     },
-    enabled: !isNew && !!id,
+    enabled: !isNew && !!id && showHistoryModal,
   });
+
+  // Efeito para acumular itens do histórico quando nova página chega
+  useEffect(() => {
+    if (historyData?.data) {
+      if (historyPage === 0) {
+        setAllHistoryItems(historyData.data);
+      } else {
+        setAllHistoryItems(prev => [...prev, ...historyData.data]);
+      }
+      setTotalHistoryCount(historyData.count);
+      // Verificar se há mais páginas
+      const totalPages = Math.ceil(historyData.count / historyData.pageSize);
+      setHasMoreHistory(historyPage < totalPages - 1);
+    }
+  }, [historyData, historyPage]);
+
+  // Resetar paginação quando o modal abrir
+  useEffect(() => {
+    if (showHistoryModal && id && !isNew) {
+      setHistoryPage(0);
+      setAllHistoryItems([]);
+      setHasMoreHistory(true);
+      setIsFetchingMoreHistory(false);
+    }
+  }, [showHistoryModal, id, isNew]);
+
+  // Função para carregar mais itens
+  const loadMoreHistory = () => {
+    if (!hasMoreHistory || isFetchingMoreHistory || historyLoading) return;
+    
+    setIsFetchingMoreHistory(true);
+    setHistoryPage(prev => prev + 1);
+    // Resetar o estado de fetching após um pequeno delay
+    setTimeout(() => {
+      setIsFetchingMoreHistory(false);
+    }, 500);
+  };
 
   useEffect(() => {
     if (!isNew && id) {
@@ -1172,11 +1280,11 @@ export default function AdminNewsEditorPage() {
         </div>
       )}
 
-      {/* Modal de Histórico */}
+      {/* Modal de Histórico com Scroll e Paginação */}
       {showHistoryModal && !isNew && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col">
-            <div className="p-6 border-b">
+          <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl mx-4 h-[85vh] flex flex-col">
+            <div className="p-6 border-b flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-primary/10">
@@ -1192,7 +1300,14 @@ export default function AdminNewsEditorPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setShowHistoryModal(false)}
+                  onClick={() => {
+                    setShowHistoryModal(false);
+                    // Resetar estado ao fechar
+                    setHistoryPage(0);
+                    setAllHistoryItems([]);
+                    setHasMoreHistory(true);
+                    setIsFetchingMoreHistory(false);
+                  }}
                   className="h-8 w-8"
                 >
                   <X className="h-4 w-4" />
@@ -1200,17 +1315,22 @@ export default function AdminNewsEditorPage() {
               </div>
             </div>
             
-            <ScrollArea className="flex-1 p-6">
+            <div className="flex-1 overflow-hidden">
               <HistoryTimeline 
-                history={historyData?.data || []} 
-                isLoading={historyLoading} 
+                history={allHistoryItems} 
+                isLoading={historyLoading && historyPage === 0}
+                onLoadMore={loadMoreHistory}
+                hasMore={hasMoreHistory}
+                isFetchingMore={isFetchingMoreHistory}
+                totalCount={totalHistoryCount}
               />
-            </ScrollArea>
+            </div>
             
-            {historyData && historyData.count > 0 && (
-              <div className="p-4 border-t bg-secondary/20">
+            {totalHistoryCount > 0 && (
+              <div className="p-4 border-t bg-secondary/20 flex-shrink-0">
                 <div className="text-xs text-muted-foreground text-center">
-                  Total de {historyData.count} registros
+                  Total de {totalHistoryCount} registros | 
+                  Mostrando {allHistoryItems.length} de {totalHistoryCount}
                 </div>
               </div>
             )}
