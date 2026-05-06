@@ -1,12 +1,11 @@
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import { supabase } from '@/integrations/supabase/client';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -44,20 +43,30 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface RichTextEditorProps {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
+  readOnly?: boolean;
+  onImageUpload?: (file: File) => Promise<string>;
 }
 
-function MenuBar({ editor }: { editor: Editor | null }) {
+function MenuBar({ 
+  editor, 
+  readOnly,
+  onImageUpload 
+}: { 
+  editor: Editor | null; 
+  readOnly?: boolean;
+  onImageUpload?: (file: File) => Promise<string>;
+}) {
   const [linkUrl, setLinkUrl] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  if (!editor) {
+  if (!editor || readOnly) {
     return null;
   }
 
@@ -68,43 +77,61 @@ function MenuBar({ editor }: { editor: Editor | null }) {
     }
   };
 
-  const addImage = () => {
-    if (imageUrl) {
-      editor.chain().focus().setImage({ src: imageUrl }).run();
-      setImageUrl('');
-    }
+  // Converter imagem para base64 (fallback)
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem válido');
+      return;
+    }
+
+    // Validar tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
     setUploadingImage(true);
     try {
-      const fileName = `inline/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.webp`;
+      let imageUrl: string;
       
-      // Compress to WebP via canvas
-      const bitmap = await createImageBitmap(file);
-      const canvas = document.createElement('canvas');
-      const maxW = 1200;
-      const scale = Math.min(1, maxW / bitmap.width);
-      canvas.width = bitmap.width * scale;
-      canvas.height = bitmap.height * scale;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise<Blob>((resolve) =>
-        canvas.toBlob((b) => resolve(b!), 'image/webp', 0.82)
-      );
-
-      const { error } = await supabase.storage.from('cms-assets').upload(fileName, blob, { contentType: 'image/webp' });
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage.from('cms-assets').getPublicUrl(fileName);
-      editor.chain().focus().setImage({ src: publicUrl }).run();
+      // Se tiver uma função de upload, usa ela
+      if (onImageUpload) {
+        imageUrl = await onImageUpload(file);
+        // Após upload bem-sucedido, insere a URL da imagem
+        editor.chain().focus().setImage({ src: imageUrl }).run();
+        toast.success('Imagem enviada e inserida com sucesso');
+      } else {
+        // Fallback: converter para base64
+        imageUrl = await convertToBase64(file);
+        editor.chain().focus().setImage({ src: imageUrl }).run();
+        toast.success('Imagem inserida com sucesso (modo local)');
+      }
     } catch (err: any) {
-      console.error('Upload failed', err);
+      console.error('Erro ao processar imagem:', err);
+      toast.error(err.message || 'Erro ao processar a imagem');
     } finally {
       setUploadingImage(false);
       if (e.target) e.target.value = '';
+    }
+  };
+
+  const addImageByUrl = () => {
+    const url = prompt('Digite a URL da imagem:');
+    if (url && url.trim()) {
+      editor.chain().focus().setImage({ src: url.trim() }).run();
     }
   };
 
@@ -296,45 +323,43 @@ function MenuBar({ editor }: { editor: Editor | null }) {
         </PopoverContent>
       </Popover>
 
-      {/* Image */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button type="button" variant="ghost" size="sm" className="h-8 px-2">
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80">
-          <div className="space-y-3">
-            <Label>Carregar Imagem</Label>
-            <label className="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed rounded-md cursor-pointer hover:border-primary/50 transition-colors text-sm text-muted-foreground">
-              {uploadingImage ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  Escolher ficheiro
-                </>
-              )}
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageFileUpload} disabled={uploadingImage} />
-            </label>
-            <div className="relative flex items-center">
-              <div className="flex-grow border-t border-muted" />
-              <span className="px-2 text-xs text-muted-foreground">ou</span>
-              <div className="flex-grow border-t border-muted" />
-            </div>
-            <Label>URL da Imagem</Label>
-            <Input
-              placeholder="https://..."
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addImage()}
+      {/* Image Upload */}
+      <div className="relative inline-flex items-center gap-1">
+        <Button 
+          type="button" 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 px-2"
+          onClick={addImageByUrl}
+          title="Inserir imagem por URL"
+        >
+          <ImageIcon className="h-4 w-4" />
+        </Button>
+        
+        <div className="relative">
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 px-2 relative"
+            disabled={uploadingImage}
+            title="Upload de imagem do computador"
+          >
+            {uploadingImage ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              onChange={handleImageFileUpload}
+              disabled={uploadingImage}
             />
-            <Button type="button" size="sm" onClick={addImage}>
-              Inserir por URL
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </Button>
+        </div>
+      </div>
 
       <Separator orientation="vertical" className="h-6 mx-1" />
 
@@ -368,6 +393,8 @@ export default function RichTextEditor({
   onChange,
   placeholder = 'Escreva o conteúdo aqui...',
   className,
+  readOnly = false,
+  onImageUpload,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -379,29 +406,59 @@ export default function RichTextEditor({
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-primary underline',
+          class: 'text-primary underline cursor-pointer',
         },
       }),
       Image.configure({
+        inline: false,
+        allowBase64: true, // Permitir base64 para imagens locais temporárias
         HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg my-4',
+          class: 'max-w-full h-auto rounded-lg my-4 shadow-sm',
         },
       }),
       Placeholder.configure({
         placeholder,
       }),
       TextAlign.configure({
-        types: ['heading', 'paragraph'],
+        types: ['heading', 'paragraph', 'image'],
       }),
       Underline,
     ],
     content,
+    editable: !readOnly,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const html = editor.getHTML();
+      onChange(html);
     },
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose max-w-none focus:outline-none min-h-[300px] p-4',
+      },
+      handleDrop: (view, event, slice, moved) => {
+        // Prevenir comportamento padrão de drop
+        return false;
+      },
+      handlePaste: (view, event, slice) => {
+        // Verificar se há imagens no paste
+        const items = event.clipboardData?.items;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              const file = items[i].getAsFile();
+              if (file && onImageUpload) {
+                event.preventDefault();
+                // Processar imagem colada
+                onImageUpload(file).then(url => {
+                  editor?.chain().focus().setImage({ src: url }).run();
+                }).catch(err => {
+                  toast.error('Erro ao fazer upload da imagem colada');
+                });
+                return true;
+              }
+            }
+          }
+        }
+        return false;
       },
     },
   });
@@ -409,13 +466,23 @@ export default function RichTextEditor({
   // Sync content from outside
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content);
+      const isSame = editor.getHTML() === content;
+      if (!isSame) {
+        editor.commands.setContent(content);
+      }
     }
   }, [content, editor]);
 
+  // Handle readOnly changes
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(!readOnly);
+    }
+  }, [readOnly, editor]);
+
   return (
     <div className={cn("border rounded-lg overflow-hidden bg-background", className)}>
-      <MenuBar editor={editor} />
+      <MenuBar editor={editor} readOnly={readOnly} onImageUpload={onImageUpload} />
       <EditorContent editor={editor} />
     </div>
   );

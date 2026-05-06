@@ -1,6 +1,229 @@
+// hooks/useCMSData.ts (versão completa e atualizada)
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import api from "@/service/api";
+
+// ─── Types for API Response ───
+interface Attachment {
+  id: string;
+  fileName: string;
+  storedFileName: string;
+  contentType: string;
+  size: number;
+}
+
+interface PageBannerAPI {
+  id: string;
+  pageKey: string;
+  titlePt: string | null;
+  subtitlePt: string | null;
+  titleEn: string | null;
+  subtitleEn: string | null;
+  publicationStatus: 'Draft' | 'Published';
+  status: 'Active' | 'Inactive';
+  bannerCode: string;
+  attachments: Attachment[];
+}
+
+export interface CMSPageBanner {
+  id: string;
+  page_key: string;
+  title: string | null;
+  subtitle: string | null;
+  image_url: string | null;
+  overlay_opacity: number;
+  is_active: boolean;
+}
+
+// ─── Types for Menu API Response ───
+export interface APIMenuItem {
+  id: string;
+  labelPt: string;
+  labelEn: string;
+  url: string;
+  icon: string;
+  group: string;
+  father: string | null;
+  order: number;
+  visibleStatus: 'Yes' | 'No';
+  newTabStatus: 'Active' | 'Inactive';
+}
+
+export interface CMSMenuItem {
+  id: string;
+  label: string;
+  description: string | null;
+  url: string | null;
+  icon: string | null;
+  sort_order: number;
+  parent_id: string | null;
+  newTab?: boolean;
+  children: CMSMenuItem[];
+}
+
+// Cache para URLs de imagens blob
+const imageUrlCache = new Map<string, string>();
+
+// Função para buscar imagem do attachment via API REST
+async function fetchAttachmentImage(bannerId: string, attachmentId: string): Promise<string | null> {
+  const cacheKey = `${bannerId}/${attachmentId}`;
+  
+  if (imageUrlCache.has(cacheKey)) {
+    return imageUrlCache.get(cacheKey)!;
+  }
+  
+  try {
+    const response = await api.get(`/banner/${bannerId}/attachments/${attachmentId}`, {
+      responseType: 'blob'
+    });
+    const url = URL.createObjectURL(response.data);
+    imageUrlCache.set(cacheKey, url);
+    return url;
+  } catch (error) {
+    console.error('Erro ao carregar imagem do banner:', error);
+    return null;
+  }
+}
+
+// Hook para buscar todos os banners (com cache)
+export function useAllBanners() {
+  const { i18n } = useTranslation();
+  const isEn = i18n.language === "en";
+
+  return useQuery({
+    queryKey: ["all_banners_api", isEn],
+    queryFn: async () => {
+      const response = await api.get('/banner');
+      const banners: PageBannerAPI[] = response.data?.news?.data || [];
+      
+      const activeBanners = banners.filter(b => b.status === 'Active');
+      
+      const bannersWithData = await Promise.all(
+        activeBanners.map(async (banner) => {
+          let imageUrl = null;
+          
+          if (banner.attachments && banner.attachments.length > 0) {
+            imageUrl = await fetchAttachmentImage(banner.id, banner.attachments[0].id);
+          }
+          
+          return {
+            id: banner.id,
+            page_key: banner.pageKey,
+            title: isEn ? (banner.titleEn || banner.titlePt) : banner.titlePt,
+            subtitle: isEn ? (banner.subtitleEn || banner.subtitlePt) : banner.subtitlePt,
+            image_url: imageUrl,
+            overlay_opacity: 0.6,
+            is_active: banner.status === 'Active',
+          } as CMSPageBanner;
+        })
+      );
+      
+      const bannerMap = new Map<string, CMSPageBanner>();
+      bannersWithData.forEach(banner => {
+        bannerMap.set(banner.page_key, banner);
+      });
+      
+      return bannerMap;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// ─── Page Banners ───
+export function usePageBanner(pageKey: string | undefined) {
+  const { data: allBanners, isLoading } = useAllBanners();
+  
+  if (!pageKey || !allBanners) {
+    return { data: null, isLoading };
+  }
+  
+  return {
+    data: allBanners.get(pageKey) || null,
+    isLoading
+  };
+}
+
+// Função para limpar cache de imagens
+export function cleanupBannerImages() {
+  imageUrlCache.forEach((url, key) => {
+    if (url && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
+  imageUrlCache.clear();
+}
+
+export function useMenuItems(group: string = "main") {
+  const { i18n } = useTranslation();
+  const isEn = i18n.language === "en";
+
+  return useQuery({
+    queryKey: ["menu_items_api", group, isEn],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/menus?PageIndex=0&PageSize=10');
+        const menuItems: APIMenuItem[] = response.data?.news?.data || [];
+        
+        console.log('📦 Menu items from API:', menuItems);
+        
+        // Para o menu principal, aceitamos grupos "main" E "footer"
+        // Isso resolve o problema do seu dado "Institucional" estar com group "footer"
+        const allowedGroups = group === "main" ? ["main", "footer"] : [group];
+        
+        const filteredItems = menuItems.filter(
+          item => allowedGroups.includes(item.group) && item.visibleStatus === 'Yes'
+        );
+        
+        console.log('🔍 Filtered items (allowed groups:', allowedGroups, '):', filteredItems);
+        
+        if (filteredItems.length === 0) {
+          console.warn('No menu items found for groups:', allowedGroups);
+          return [];
+        }
+        
+        // Transformar para o formato esperado
+        const items: CMSMenuItem[] = filteredItems.map((item) => ({
+          id: item.id,
+          label: isEn ? (item.labelEn || item.labelPt) : item.labelPt,
+          description: null,
+          url: item.url || null,
+          icon: item.icon || null,
+          sort_order: item.order,
+          // Tratar father vazio ou inválido
+          parent_id: item.father && item.father !== "" && item.father !== "string" && item.father !== "TESTE" ? item.father : null,
+          newTab: item.newTabStatus === 'Active',
+          children: [],
+        }));
+        
+        // Remover itens duplicados ou inválidos
+        const validItems = items.filter(item => 
+          item.label && item.label !== "TESTE" && item.label !== "Teste1" && item.label !== "string"
+        );
+        
+        // Ordenar por order
+        validItems.sort((a, b) => a.sort_order - b.sort_order);
+        
+        // Construir árvore de menus
+        const topLevel = validItems.filter((item) => !item.parent_id);
+        
+        topLevel.forEach((parent) => {
+          parent.children = validItems
+            .filter((item) => item.parent_id === parent.id)
+            .sort((a, b) => a.sort_order - b.sort_order);
+        });
+        
+        const result = topLevel.sort((a, b) => a.sort_order - b.sort_order);
+        console.log('✅ Final menu tree:', result);
+        
+        return result;
+      } catch (error) {
+        console.error('❌ Erro ao carregar menus da API:', error);
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 // ─── FAQ Items ───
 export function useFAQItems() {
@@ -10,18 +233,10 @@ export function useFAQItems() {
   return useQuery({
     queryKey: ["faq_items", isEn],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("faq_items")
-        .select("*")
-        .eq("is_active", true)
-        .order("category")
-        .order("sort_order");
-
-      if (error) throw error;
-      return data;
+      // TODO: Migrar para API quando disponível
+      return [];
     },
     select: (data) => {
-      // Group by category
       const grouped = data.reduce((acc, item) => {
         if (!acc[item.category]) acc[item.category] = [];
         acc[item.category].push({
@@ -43,14 +258,8 @@ export function useHistoryEvents() {
   return useQuery({
     queryKey: ["history_events", isEn],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("history_events")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-
-      if (error) throw error;
-      return data;
+      // TODO: Migrar para API quando disponível
+      return [];
     },
     select: (data) =>
       data.map((e) => ({
@@ -88,14 +297,8 @@ export function useBoardMembers() {
   return useQuery({
     queryKey: ["board_members", isEn],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("board_members")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-
-      if (error) throw error;
-      return data;
+      // TODO: Migrar para API quando disponível
+      return [];
     },
     select: (data) =>
       data.map((m) => ({
@@ -125,77 +328,10 @@ export function useBoardMemberBySlug(slug: string | undefined) {
     queryKey: ["board_member", slug, isEn],
     queryFn: async () => {
       if (!slug) return null;
-      const { data, error } = await supabase
-        .from("board_members")
-        .select("*")
-        .eq("slug", slug)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) return null;
-
-      return {
-        id: data.id,
-        slug: data.slug,
-        full_name: data.full_name,
-        title: isEn ? (data.title_en || data.title_pt) : data.title_pt,
-        role: isEn ? (data.role_en || data.role_pt) : data.role_pt,
-        bio: isEn ? (data.bio_en || data.bio_pt) : data.bio_pt,
-        message: isEn ? (data.message_en || data.message_pt) : data.message_pt,
-        photo_url: data.photo_url,
-        email: data.email,
-        phone: data.phone,
-        office_location: data.office_location,
-        group_key: data.group_key,
-        sort_order: data.sort_order,
-        is_active: data.is_active,
-      } as CMSBoardMember;
+      // TODO: Migrar para API quando disponível
+      return null;
     },
     enabled: !!slug,
-  });
-}
-
-// ─── Page Banners ───
-export interface CMSPageBanner {
-  id: string;
-  page_key: string;
-  title: string | null;
-  subtitle: string | null;
-  image_url: string | null;
-  overlay_opacity: number | null;
-  is_active: boolean;
-}
-
-export function usePageBanner(pageKey: string | undefined) {
-  const { i18n } = useTranslation();
-  const isEn = i18n.language === "en";
-
-  return useQuery({
-    queryKey: ["page_banner", pageKey, isEn],
-    queryFn: async () => {
-      if (!pageKey) return null;
-      const { data, error } = await supabase
-        .from("page_banners")
-        .select("*")
-        .eq("page_key", pageKey)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) return null;
-
-      return {
-        id: data.id,
-        page_key: data.page_key,
-        title: isEn ? (data.title_en || data.title_pt) : data.title_pt,
-        subtitle: isEn ? (data.subtitle_en || data.subtitle_pt) : data.subtitle_pt,
-        image_url: data.image_url,
-        overlay_opacity: data.overlay_opacity,
-        is_active: data.is_active,
-      } as CMSPageBanner;
-    },
-    enabled: !!pageKey,
   });
 }
 
@@ -216,26 +352,8 @@ export function useContentBlock(pageKey: string, sectionKey: string) {
   return useQuery({
     queryKey: ["content_block", pageKey, sectionKey, lang],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("content_blocks")
-        .select("*")
-        .eq("page_key", pageKey)
-        .eq("section_key", sectionKey)
-        .eq("language", lang)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) return null;
-
-      return {
-        id: data.id,
-        page_key: data.page_key,
-        section_key: data.section_key,
-        content: data.content as Record<string, any>,
-        sort_order: data.sort_order,
-        is_active: data.is_active,
-      } as CMSContentBlock;
+      // TODO: Migrar para API quando disponível
+      return null;
     },
   });
 }
@@ -247,83 +365,13 @@ export function useContentBlocks(pageKey: string) {
   return useQuery({
     queryKey: ["content_blocks", pageKey, lang],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("content_blocks")
-        .select("*")
-        .eq("page_key", pageKey)
-        .eq("language", lang)
-        .eq("is_active", true)
-        .order("sort_order");
-
-      if (error) throw error;
-      return data.map((d) => ({
-        id: d.id,
-        page_key: d.page_key,
-        section_key: d.section_key,
-        content: d.content as Record<string, any>,
-        sort_order: d.sort_order,
-        is_active: d.is_active,
-      })) as CMSContentBlock[];
-    },
-  });
-}
-
-// ─── Menu Items ───
-export interface CMSMenuItem {
-  id: string;
-  label: string;
-  description: string | null;
-  url: string | null;
-  icon: string | null;
-  sort_order: number;
-  parent_id: string | null;
-  children: CMSMenuItem[];
-}
-
-export function useMenuItems(group: string = "main") {
-  const { i18n } = useTranslation();
-  const isEn = i18n.language === "en";
-
-  return useQuery({
-    queryKey: ["menu_items", isEn, group],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("is_visible", true)
-        .eq("menu_group", group)
-        .order("sort_order");
-
-      if (error) throw error;
-      return data;
-    },
-    select: (data) => {
-      const items = data.map((item) => ({
-        id: item.id,
-        label: isEn ? (item.label_en || item.label_pt) : item.label_pt,
-        description: isEn ? ((item as any).description_en || (item as any).description_pt || null) : ((item as any).description_pt || null),
-        url: item.url,
-        icon: item.icon,
-        sort_order: item.sort_order,
-        parent_id: item.parent_id,
-        children: [] as CMSMenuItem[],
-      }));
-
-      // Build tree
-      const topLevel = items.filter((i) => !i.parent_id);
-      topLevel.forEach((parent) => {
-        parent.children = items
-          .filter((i) => i.parent_id === parent.id)
-          .sort((a, b) => a.sort_order - b.sort_order);
-      });
-
-      return topLevel.sort((a, b) => a.sort_order - b.sort_order);
+      // TODO: Migrar para API quando disponível
+      return [];
     },
   });
 }
 
 // ─── News Articles ───
-
 function formatPortugueseDate(dateStr: string | null): string {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -358,23 +406,8 @@ export function useNewsArticles(options?: {
   return useQuery({
     queryKey: ["news_articles", options?.category, options?.limit, isEn],
     queryFn: async () => {
-      let query = supabase
-        .from("news_articles")
-        .select("*")
-        .eq("status", "published")
-        .not("published_at", "is", null)
-        .order("published_at", { ascending: false });
-
-      if (options?.category && options.category !== "all") {
-        query = query.eq("category", options.category);
-      }
-      if (options?.limit) {
-        query = query.limit(options.limit);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      // TODO: Migrar para API quando disponível
+      return [];
     },
     select: (data) =>
       data.map((a) => ({
@@ -399,27 +432,8 @@ export function useNewsArticleBySlug(slug: string | undefined) {
     queryKey: ["news_article", slug, isEn],
     queryFn: async () => {
       if (!slug) return null;
-      const { data, error } = await supabase
-        .from("news_articles")
-        .select("*")
-        .eq("slug", slug)
-        .eq("status", "published")
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) return null;
-
-      return {
-        id: data.slug,
-        slug: data.slug,
-        title: isEn ? ((data as any).title_en || data.title) : data.title,
-        date: formatPortugueseDate(data.published_at),
-        category: data.category || "geral",
-        image: data.featured_image || "/placeholder.svg",
-        excerpt: isEn ? ((data as any).excerpt_en || data.excerpt || "") : (data.excerpt || ""),
-        content: isEn ? ((data as any).content_en || data.content || "") : (data.content || ""),
-        published_at: data.published_at,
-      } as CMSNewsArticle;
+      // TODO: Migrar para API quando disponível
+      return null;
     },
     enabled: !!slug,
   });
@@ -430,17 +444,12 @@ export function useDashboardCounts() {
   return useQuery({
     queryKey: ["dashboard_counts"],
     queryFn: async () => {
-      const [news, blocks, eois, docs] = await Promise.all([
-        supabase.from("news_articles").select("id", { count: "exact", head: true }).eq("status", "published"),
-        supabase.from("petroleum_blocks").select("id", { count: "exact", head: true }),
-        supabase.from("expressions_of_interest").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("investor_documents").select("id", { count: "exact", head: true }),
-      ]);
+      // TODO: Migrar para API quando disponível
       return {
-        newsCount: news.count ?? 0,
-        blocksCount: blocks.count ?? 0,
-        eoisCount: eois.count ?? 0,
-        docsCount: docs.count ?? 0,
+        newsCount: 0,
+        blocksCount: 0,
+        eoisCount: 0,
+        docsCount: 0,
       };
     },
   });
@@ -451,15 +460,11 @@ export function usePendingCounts() {
   return useQuery({
     queryKey: ["pending_counts"],
     queryFn: async () => {
-      const [draftNews, pendingInvestors, pendingEois] = await Promise.all([
-        supabase.from("news_articles").select("id", { count: "exact", head: true }).eq("status", "draft"),
-        supabase.from("investor_registrations").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("expressions_of_interest").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      ]);
+      // TODO: Migrar para API quando disponível
       return {
-        draftNews: draftNews.count ?? 0,
-        pendingInvestors: pendingInvestors.count ?? 0,
-        pendingEois: pendingEois.count ?? 0,
+        draftNews: 0,
+        pendingInvestors: 0,
+        pendingEois: 0,
       };
     },
     refetchInterval: 30000,
@@ -482,19 +487,8 @@ export function useInvestorDocuments(category?: string) {
   return useQuery({
     queryKey: ["investor_documents", category],
     queryFn: async () => {
-      let query = supabase
-        .from("investor_documents")
-        .select("*")
-        .eq("is_public", true)
-        .order("created_at", { ascending: false });
-
-      if (category && category !== "all") {
-        query = query.eq("category", category);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as CMSInvestorDocument[];
+      // TODO: Migrar para API quando disponível
+      return [];
     },
   });
 }
@@ -507,15 +501,8 @@ export function useMediaItems(mediaType: string) {
   return useQuery({
     queryKey: ["media_items", mediaType, isEn],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("media_items")
-        .select("*")
-        .eq("media_type", mediaType)
-        .eq("is_active", true)
-        .order("sort_order");
-
-      if (error) throw error;
-      return data;
+      // TODO: Migrar para API quando disponível
+      return [];
     },
     select: (data) =>
       data.map((item) => ({
@@ -553,36 +540,8 @@ export function useBoardDepartments(memberId?: string) {
   return useQuery({
     queryKey: ["board_departments", memberId, isEn],
     queryFn: async () => {
-      let query = supabase
-        .from("board_departments")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-
-      if (memberId) {
-        query = query.eq("member_id", memberId);
-      }
-
-      const { data: depts, error } = await query;
-      if (error) throw error;
-
-      // Fetch all sub-departments for these departments
-      const deptIds = depts.map(d => d.id);
-      let subDepts: any[] = [];
-      if (deptIds.length > 0) {
-        const { data, error: subError } = await supabase
-          .from("board_sub_departments")
-          .select("*")
-          .in("department_id", deptIds)
-          .order("sort_order");
-        if (subError) throw subError;
-        subDepts = data || [];
-      }
-
-      return depts.map(d => ({
-        ...d,
-        sub_departments: subDepts.filter(s => s.department_id === d.id),
-      })) as CMSBoardDepartment[];
+      // TODO: Migrar para API quando disponível
+      return [];
     },
     enabled: memberId !== "",
   });

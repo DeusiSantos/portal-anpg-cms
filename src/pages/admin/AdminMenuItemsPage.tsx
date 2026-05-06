@@ -2,27 +2,71 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from '@/components/ui/dialog';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Loader2, Menu, ExternalLink } from 'lucide-react';
-import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { Plus, Pencil, Trash2, Loader2, ExternalLink } from 'lucide-react';
+import api from '@/service/api';
 
-type MenuItem = Tables<'menu_items'>;
+// Interface para o item do menu baseada na API
+interface MenuItem {
+  id: string;
+  labelPt: string;
+  labelEn: string;
+  url: string;
+  icon: string;
+  group: string;
+  father: string;
+  order: number;
+  visibleStatus: 'Yes' | 'No';
+  newTabStatus: 'Active' | 'Inactive';
+}
+
+// Interface para a resposta da API
+interface ApiResponse {
+  menuItems: {
+    pageIndex: number;
+    pageSize: number;
+    count: number;
+    data: MenuItem[];
+  };
+}
+
+// Interface para criação/atualização - DTO da API
+interface MenuItemsDto {
+  id?: string;
+  labelPt: string;
+  labelEn: string;
+  url: string;
+  icon: string;
+  group: string;
+  father: string;
+  order: number;
+  visibleStatus: 'Yes' | 'No';
+  newTabStatus: 'Active' | 'Inactive';
+}
+
+// Interface para o wrapper que a API espera
+interface MenuItemsRequest {
+  menuItems: MenuItemsDto;
+}
 
 export default function AdminMenuItemsPage() {
   const queryClient = useQueryClient();
@@ -30,163 +74,403 @@ export default function AdminMenuItemsPage() {
   const [editing, setEditing] = useState<MenuItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
   const [formData, setFormData] = useState({
-    label_pt: '', label_en: '', url: '', icon: '', menu_group: 'main', parent_id: '' as string | null,
-    sort_order: 0, is_visible: true, open_in_new_tab: false });
+    labelPt: '',
+    labelEn: '',
+    url: '',
+    icon: '',
+    group: 'main',
+    father: '',
+    order: 0,
+    visibleStatus: 'Yes' as 'Yes' | 'No',
+    newTabStatus: 'Inactive' as 'Active' | 'Inactive'
+  });
 
-  const { data: items, isLoading } = useQuery({
+  // Buscar menus da API
+  const { data: response, isLoading } = useQuery({
     queryKey: ['admin-menu-items'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('menu_items').select('*').order('menu_group').order('sort_order');
-      if (error) throw error;
-      return data as MenuItem[];
-    } });
+      const { data } = await api.get<ApiResponse>('/menus');
+      console.log('API Response:', data); // Para debug
+      return data;
+    }
+  });
 
-  const topLevelItems = items?.filter(i => !i.parent_id) || [];
+  // Extrair os items da estrutura correta da API
+  const items = response?.menuItems?.data || [];
+  
+  // Itens de topo (sem father/pai)
+  const topLevelItems = items.filter(i => !i.father || i.father === '');
+  
+  // Função para obter filhos
+  const getChildren = (parentId: string) => items.filter(i => i.father === parentId);
 
+  // Criar mutation - POST com wrapper menuItems
   const createMutation = useMutation({
-    mutationFn: async (data: TablesInsert<'menu_items'>) => {
-      const { error } = await supabase.from('menu_items').insert(data);
-      if (error) throw error;
+    mutationFn: async (data: MenuItemsDto) => {
+      const request: MenuItemsRequest = { menuItems: data };
+      const response = await api.post('/menus', request);
+      return response.data;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] }); toast.success('Item criado'); handleClose(); },
-    onError: (e) => toast.error(`Erro: ${e.message}`) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] });
+      toast.success('Item criado com sucesso');
+      handleClose();
+    },
+    onError: (e: any) => {
+      console.error('Erro no POST:', e.response?.data);
+      toast.error(`Erro ao criar: ${e.response?.data?.message || e.message}`);
+    }
+  });
 
+  // Atualizar mutation - PUT com wrapper menuItems
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<MenuItem> }) => {
-      const { error } = await supabase.from('menu_items').update(data).eq('id', id);
-      if (error) throw error;
+    mutationFn: async ({ id, data }: { id: string; data: Partial<MenuItemsDto> }) => {
+      const request: MenuItemsRequest = {
+        menuItems: {
+          ...data,
+          id: id
+        } as MenuItemsDto
+      };
+      const response = await api.put('/menus', request);
+      return response.data;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] }); toast.success('Item actualizado'); handleClose(); },
-    onError: (e) => toast.error(`Erro: ${e.message}`) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] });
+      toast.success('Item actualizado com sucesso');
+      handleClose();
+    },
+    onError: (e: any) => {
+      console.error('Erro no PUT:', e.response?.data);
+      toast.error(`Erro ao actualizar: ${e.response?.data?.message || e.message}`);
+    }
+  });
 
+  // Deletar mutation - DELETE com ID
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('menu_items').delete().eq('id', id);
-      if (error) throw error;
+      const response = await api.delete(`/menus/${id}`);
+      return response.data;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] }); toast.success('Item eliminado'); setDeleteItem(null); },
-    onError: (e) => toast.error(`Erro: ${e.message}`) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] });
+      toast.success('Item eliminado com sucesso');
+      setDeleteItem(null);
+    },
+    onError: (e: any) => {
+      console.error('Erro no DELETE:', e.response?.data);
+      toast.error(`Erro ao eliminar: ${e.response?.data?.message || e.message}`);
+    }
+  });
 
-  const handleClose = () => { setIsDialogOpen(false); setEditing(null); setFormData({ label_pt: '', label_en: '', url: '', icon: '', menu_group: 'main', parent_id: null, sort_order: 0, is_visible: true, open_in_new_tab: false }); };
+  const handleClose = () => {
+    setIsDialogOpen(false);
+    setEditing(null);
+    setFormData({
+      labelPt: '', labelEn: '', url: '', icon: '',
+      group: 'main', father: '', order: 0,
+      visibleStatus: 'Yes', newTabStatus: 'Inactive'
+    });
+  };
 
   const handleEdit = (item: MenuItem) => {
     setEditing(item);
-    setFormData({ label_pt: item.label_pt, label_en: item.label_en || '', url: item.url || '', icon: item.icon || '', menu_group: item.menu_group, parent_id: item.parent_id, sort_order: item.sort_order, is_visible: item.is_visible, open_in_new_tab: item.open_in_new_tab });
+    setFormData({
+      labelPt: item.labelPt,
+      labelEn: item.labelEn || '',
+      url: item.url || '',
+      icon: item.icon || '',
+      group: item.group,
+      father: item.father || '',
+      order: item.order,
+      visibleStatus: item.visibleStatus,
+      newTabStatus: item.newTabStatus
+    });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.label_pt) { toast.error('Label PT é obrigatório'); return; }
-    const submitData = { label_pt: formData.label_pt, label_en: formData.label_en || null, url: formData.url || null, icon: formData.icon || null, menu_group: formData.menu_group, parent_id: formData.parent_id || null, sort_order: formData.sort_order, is_visible: formData.is_visible, open_in_new_tab: formData.open_in_new_tab };
-    if (editing) { updateMutation.mutate({ id: editing.id, data: submitData }); } else { createMutation.mutate(submitData); }
+    if (!formData.labelPt) {
+      toast.error('Label PT é obrigatório');
+      return;
+    }
+
+    const submitData: MenuItemsDto = {
+      labelPt: formData.labelPt,
+      labelEn: formData.labelEn,
+      url: formData.url,
+      icon: formData.icon,
+      group: formData.group,
+      father: formData.father,
+      order: formData.order,
+      visibleStatus: formData.visibleStatus,
+      newTabStatus: formData.newTabStatus
+    };
+
+    if (editing) {
+      updateMutation.mutate({ id: editing.id, data: submitData });
+    } else {
+      createMutation.mutate(submitData);
+    }
   };
 
-  const getChildren = (parentId: string) => items?.filter(i => i.parent_id === parentId) || [];
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <AdminLayout title="Menu / Navegação" subtitle="Gerir itens de menu do site">
-
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div><CardTitle>Menu Items</CardTitle><CardDescription>Gerir a estrutura de navegação do website (menus, submenus)</CardDescription></div>
-              <Button onClick={() => { handleClose(); setIsDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />Novo Item</Button>
+              <div>
+                <CardTitle>Menu Items</CardTitle>
+                <CardDescription>Gerir a estrutura de navegação do website (menus, submenus)</CardDescription>
+              </div>
+              <Button onClick={() => { handleClose(); setIsDialogOpen(true); }}>
+                <Plus className="h-4 w-4 mr-2" />Novo Item
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
             ) : (
               <div className="rounded-md border">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Label (PT)</TableHead><TableHead>Label (EN)</TableHead><TableHead>URL</TableHead><TableHead>Grupo</TableHead><TableHead>Ordem</TableHead><TableHead>Visível</TableHead><TableHead className="text-right">Acções</TableHead></TableRow></TableHeader>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Label (PT)</TableHead>
+                      <TableHead>Label (EN)</TableHead>
+                      <TableHead>URL</TableHead>
+                      <TableHead>Grupo</TableHead>
+                      <TableHead>Ordem</TableHead>
+                      <TableHead>Visível</TableHead>
+                      <TableHead className="text-right">Acções</TableHead>
+                    </TableRow>
+                  </TableHeader>
                   <TableBody>
                     {topLevelItems.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum item de menu</TableCell></TableRow>
-                    ) : topLevelItems.map(item => {
-                      const children = getChildren(item.id);
-                      return (
-                        <React.Fragment key={item.id}>
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.label_pt}</TableCell>
-                            <TableCell>{item.label_en || '—'}</TableCell>
-                            <TableCell className="flex items-center gap-1">{item.url || '—'}{item.open_in_new_tab && <ExternalLink className="h-3 w-3" />}</TableCell>
-                            <TableCell><Badge variant="outline">{item.menu_group}</Badge></TableCell>
-                            <TableCell>{item.sort_order}</TableCell>
-                            <TableCell><Badge variant={item.is_visible ? 'default' : 'secondary'}>{item.is_visible ? 'Sim' : 'Não'}</Badge></TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}><Pencil className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          {children.map(child => (
-                            <TableRow key={child.id} className="bg-muted/30">
-                              <TableCell className="pl-8">↳ {child.label_pt}</TableCell>
-                              <TableCell>{child.label_en || '—'}</TableCell>
-                              <TableCell>{child.url || '—'}</TableCell>
-                              <TableCell><Badge variant="outline">{child.menu_group}</Badge></TableCell>
-                              <TableCell>{child.sort_order}</TableCell>
-                              <TableCell><Badge variant={child.is_visible ? 'default' : 'secondary'}>{child.is_visible ? 'Sim' : 'Não'}</Badge></TableCell>
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Nenhum item de menu encontrado
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      topLevelItems.map(item => {
+                        const children = getChildren(item.id);
+                        return (
+                          <React.Fragment key={item.id}>
+                            <TableRow>
+                              <TableCell className="font-medium">{item.labelPt}</TableCell>
+                              <TableCell>{item.labelEn || '—'}</TableCell>
+                              <TableCell className="flex items-center gap-1">
+                                {item.url || '—'}
+                                {item.newTabStatus === 'Active' && <ExternalLink className="h-3 w-3" />}
+                              </TableCell>
+                              <TableCell><Badge variant="outline">{item.group}</Badge></TableCell>
+                              <TableCell>{item.order}</TableCell>
+                              <TableCell>
+                                <Badge variant={item.visibleStatus === 'Yes' ? 'default' : 'secondary'}>
+                                  {item.visibleStatus === 'Yes' ? 'Sim' : 'Não'}
+                                </Badge>
+                              </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="icon" onClick={() => handleEdit(child)}><Pencil className="h-4 w-4" /></Button>
-                                  <Button variant="ghost" size="icon" onClick={() => setDeleteItem(child)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
-                        </React.Fragment>
-                      );
-                    })}
+                            {children.map(child => (
+                              <TableRow key={child.id} className="bg-muted/30">
+                                <TableCell className="pl-8">↳ {child.labelPt}</TableCell>
+                                <TableCell>{child.labelEn || '—'}</TableCell>
+                                <TableCell>{child.url || '—'}</TableCell>
+                                <TableCell><Badge variant="outline">{child.group}</Badge></TableCell>
+                                <TableCell>{child.order}</TableCell>
+                                <TableCell>
+                                  <Badge variant={child.visibleStatus === 'Yes' ? 'default' : 'secondary'}>
+                                    {child.visibleStatus === 'Yes' ? 'Sim' : 'Não'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(child)}>
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => setDeleteItem(child)}>
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
               </div>
             )}
-            <div className="mt-4 text-sm text-muted-foreground">{items?.length || 0} item(s) de menu</div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              Total: {items.length} item(s) de menu
+            </div>
           </CardContent>
         </Card>
       </main>
 
+      {/* Dialog para criar/editar */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader><DialogTitle>{editing ? 'Editar Item' : 'Novo Item de Menu'}</DialogTitle><DialogDescription>Configure o item de navegação</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Editar Item' : 'Novo Item de Menu'}</DialogTitle>
+            <DialogDescription>Configure o item de navegação</DialogDescription>
+          </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>Label PT *</Label><Input value={formData.label_pt} onChange={e => setFormData({...formData, label_pt: e.target.value})} required /></div>
-                <div className="space-y-2"><Label>Label EN</Label><Input value={formData.label_en} onChange={e => setFormData({...formData, label_en: e.target.value})} /></div>
+                <div className="space-y-2">
+                  <Label>Label PT *</Label>
+                  <Input
+                    value={formData.labelPt}
+                    onChange={e => setFormData({ ...formData, labelPt: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Label EN</Label>
+                  <Input
+                    value={formData.labelEn}
+                    onChange={e => setFormData({ ...formData, labelEn: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>URL</Label><Input value={formData.url} onChange={e => setFormData({...formData, url: e.target.value})} placeholder="/about" /></div>
-                <div className="space-y-2"><Label>Ícone</Label><Input value={formData.icon} onChange={e => setFormData({...formData, icon: e.target.value})} placeholder="Ex: Building, Globe" /></div>
+                <div className="space-y-2">
+                  <Label>URL</Label>
+                  <Input
+                    value={formData.url}
+                    onChange={e => setFormData({ ...formData, url: e.target.value })}
+                    placeholder="/exemplo ou https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ícone</Label>
+                  <Input
+                    value={formData.icon}
+                    onChange={e => setFormData({ ...formData, icon: e.target.value })}
+                    placeholder="Ex: Home, Settings, User"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2"><Label>Grupo</Label>
-                  <Select value={formData.menu_group} onValueChange={v => setFormData({...formData, menu_group: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="main">Principal</SelectItem><SelectItem value="footer">Rodapé</SelectItem><SelectItem value="utility">Utilidades</SelectItem></SelectContent></Select>
+                <div className="space-y-2">
+                  <Label>Grupo</Label>
+                  <Select
+                    value={formData.group}
+                    onValueChange={v => setFormData({ ...formData, group: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="main">Principal</SelectItem>
+                      <SelectItem value="footer">Rodapé</SelectItem>
+                      <SelectItem value="utility">Utilidades</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-2"><Label>Pai</Label>
-                  <Select value={formData.parent_id || 'none'} onValueChange={v => setFormData({...formData, parent_id: v === 'none' ? null : v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">— Nenhum (topo) —</SelectItem>{topLevelItems.filter(i => i.id !== editing?.id).map(i => <SelectItem key={i.id} value={i.id}>{i.label_pt}</SelectItem>)}</SelectContent></Select>
+                <div className="space-y-2">
+                  <Label>Item Pai</Label>
+                  <Select
+                    value={formData.father || 'none'}
+                    onValueChange={v => setFormData({ ...formData, father: v === 'none' ? '' : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— Nenhum (nível superior) —</SelectItem>
+                      {topLevelItems
+                        .filter(i => i.id !== editing?.id)
+                        .map(i => (
+                          <SelectItem key={i.id} value={i.id}>
+                            {i.labelPt}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-2"><Label>Ordem</Label><Input type="number" value={formData.sort_order} onChange={e => setFormData({...formData, sort_order: Number(e.target.value)})} /></div>
+                <div className="space-y-2">
+                  <Label>Ordem</Label>
+                  <Input
+                    type="number"
+                    value={formData.order}
+                    onChange={e => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
               </div>
               <div className="flex gap-6">
-                <div className="flex items-center gap-2"><Switch checked={formData.is_visible} onCheckedChange={v => setFormData({...formData, is_visible: v})} /><Label>Visível</Label></div>
-                <div className="flex items-center gap-2"><Switch checked={formData.open_in_new_tab} onCheckedChange={v => setFormData({...formData, open_in_new_tab: v})} /><Label>Nova aba</Label></div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={formData.visibleStatus === 'Yes'}
+                    onCheckedChange={v => setFormData({ ...formData, visibleStatus: v ? 'Yes' : 'No' })}
+                  />
+                  <Label>Visível no menu</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={formData.newTabStatus === 'Active'}
+                    onCheckedChange={v => setFormData({ ...formData, newTabStatus: v ? 'Active' : 'Inactive' })}
+                  />
+                  <Label>Abrir em nova aba</Label>
+                </div>
               </div>
             </div>
-            <DialogFooter><Button type="button" variant="outline" onClick={handleClose}>Cancelar</Button><Button type="submit" disabled={isSaving}>{isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{editing ? 'Guardar' : 'Criar'}</Button></DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editing ? 'Actualizar' : 'Criar'}
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Alert Dialog para confirmar exclusão */}
       <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Eliminar Item</AlertDialogTitle><AlertDialogDescription>Eliminar "{deleteItem?.label_pt}"? Os sub-itens ficarão órfãos.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteItem && deleteMutation.mutate(deleteItem.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Eliminar</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Eliminação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja eliminar o item "{deleteItem?.labelPt}"?
+              {getChildren(deleteItem?.id || '').length > 0 && (
+                <span className="block mt-2 text-destructive">
+                  Atenção: Este item tem sub-itens que ficarão sem pai!
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteItem && deleteMutation.mutate(deleteItem.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </AdminLayout>

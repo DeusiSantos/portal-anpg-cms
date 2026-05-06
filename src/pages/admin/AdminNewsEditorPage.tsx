@@ -195,7 +195,58 @@ interface NewsFormData {
   contentEn: string;
   category: string;
   publicationDate: string;
-  uploadDocs?: File[];
+  featuredImage?: File;
+}
+
+interface ImageData {
+  file: File;
+  position: number;
+  language: 'pt' | 'en';
+}
+
+// Função para extrair imagens do HTML
+function extractImagesFromHTML(htmlContent: string, language: 'pt' | 'en'): { cleanedHtml: string; images: ImageData[] } {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlContent;
+  
+  const images = tempDiv.querySelectorAll('img');
+  const imageData: ImageData[] = [];
+  
+  images.forEach((img, index) => {
+    const src = img.getAttribute('src');
+    if (src && src.startsWith('data:image')) {
+      // Converter base64 para File
+      const file = dataURLToFile(src, `content-image-${language}-${index}.png`);
+      imageData.push({
+        file,
+        position: index,
+        language
+      });
+      
+      // Substituir por um marcador único
+      const marker = `{{IMAGE_${language}_${index}}}`;
+      img.setAttribute('data-image-marker', marker);
+      img.removeAttribute('src');
+      img.style.display = 'none';
+    }
+  });
+  
+  return {
+    cleanedHtml: tempDiv.innerHTML,
+    images: imageData
+  };
+}
+
+function dataURLToFile(dataURL: string, filename: string): File {
+  const arr = dataURL.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
 }
 
 // Componente de Timeline de Histórico com scroll e paginação
@@ -204,7 +255,7 @@ function HistoryTimeline({
   isLoading, 
   onLoadMore, 
   hasMore, 
-  isFetchingMore,
+  isFetchingMore, 
   totalCount 
 }: { 
   history: HistoryItem[]; 
@@ -374,7 +425,6 @@ export default function AdminNewsEditorPage() {
     contentEn: '',
     category: 'geral',
     publicationDate: new Date().toISOString(),
-    uploadDocs: [],
   });
 
   const [currentStatus, setCurrentStatus] = useState<NewsStatus>('Draft');
@@ -408,7 +458,6 @@ export default function AdminNewsEditorPage() {
           PageSize: 10 
         }
       });
-      // A API retorna { histories: { pageIndex, pageSize, count, data } }
       return response.data.histories as HistoryResponse;
     },
     enabled: !isNew && !!id && showHistoryModal,
@@ -423,7 +472,6 @@ export default function AdminNewsEditorPage() {
         setAllHistoryItems(prev => [...prev, ...historyData.data]);
       }
       setTotalHistoryCount(historyData.count);
-      // Verificar se há mais páginas
       const totalPages = Math.ceil(historyData.count / historyData.pageSize);
       setHasMoreHistory(historyPage < totalPages - 1);
     }
@@ -445,7 +493,6 @@ export default function AdminNewsEditorPage() {
     
     setIsFetchingMoreHistory(true);
     setHistoryPage(prev => prev + 1);
-    // Resetar o estado de fetching após um pequeno delay
     setTimeout(() => {
       setIsFetchingMoreHistory(false);
     }, 500);
@@ -474,7 +521,6 @@ export default function AdminNewsEditorPage() {
         contentEn: article.contentEn || '',
         category: article.category || 'geral',
         publicationDate: article.publicationDate || new Date().toISOString(),
-        uploadDocs: [],
       });
       
       setCurrentStatus(article.status);
@@ -546,16 +592,16 @@ export default function AdminNewsEditorPage() {
       if (!id) throw new Error('ID da notícia não encontrado');
       
       const formDataToSend = new FormData();
-      formDataToSend.append('uploadDocs', file);
+      formDataToSend.append('featuredImage', file);
       
-      const response = await api.post(`/news/${id}/attachments?documentId=${id}`, formDataToSend, {
+      const response = await api.post(`/news/${id}/featured-image`, formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
       return response.data;
     },
     onSuccess: () => {
-      toast.success('Imagem actualizada com sucesso');
+      toast.success('Imagem de destaque actualizada com sucesso');
       fetchArticle();
       setSelectedImageFile(null);
     },
@@ -602,42 +648,79 @@ export default function AdminNewsEditorPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: NewsFormData) => {
+      const formDataToSend = new FormData();
+      
       if (isNew) {
-        const formDataToSend = new FormData();
-        
+        // 1. Adicionar campos de texto
         formDataToSend.append('titlePt', data.titlePt);
-        formDataToSend.append('slugOrURL', data.slugOrURL);
+        formDataToSend.append('slug', data.slugOrURL);
         formDataToSend.append('excerptPt', data.excerptPt);
-        formDataToSend.append('contentPt', data.contentPt);
         formDataToSend.append('titleEn', data.titleEn);
         formDataToSend.append('excerptEn', data.excerptEn);
-        formDataToSend.append('contentEn', data.contentEn);
         formDataToSend.append('category', data.category);
         formDataToSend.append('publicationDate', data.publicationDate);
         
-        if (data.uploadDocs && data.uploadDocs.length > 0) {
-          formDataToSend.append('uploadDocs', data.uploadDocs[0]);
+        // 2. Processar o conteúdo HTML e extrair imagens
+        const { cleanedHtml: cleanedContentPt, images: imagesPt } = extractImagesFromHTML(data.contentPt, 'pt');
+        const { cleanedHtml: cleanedContentEn, images: imagesEn } = extractImagesFromHTML(data.contentEn, 'en');
+        
+        // Adicionar os conteúdos limpos (sem base64)
+        formDataToSend.append('contentPt', cleanedContentPt);
+        formDataToSend.append('contentEn', cleanedContentEn);
+        
+        // 3. Adicionar imagem de destaque (featuredImage) - OBRIGATÓRIA
+        if (!data.featuredImage) {
+          throw new Error('A imagem de destaque é obrigatória');
         }
+        formDataToSend.append('featuredImage', data.featuredImage);
+        
+        // 4. Adicionar imagens de conteúdo (newsImage) - na ordem correta
+        const allImages = [...imagesPt, ...imagesEn];
+        
+        // Validar que há pelo menos uma imagem no conteúdo
+        if (allImages.length === 0) {
+          throw new Error('A notícia deve conter pelo menos uma imagem no conteúdo');
+        }
+        
+        // Ordenar por posição para manter a ordem no editor
+        allImages.sort((a, b) => a.position - b.position);
+        
+        // Adicionar cada imagem ao FormData com o mesmo nome 'newsImage'
+        allImages.forEach((image) => {
+          formDataToSend.append('newsImage', image.file);
+        });
+        
+        console.log('Enviando notícia:', {
+          hasFeaturedImage: !!data.featuredImage,
+          contentImagesCount: allImages.length,
+          contentImagesOrder: allImages.map(img => ({ position: img.position, language: img.language }))
+        });
         
         const response = await api.post('/news', formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 30000, // Aumentar timeout para upload de imagens
         });
         
         return response.data;
       } else {
+        // Para edição, verificar se o status permite edição
+        const canEdit = !['Rejected', 'Deleted', 'Archived', 'Published'].includes(currentStatus);
+        if (!canEdit) {
+          throw new Error('Não é possível editar notícias neste estado');
+        }
+        
+        // Para edição, enviar apenas os metadados (imagens são gerenciadas separadamente)
         const updateData = {
-          news: {
-            id: id,
-            titlePt: data.titlePt,
-            slugOrURL: data.slugOrURL,
-            excerptPt: data.excerptPt,
-            contentPt: data.contentPt,
-            titleEn: data.titleEn,
-            excerptEn: data.excerptEn,
-            contentEn: data.contentEn,
-            publicationDate: data.publicationDate,
-            category: data.category,
-          }
+          id: id,
+          titlePt: data.titlePt,
+          slugOrURL: data.slugOrURL,
+          excerptPt: data.excerptPt,
+          contentPt: data.contentPt,
+          titleEn: data.titleEn,
+          excerptEn: data.excerptEn,
+          contentEn: data.contentEn,
+          publicationDate: data.publicationDate,
+          category: data.category,
         };
         
         const response = await api.put('/news', updateData, {
@@ -647,7 +730,7 @@ export default function AdminNewsEditorPage() {
         return response.data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-news'] });
       toast.success(isNew ? 'Notícia criada com sucesso' : 'Notícia actualizada com sucesso');
       
@@ -658,7 +741,9 @@ export default function AdminNewsEditorPage() {
       }
     },
     onError: (error: any) => {
-      toast.error(`Erro ao guardar: ${error.response?.data?.message || error.message}`);
+      console.error('Erro detalhado:', error.response?.data);
+      const errorMessage = error.response?.data?.message || error.message || 'Erro ao guardar a notícia';
+      toast.error(`Erro ao guardar: ${errorMessage}`);
     },
   });
 
@@ -670,9 +755,33 @@ export default function AdminNewsEditorPage() {
       return;
     }
 
+    // Para novas notícias, validar imagens
+    if (isNew) {
+      // Validar imagem de destaque
+      if (!selectedImageFile && !formData.featuredImage) {
+        toast.error('A imagem de destaque é obrigatória');
+        return;
+      }
+      
+      // Extrair imagens do conteúdo para verificar
+      const { images: imagesPt } = extractImagesFromHTML(formData.contentPt, 'pt');
+      const { images: imagesEn } = extractImagesFromHTML(formData.contentEn, 'en');
+      const totalContentImages = imagesPt.length + imagesEn.length;
+      
+      // Validar pelo menos uma imagem no conteúdo
+      if (totalContentImages === 0) {
+        toast.error('A notícia deve conter pelo menos uma imagem no conteúdo');
+        return;
+      }
+      
+      // Informar ao usuário sobre o envio das imagens
+      toast.info(`Serão enviadas ${totalContentImages} imagem(ns) de conteúdo e 1 imagem de destaque`);
+    }
+
     const dataToSubmit = {
       ...formData,
       slugOrURL: formData.slugOrURL || generateSlug(formData.titlePt),
+      featuredImage: selectedImageFile || undefined,
     };
 
     saveMutation.mutate(dataToSubmit);
@@ -724,7 +833,7 @@ export default function AdminNewsEditorPage() {
   };
 
   const availableNextStates = STATUS_TRANSITIONS[currentStatus] || [];
-  const canEdit = !['Rejected', 'Deleted', 'Archived'].includes(currentStatus);
+  const canEdit = !['Rejected', 'Deleted', 'Archived', 'Published'].includes(currentStatus);
   const requiresComment = selectedNextStatus ? REQUIRED_COMMENT_STATUSES.includes(selectedNextStatus) : false;
 
   const getTransitionDescription = (from: NewsStatus, to: NewsStatus): string => {
@@ -853,11 +962,11 @@ export default function AdminNewsEditorPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Conteúdo Completo</Label>
+                      <Label>Conteúdo Completo * (deve conter pelo menos uma imagem)</Label>
                       <RichTextEditor
                         content={formData.contentPt}
                         onChange={(html) => setFormData({ ...formData, contentPt: html })}
-                        placeholder="Escreva o conteúdo da notícia aqui..."
+                        placeholder="Escreva o conteúdo da notícia aqui... Lembre-se de adicionar pelo menos uma imagem"
                       />
                     </div>
                   </CardContent>
@@ -1079,28 +1188,42 @@ export default function AdminNewsEditorPage() {
               </Card>
             )}
 
-            {/* Card de Imagem */}
+            {/* Card de Imagem de Destaque */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Imagem de Destaque</CardTitle>
+                <CardTitle className="text-lg">Imagem de Destaque *</CardTitle>
                 <CardDescription>
                   {isNew 
-                    ? 'Envie uma imagem para a notícia (opcional)' 
+                    ? 'Envie uma imagem principal para a notícia (obrigatória)' 
                     : 'Gerencie a imagem principal da notícia'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {isNew ? (
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setFormData({ ...formData, uploadDocs: [e.target.files[0]] });
-                      }
-                    }}
-                    className="w-full p-2 border rounded-md"
-                  />
+                  <div className="space-y-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setSelectedImageFile(e.target.files[0]);
+                          const previewUrl = URL.createObjectURL(e.target.files[0]);
+                          setCurrentImageUrl(previewUrl);
+                        }
+                      }}
+                      className="w-full p-2 border rounded-md"
+                      required
+                    />
+                    {currentImageUrl && (
+                      <div className="relative rounded-md overflow-hidden border">
+                        <img 
+                          src={currentImageUrl} 
+                          alt="Preview" 
+                          className="w-full h-40 object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <div className="space-y-3">
@@ -1171,12 +1294,32 @@ export default function AdminNewsEditorPage() {
               </CardContent>
             </Card>
 
+            {/* Card de Informação - Apenas para novas notícias */}
+            {isNew && (
+              <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="text-sm text-blue-800 dark:text-blue-300">
+                      <p className="font-medium mb-1">Requisitos da Notícia:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>Imagem de destaque é obrigatória</li>
+                        <li>Conteúdo deve conter pelo menos uma imagem</li>
+                        <li>As imagens no conteúdo serão enviadas na ordem em que aparecem</li>
+                        <li>Título é obrigatório</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Botões de Ação */}
             <div className="flex gap-3">
               <Button
                 type="submit"
                 className="flex-1 gap-2"
-                disabled={saveMutation.isPending || !canEdit}
+                disabled={saveMutation.isPending || (isNew ? false : !canEdit)}
               >
                 {saveMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1302,7 +1445,6 @@ export default function AdminNewsEditorPage() {
                   size="icon"
                   onClick={() => {
                     setShowHistoryModal(false);
-                    // Resetar estado ao fechar
                     setHistoryPage(0);
                     setAllHistoryItems([]);
                     setHasMoreHistory(true);
