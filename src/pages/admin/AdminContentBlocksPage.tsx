@@ -5,40 +5,93 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from '@/components/ui/dialog';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Search, Pencil, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Loader2, LayoutGrid } from 'lucide-react';
 import api from '@/service/api';
-import RichTextEditor from '@/components/admin/RichTextEditor';
+
+// Tipos da API
+interface ContentBlockContent {
+  lang: number;
+  [key: string]: any; // Conteúdo dinâmico por idioma
+}
 
 interface ContentBlock {
   id: string;
   pageKey: string;
-  section: string;
-  language: string;
+  sectionKey: string;
   order: number;
-  status: 'Active' | 'Inactive';
-  content: string;
+  contents: ContentBlockContent[];
+  isActive: boolean;
+  createdAt: string;
+  createdBy: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  deletedBy: string | null;
 }
 
-interface ContentBlockResponse {
-  contentBlock: {
-    pageIndex: number;
-    pageSize: number;
-    count: number;
-    data: ContentBlock[];
-  };
+interface ContentBlocksResponse {
+  items: ContentBlock[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
+
+interface ContentBlockFormData {
+  pageKey: string;
+  sectionKey: string;
+  order: number;
+  contentPt: Record<string, any>;
+  contentEn: Record<string, any>;
+  isActive: boolean;
+}
+
+// Função para obter conteúdo por idioma
+const getContentByLang = (contents: ContentBlockContent[], lang: number): Record<string, any> => {
+  const content = contents?.find(c => c.lang === lang);
+  if (!content) return {};
+  // Remover o campo lang do objeto
+  const { lang: _, ...rest } = content;
+  return rest;
+};
+
+// Função para construir o objeto de conteúdo para a API
+const buildContents = (contentPt: Record<string, any>, contentEn: Record<string, any>): ContentBlockContent[] => {
+  const contents: ContentBlockContent[] = [];
+  
+  if (contentPt && Object.keys(contentPt).length > 0) {
+    contents.push({ lang: 1, ...contentPt });
+  }
+  
+  if (contentEn && Object.keys(contentEn).length > 0) {
+    contents.push({ lang: 2, ...contentEn });
+  }
+  
+  return contents;
+};
 
 export default function AdminContentBlocksPage() {
   const queryClient = useQueryClient();
@@ -47,46 +100,42 @@ export default function AdminContentBlocksPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ContentBlock | null>(null);
   const [deleteItem, setDeleteItem] = useState<ContentBlock | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ContentBlockFormData>({
     pageKey: '',
-    section: '',
-    language: 'pt',
-    content: '',
+    sectionKey: '',
     order: 0,
-    status: 'Active' as 'Active' | 'Inactive'
+    contentPt: {},
+    contentEn: {},
+    isActive: true,
   });
+  const [contentPtJson, setContentPtJson] = useState('{}');
+  const [contentEnJson, setContentEnJson] = useState('{}');
 
-  // Buscar todos os Content Blocks
-  const { data: blocks, isLoading } = useQuery({
+  // Buscar content blocks da API
+  const { data: blocksResponse, isLoading } = useQuery({
     queryKey: ['admin-content-blocks'],
     queryFn: async () => {
-      const response = await api.get<ContentBlockResponse>('/content-blocks');
-      const blocksData = response.data?.contentBlock?.data || [];
-      
-      return blocksData.sort((a, b) => {
-        if (a.pageKey !== b.pageKey) return a.pageKey.localeCompare(b.pageKey);
-        return a.order - b.order;
+      const response = await api.get<ContentBlocksResponse>('/content-blocks', {
+        params: { page: 1, pageSize: 100 }
       });
+      return response.data;
     }
   });
 
-  // Extrair páginas únicas para o filtro
-  const pageKeys = [...new Set(blocks?.map(b => b.pageKey) || [])];
+  const blocks = blocksResponse?.items || [];
+  
+  // Páginas únicas para filtro
+  const pageKeys = [...new Set(blocks.map(b => b.pageKey))];
 
-  // Criar Content Block
+  // Criar content block
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<ContentBlock, 'id'>) => {
+    mutationFn: async (data: ContentBlockFormData) => {
       const payload = {
-        contentBlock: {
-          id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(7),
-          pageKey: data.pageKey,
-          section: data.section,
-          language: data.language,
-          order: data.order,
-          status: data.status,
-          content: data.content
-        }
+        pageKey: data.pageKey,
+        sectionKey: data.sectionKey,
+        order: data.order,
+        contents: buildContents(data.contentPt, data.contentEn),
+        isActive: data.isActive,
       };
       const response = await api.post('/content-blocks', payload);
       return response.data;
@@ -96,27 +145,23 @@ export default function AdminContentBlocksPage() {
       toast.success('Bloco criado com sucesso');
       handleClose();
     },
-    onError: (e) => {
-      const errorMsg = e.response?.data?.message || e.message || 'Erro ao criar bloco';
-      toast.error(`Erro: ${errorMsg}`);
-    }
+    onError: (error: any) => {
+      console.error('Erro ao criar bloco:', error);
+      toast.error(error.response?.data?.message || 'Erro ao criar bloco');
+    },
   });
 
-  // Atualizar Content Block
+  // Atualizar content block
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<ContentBlock> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: ContentBlockFormData }) => {
       const payload = {
-        contentBlock: {
-          id: id,
-          pageKey: data.pageKey,
-          section: data.section,
-          language: data.language,
-          order: data.order,
-          status: data.status,
-          content: data.content
-        }
+        pageKey: data.pageKey,
+        sectionKey: data.sectionKey,
+        order: data.order,
+        contents: buildContents(data.contentPt, data.contentEn),
+        isActive: data.isActive,
       };
-      const response = await api.put(`/content-blocks`, payload);
+      const response = await api.put(`/content-blocks/${id}`, payload);
       return response.data;
     },
     onSuccess: () => {
@@ -124,13 +169,13 @@ export default function AdminContentBlocksPage() {
       toast.success('Bloco actualizado com sucesso');
       handleClose();
     },
-    onError: (e) => {
-      const errorMsg = e.response?.data?.message || e.message || 'Erro ao actualizar bloco';
-      toast.error(`Erro: ${errorMsg}`);
-    }
+    onError: (error: any) => {
+      console.error('Erro ao actualizar bloco:', error);
+      toast.error(error.response?.data?.message || 'Erro ao actualizar bloco');
+    },
   });
 
-  // Eliminar Content Block
+  // Eliminar content block
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await api.delete(`/content-blocks/${id}`);
@@ -141,56 +186,82 @@ export default function AdminContentBlocksPage() {
       toast.success('Bloco eliminado com sucesso');
       setDeleteItem(null);
     },
-    onError: (e) => {
-      const errorMsg = e.response?.data?.message || e.message || 'Erro ao eliminar bloco';
-      toast.error(`Erro: ${errorMsg}`);
-    }
+    onError: (error: any) => {
+      console.error('Erro ao eliminar bloco:', error);
+      toast.error(error.response?.data?.message || 'Erro ao eliminar bloco');
+    },
   });
 
   const handleClose = () => {
     setIsDialogOpen(false);
     setEditing(null);
-    setShowPreview(false);
     setFormData({
       pageKey: '',
-      section: '',
-      language: 'pt',
-      content: '',
+      sectionKey: '',
       order: 0,
-      status: 'Active'
+      contentPt: {},
+      contentEn: {},
+      isActive: true,
     });
+    setContentPtJson('{}');
+    setContentEnJson('{}');
   };
 
   const handleEdit = (block: ContentBlock) => {
+    const ptContent = getContentByLang(block.contents, 1);
+    const enContent = getContentByLang(block.contents, 2);
+    
     setEditing(block);
     setFormData({
       pageKey: block.pageKey,
-      section: block.section,
-      language: block.language,
-      content: block.content || '',
+      sectionKey: block.sectionKey,
       order: block.order,
-      status: block.status
+      contentPt: ptContent,
+      contentEn: enContent,
+      isActive: block.isActive,
     });
+    setContentPtJson(JSON.stringify(ptContent, null, 2));
+    setContentEnJson(JSON.stringify(enContent, null, 2));
     setIsDialogOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.pageKey || !formData.section) {
-      toast.error('Página e secção são obrigatórias');
+    if (!formData.pageKey) {
+      toast.error('Page Key é obrigatório');
       return;
     }
-
+    
+    if (!formData.sectionKey) {
+      toast.error('Section Key é obrigatório');
+      return;
+    }
+    
+    // Validar JSON
+    let parsedPt: Record<string, any> = {};
+    let parsedEn: Record<string, any> = {};
+    
+    try {
+      parsedPt = JSON.parse(contentPtJson);
+    } catch {
+      toast.error('JSON inválido no conteúdo em português');
+      return;
+    }
+    
+    try {
+      parsedEn = JSON.parse(contentEnJson);
+    } catch {
+      toast.error('JSON inválido no conteúdo em inglês');
+      return;
+    }
+    
     const submitData = {
-      pageKey: formData.pageKey,
-      section: formData.section,
-      language: formData.language,
-      content: formData.content || '',
-      order: formData.order,
-      status: formData.status
+      ...formData,
+      contentPt: parsedPt,
+      contentEn: parsedEn,
     };
-
+    
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: submitData });
     } else {
@@ -198,48 +269,15 @@ export default function AdminContentBlocksPage() {
     }
   };
 
-  // Função para fazer upload de imagem (implementar conforme sua API de imagens)
-  const handleImageUpload = async (file: File): Promise<string> => {
-    // TODO: Implementar upload para sua API de imagens
-    // Exemplo:
-    // const formData = new FormData();
-    // formData.append('image', file);
-    // const response = await api.post('/upload', formData);
-    // return response.data.url;
-    
-    // Por enquanto, converte para base64
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
   // Filtrar blocos
-  const filtered = blocks?.filter(b => {
-    const matchSearch = b.pageKey.toLowerCase().includes(search.toLowerCase()) || 
-                       b.section.toLowerCase().includes(search.toLowerCase()) ||
-                       (b.content && b.content.toLowerCase().includes(search.toLowerCase()));
-    const matchPage = filterPage === 'all' || b.pageKey === filterPage;
+  const filtered = blocks.filter(block => {
+    const matchSearch = block.pageKey.toLowerCase().includes(search.toLowerCase()) || 
+                        block.sectionKey.toLowerCase().includes(search.toLowerCase());
+    const matchPage = filterPage === 'all' || block.pageKey === filterPage;
     return matchSearch && matchPage;
   });
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-
-  // Função para remover tags HTML para prévia
-  const stripHtml = (html: string) => {
-    if (!html) return '';
-    const tmp = document.createElement('DIV');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
-
-  const truncateText = (text: string, maxLength: number = 80) => {
-    const stripped = stripHtml(text);
-    if (stripped.length <= maxLength) return stripped;
-    return stripped.substring(0, maxLength) + '...';
-  };
 
   return (
     <AdminLayout title="Blocos de Conteúdo" subtitle="Gerir blocos de conteúdo das páginas">
@@ -251,7 +289,7 @@ export default function AdminContentBlocksPage() {
                 <CardTitle>Content Blocks</CardTitle>
                 <CardDescription>Gerir secções editáveis das páginas (Hero, Estatísticas, Serviços, etc.)</CardDescription>
               </div>
-              <Button onClick={() => { setIsDialogOpen(true); }}>
+              <Button onClick={() => { handleClose(); setIsDialogOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Bloco
               </Button>
@@ -262,7 +300,7 @@ export default function AdminContentBlocksPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Pesquisar por página, secção ou conteúdo..." 
+                  placeholder="Pesquisar por página ou secção..." 
                   value={search} 
                   onChange={(e) => setSearch(e.target.value)} 
                   className="pl-10" 
@@ -274,9 +312,7 @@ export default function AdminContentBlocksPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as Páginas</SelectItem>
-                  {pageKeys.map(k => (
-                    <SelectItem key={k} value={k}>{k}</SelectItem>
-                  ))}
+                  {pageKeys.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -292,68 +328,73 @@ export default function AdminContentBlocksPage() {
                     <TableRow>
                       <TableHead>Página</TableHead>
                       <TableHead>Secção</TableHead>
-                      <TableHead>Idioma</TableHead>
-                      <TableHead className="w-[40%]">Conteúdo (Prévia)</TableHead>
+                      <TableHead>Conteúdo</TableHead>
                       <TableHead>Ordem</TableHead>
                       <TableHead>Estado</TableHead>
                       <TableHead className="text-right">Acções</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered?.length === 0 ? (
+                    {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                           Nenhum bloco encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filtered?.map(block => (
-                        <TableRow key={block.id}>
-                          <TableCell className="font-medium">
-                            <Badge variant="outline">{block.pageKey}</Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">{block.section}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{block.language.toUpperCase()}</Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {truncateText(block.content, 100)}
-                          </TableCell>
-                          <TableCell>{block.order}</TableCell>
-                          <TableCell>
-                            <Badge variant={block.status === 'Active' ? 'default' : 'secondary'}>
-                              {block.status === 'Active' ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="icon" onClick={() => handleEdit(block)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => setDeleteItem(block)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      filtered.map(block => {
+                        const ptContent = getContentByLang(block.contents, 1);
+                        const hasContent = Object.keys(ptContent).length > 0;
+                        return (
+                          <TableRow key={block.id}>
+                            <TableCell className="font-medium">{block.pageKey}</TableCell>
+                            <TableCell>{block.sectionKey}</TableCell>
+                            <TableCell>
+                              {hasContent ? (
+                                <Badge variant="outline" className="text-xs">
+                                  {Object.keys(ptContent).join(', ')}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{block.order}</TableCell>
+                            <TableCell>
+                              <Badge variant={block.isActive ? 'default' : 'secondary'}>
+                                {block.isActive ? 'Activo' : 'Inactivo'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(block)}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => setDeleteItem(block)}>
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
               </div>
             )}
             <div className="mt-4 text-sm text-muted-foreground">
-              {filtered?.length || 0} bloco(s)
+              {filtered.length} bloco(s)
             </div>
           </CardContent>
         </Card>
       </main>
 
+      {/* Dialog para criar/editar */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? 'Editar Bloco' : 'Novo Bloco de Conteúdo'}</DialogTitle>
-            <DialogDescription>Defina a página, secção e conteúdo do bloco usando o editor rich text.</DialogDescription>
+            <DialogDescription>Defina a página, secção e conteúdo do bloco para cada idioma.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
@@ -363,36 +404,22 @@ export default function AdminContentBlocksPage() {
                   <Input 
                     value={formData.pageKey} 
                     onChange={e => setFormData({...formData, pageKey: e.target.value})} 
-                    placeholder="Ex: home, about, services" 
+                    placeholder="Ex: home, about" 
                     required 
                   />
-                  <p className="text-xs text-muted-foreground">Identificador único da página</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Secção (section) *</Label>
+                  <Label>Secção (sectionKey) *</Label>
                   <Input 
-                    value={formData.section} 
-                    onChange={e => setFormData({...formData, section: e.target.value})} 
-                    placeholder="Ex: hero, stats, services" 
+                    value={formData.sectionKey} 
+                    onChange={e => setFormData({...formData, sectionKey: e.target.value})} 
+                    placeholder="Ex: hero, stats" 
                     required 
                   />
-                  <p className="text-xs text-muted-foreground">Identificador da secção na página</p>
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Idioma</Label>
-                  <Select value={formData.language} onValueChange={v => setFormData({...formData, language: v})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pt">Português</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Ordem</Label>
                   <Input 
@@ -400,60 +427,48 @@ export default function AdminContentBlocksPage() {
                     value={formData.order} 
                     onChange={e => setFormData({...formData, order: Number(e.target.value)})} 
                   />
-                  <p className="text-xs text-muted-foreground">Ordem de exibição</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>Estado</Label>
-                  <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as 'Active' | 'Inactive'})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Activo</SelectItem>
-                      <SelectItem value="Inactive">Inactivo</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-end gap-2 pb-1">
+                  <Switch 
+                    checked={formData.isActive} 
+                    onCheckedChange={v => setFormData({...formData, isActive: v})} 
+                  />
+                  <Label>Activo</Label>
                 </div>
               </div>
-
+              
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label>Conteúdo *</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPreview(!showPreview)}
-                  >
-                    {showPreview ? (
-                      <>
-                        <EyeOff className="h-4 w-4 mr-2" />
-                        Editar
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="h-4 w-4 mr-2" />
-                        Pré-visualizar
-                      </>
-                    )}
-                  </Button>
-                </div>
-                
-                {showPreview ? (
-                  <div className="border rounded-lg p-6 min-h-[300px] bg-muted/20">
-                    <div 
-                      className="prose prose-sm sm:prose max-w-none dark:prose-invert"
-                      dangerouslySetInnerHTML={{ __html: formData.content || '<p class="text-muted-foreground italic">Sem conteúdo para pré-visualizar</p>' }}
+                <Label>Conteúdo (JSON)</Label>
+                <Tabs defaultValue="pt" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pt">Português</TabsTrigger>
+                    <TabsTrigger value="en">English</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="pt" className="space-y-2 pt-2">
+                    <Textarea 
+                      value={contentPtJson} 
+                      onChange={e => setContentPtJson(e.target.value)} 
+                      rows={10} 
+                      className="font-mono text-xs"
+                      placeholder='{"title": "...", "description": "..."}'
                     />
-                  </div>
-                ) : (
-                  <RichTextEditor
-                    content={formData.content}
-                    onChange={(html) => setFormData({...formData, content: html})}
-                    placeholder="Escreva o conteúdo aqui. Use as ferramentas de formatação para criar textos ricos..."
-                    onImageUpload={handleImageUpload}
-                  />
-                )}
+                    <p className="text-xs text-muted-foreground">
+                      Insira o conteúdo em formato JSON. Exemplo: {"{ \"title\": \"Título\", \"subtitle\": \"Subtítulo\" }"}
+                    </p>
+                  </TabsContent>
+                  <TabsContent value="en" className="space-y-2 pt-2">
+                    <Textarea 
+                      value={contentEnJson} 
+                      onChange={e => setContentEnJson(e.target.value)} 
+                      rows={10} 
+                      className="font-mono text-xs"
+                      placeholder='{"title": "...", "description": "..."}'
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter content in JSON format. Example: {"{ \"title\": \"Title\", \"subtitle\": \"Subtitle\" }"}
+                    </p>
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
             <DialogFooter>
@@ -469,13 +484,14 @@ export default function AdminContentBlocksPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Alert Dialog para confirmar exclusão */}
       <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar Bloco</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja eliminar o bloco "{deleteItem?.pageKey}/{deleteItem?.section}"?
-              Esta acção não pode ser desfeita.
+              Tem a certeza que deseja eliminar o bloco "{deleteItem?.pageKey}/{deleteItem?.sectionKey}"?
+              Esta acção não pode ser revertida.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

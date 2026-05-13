@@ -97,6 +97,9 @@ import AdminSitePagesPage from "./pages/admin/AdminSitePagesPage";
 import AdminPageEditorPage from "./pages/admin/AdminPageEditorPage";
 import { SobaWidget } from "./components/chat/SobaWidget";
 import { ScrollToTop } from "./components/ScrollToTop";
+import EventDetailPage from "./pages/EventDetailPage";
+import AdminEventPage from "./pages/admin/AdminEventPage";
+import AdminEventsEditorPage from "./pages/admin/AdminEventsEditorPage";
 const queryClient = new QueryClient();
 
 function AnimatedRoutes() {
@@ -108,16 +111,16 @@ function AnimatedRoutes() {
       <PageTransition key={location.pathname}>
         <Routes location={location}>
           <Route path="/" element={<Index />} />
-          
+
           {/* About Us */}
           <Route path="/about" element={<AboutPage />} />
           <Route path="/about/pca-message" element={<PcaMessagePage />} />
           <Route path="/about/anpg" element={<AnpgPage />} />
-          <Route path="/about/board/:slug" element={<BoardMemberPage />} />
+          <Route path="/about/board/:id" element={<BoardMemberPage />} />
           <Route path="/about/history" element={<HistoryPage />} />
           <Route path="/about/social-responsibility" element={<SocialResponsibilityPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
-          
+
           {/* Opportunities */}
           <Route path="/opportunities" element={<OpportunitiesPage />} />
           <Route path="/opportunities/tender-2025" element={<Tender2025Page />} />
@@ -125,7 +128,7 @@ function AnimatedRoutes() {
           <Route path="/opportunities/tender-2023" element={<Tender2023Page />} />
           <Route path="/opportunities/energy-integration" element={<EnergyIntegrationPage />} />
           <Route path="/opportunities/gas" element={<GasPage />} />
-          
+
           {/* E&P Data */}
           <Route path="/ep-data" element={<EpDataPage />} />
           <Route path="/ep-data/iona" element={<IonaPage />} />
@@ -135,7 +138,7 @@ function AnimatedRoutes() {
           <Route path="/ep-data/blocks/:blockId" element={<BlockDetailsPage />} />
           <Route path="/ep-data/conference-2021" element={<Conference2021Page />} />
           <Route path="/ep-data/conference-2023" element={<Conference2023Page />} />
-          
+
           {/* Exploration */}
           <Route path="/exploration" element={<ExplorationPage />} />
           <Route path="/exploration/seismic-campaigns" element={<SeismicCampaignsPage />} />
@@ -144,18 +147,20 @@ function AnimatedRoutes() {
           <Route path="/exploration/seismic-2d" element={<SeismicMapPage type="2d" />} />
           <Route path="/exploration/seismic-3d" element={<SeismicMapPage type="3d" />} />
           <Route path="/exploration/seismic-4d" element={<SeismicMapPage type="4d" />} />
-          
+
           {/* Regulation pages */}
           <Route path="/regulation" element={<RegulationPage />} />
           <Route path="/regulation/licensing" element={<LicensingPage />} />
           <Route path="/regulation/oversight" element={<OversightPage />} />
           <Route path="/regulation/tenders" element={<TendersPage />} />
-          
+
           {/* Other pages */}
           <Route path="/media" element={<MediaPage />} />
           <Route path="/media/events" element={<EventsPage />} />
           <Route path="/media/archive" element={<NewsArchivePage />} />
           <Route path="/news/:newsId" element={<NewsDetailPage />} />
+          <Route path="/events/:id" element={<EventDetailPage />} />
+
           <Route path="/production" element={<ProductionPage />} />
           <Route path="/production/history" element={<ProductionHistoryPage />} />
           <Route path="/local-content" element={<LocalContentPage />} />
@@ -168,21 +173,27 @@ function AnimatedRoutes() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/whistleblower" element={<WhistleblowerPage />} />
-          
+
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/news" element={<ProtectedRoute requiredPermission="content"><AdminNewsPage /></ProtectedRoute>} />
           <Route path="/admin/news/:id" element={<ProtectedRoute requiredPermission="content"><AdminNewsEditorPage /></ProtectedRoute>} />
+
+          <Route path="/admin/events" element={<ProtectedRoute requiredPermission="content"><AdminEventPage /></ProtectedRoute>} />
+          <Route path="/admin/events/:id" element={<ProtectedRoute requiredPermission="content"><AdminEventsEditorPage /></ProtectedRoute>} />
+
+
+
           <Route path="/admin/pages" element={<ProtectedRoute requiredPermission="content"><AdminCMSPage /></ProtectedRoute>} />
           <Route path="/admin/blocks" element={<ProtectedRoute requiredPermission="operations"><AdminBlocksPage /></ProtectedRoute>} />
           <Route path="/admin/production" element={<ProtectedRoute requiredPermission="operations"><AdminProductionPage /></ProtectedRoute>} />
           <Route path="/admin/eoi" element={<ProtectedRoute requiredPermission="investors"><AdminEOIPage /></ProtectedRoute>} />
           <Route path="/admin/documents" element={<ProtectedRoute requiredPermission="investors"><AdminDocumentsPage /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute requiredPermission="admin"><AdminUsersPage /></ProtectedRoute>} />
-          <Route path="/admin/audit" element={<ProtectedRoute requiredPermission="admin"><AdminAuditPage /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute requiredPermission="admin"><AdminSettingsPage /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute requiredPermission="ADMIN"><AdminUsersPage /></ProtectedRoute>} />
+          <Route path="/admin/audit" element={<ProtectedRoute requiredPermission="ADMIN"><AdminAuditPage /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute requiredPermission="ADMIN"><AdminSettingsPage /></ProtectedRoute>} />
           <Route path="/admin/knowledge-base" element={<ProtectedRoute requiredPermission="content"><AdminKnowledgeBasePage /></ProtectedRoute>} />
           <Route path="/admin/content-blocks" element={<ProtectedRoute requiredPermission="content"><AdminContentBlocksPage /></ProtectedRoute>} />
           <Route path="/admin/menu-items" element={<ProtectedRoute requiredPermission="content"><AdminMenuItemsPage /></ProtectedRoute>} />
@@ -196,7 +207,7 @@ function AnimatedRoutes() {
           <Route path="/admin/investors" element={<ProtectedRoute requiredPermission="investors"><AdminInvestorsPage /></ProtectedRoute>} />
           <Route path="/admin/site-pages" element={<ProtectedRoute requiredPermission="content"><AdminSitePagesPage /></ProtectedRoute>} />
           <Route path="/admin/site-pages/:pageKey" element={<ProtectedRoute requiredPermission="content"><AdminPageEditorPage /></ProtectedRoute>} />
-          
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

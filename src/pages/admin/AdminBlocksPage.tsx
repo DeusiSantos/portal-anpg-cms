@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +20,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -42,153 +41,1377 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
-  ArrowLeft,
   Plus,
   Search,
   Pencil,
   Trash2,
-  MapPin,
   Filter,
   Loader2,
+  PlusCircle,
+  Edit,
+  X,
 } from 'lucide-react';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import api from '@/service/api';
 
-type PetroleumBlock = Tables<'petroleum_blocks'>;
+// Tipos da API
+interface Basin {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
-const BASINS = ['Kwanza', 'Benguela', 'Namibe', 'Congo', 'Cabinda'];
-const STATUSES = [
-  { value: 'available', label: 'Disponível', color: 'bg-status-success' },
-  { value: 'licensed', label: 'Licenciado', color: 'bg-status-info' },
-  { value: 'exploration', label: 'Exploração', color: 'bg-status-warning' },
-  { value: 'production', label: 'Produção', color: 'bg-primary' },
-  { value: 'relinquished', label: 'Devolvido', color: 'bg-status-neutral' },
-];
+interface BasinsResponse {
+  items: Basin[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
 
-const emptyBlock: Partial<TablesInsert<'petroleum_blocks'>> = {
-  block_name: '',
-  basin: '',
-  operator: '',
-  status: 'available',
-  area_km2: undefined,
-  water_depth_m: undefined,
-  description: '',
-  discovery_year: undefined,
-  geological_formation: '',
-  reservoir_type: '',
-  estimated_reserves_mmboe: undefined,
-  license_start: '',
-  license_end: '',
-  total_wells: undefined,
-  active_wells: undefined,
-  fpso_name: '',
-  geological_notes: '',
-};
+interface OilBlockState {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+}
 
-export default function AdminBlocksPage() {
-  const { signOut } = useAuth();
-  const queryClient = useQueryClient();
-  
-  const [search, setSearch] = useState('');
-  const [filterBasin, setFilterBasin] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingBlock, setEditingBlock] = useState<PetroleumBlock | null>(null);
-  const [formData, setFormData] = useState<Partial<TablesInsert<'petroleum_blocks'>>>(emptyBlock);
-  
-  const [deleteBlock, setDeleteBlock] = useState<PetroleumBlock | null>(null);
+interface OilBlockStatesResponse {
+  items: OilBlockState[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
 
-  // Fetch blocks
-  const { data: blocks, isLoading } = useQuery({
-    queryKey: ['admin-blocks'],
+interface Operator {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface OperatorsResponse {
+  items: Operator[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
+
+interface GeologicalFormation {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface GeologicalFormationsResponse {
+  items: GeologicalFormation[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
+
+interface ReservoirType {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface ReservoirTypesResponse {
+  items: ReservoirType[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
+
+interface OilBlock {
+  id: string;
+  name: string;
+  basinId: string;
+  basinName: string;
+  oilBlockStateId: string;
+  oilBlockStateName: string;
+  operatorId: string;
+  operatorName: string;
+  areaKm2: number;
+  waterDepthMeters: number;
+  description: string;
+  discoveryYear: number;
+  estimatedReservesMMboe: number;
+  geologicalFormationId: string;
+  geologicalFormationName: string;
+  reservoirTypeId: string;
+  reservoirTypeName: string;
+  licenseStartDate: string;
+  licenseEndDate: string;
+  totalWells: number;
+  activeWells: number;
+  fpsoName: string;
+  geologicalNotes: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface OilBlocksResponse {
+  items: OilBlock[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
+
+interface OilBlockFormData {
+  name: string;
+  basinId: string;
+  oilBlockStateId: string;
+  operatorId: string;
+  areaKm2: number;
+  waterDepthMeters: number;
+  description: string;
+  discoveryYear: number;
+  estimatedReservesMMboe: number;
+  geologicalFormationId: string;
+  reservoirTypeId: string;
+  licenseStartDate: string;
+  licenseEndDate: string;
+  totalWells: number;
+  activeWells: number;
+  fpsoName: string;
+  geologicalNotes: string;
+  isActive: boolean;
+}
+
+// Componente para gerenciar Bacias
+function BasinsManager({ onBasinCreated }: { onBasinCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [editingBasin, setEditingBasin] = useState<Basin | null>(null);
+  const [deleteBasin, setDeleteBasin] = useState<Basin | null>(null);
+
+  const { data: basinsResponse, refetch } = useQuery({
+    queryKey: ['basins-manager'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('petroleum_blocks')
-        .select('*')
-        .order('block_name');
-      
-      if (error) throw error;
-      return data as PetroleumBlock[];
+      const response = await api.get<BasinsResponse>('/operations/basins', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
     },
   });
 
-  // Create mutation
   const createMutation = useMutation({
-    mutationFn: async (data: TablesInsert<'petroleum_blocks'>) => {
-      const { error } = await supabase.from('petroleum_blocks').insert(data);
-      if (error) throw error;
+    mutationFn: async (name: string) => {
+      const response = await api.post('/operations/basins', { name });
+      return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-blocks'] });
+      refetch();
+      onBasinCreated();
+      toast.success('Bacia criada com sucesso');
+      setName('');
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar bacia');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await api.patch(`/operations/basins/${id}`, { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onBasinCreated();
+      toast.success('Bacia actualizada com sucesso');
+      setEditingBasin(null);
+      setName('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao actualizar bacia');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/operations/basins/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onBasinCreated();
+      toast.success('Bacia eliminada com sucesso');
+      setDeleteBasin(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao eliminar bacia');
+    },
+  });
+
+  const basins = basinsResponse?.items || [];
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Gerir Bacias
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Gestão de Bacias</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova bacias petrolíferas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome da bacia"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={() => {
+                if (!name.trim()) {
+                  toast.error('Nome da bacia é obrigatório');
+                  return;
+                }
+                if (editingBasin) {
+                  updateMutation.mutate({ id: editingBasin.id, name: name.trim() });
+                } else {
+                  createMutation.mutate(name.trim());
+                }
+              }} disabled={createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editingBasin ? 'Actualizar' : 'Adicionar'}
+              </Button>
+            </div>
+            {editingBasin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingBasin(null);
+                  setName('');
+                }}
+                className="text-muted-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Cancelar edição
+              </Button>
+            )}
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="w-24 text-right">Acções</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {basins.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        Nenhuma bacia cadastrada
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    basins.map((basin) => (
+                      <TableRow key={basin.id}>
+                        <TableCell>{basin.name}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingBasin(basin);
+                                setName(basin.name);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => setDeleteBasin(basin)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteBasin} onOpenChange={() => setDeleteBasin(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar Bacia</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja eliminar a bacia "{deleteBasin?.name}"?
+              Esta acção não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteBasin && deleteMutation.mutate(deleteBasin.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+// Componente para gerenciar Estados
+function OilBlockStatesManager({ onStateCreated }: { onStateCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [editingState, setEditingState] = useState<OilBlockState | null>(null);
+  const [deleteState, setDeleteState] = useState<OilBlockState | null>(null);
+
+  const { data: statesResponse, refetch } = useQuery({
+    queryKey: ['oil-block-states-manager'],
+    queryFn: async () => {
+      const response = await api.get<OilBlockStatesResponse>('/operations/oil-block-states', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await api.post('/operations/oil-block-states', { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onStateCreated();
+      toast.success('Estado criado com sucesso');
+      setName('');
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar estado');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await api.patch(`/operations/oil-block-states/${id}`, { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onStateCreated();
+      toast.success('Estado actualizado com sucesso');
+      setEditingState(null);
+      setName('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao actualizar estado');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/operations/oil-block-states/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onStateCreated();
+      toast.success('Estado eliminado com sucesso');
+      setDeleteState(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao eliminar estado');
+    },
+  });
+
+  const states = statesResponse?.items || [];
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Gerir Estados
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Gestão de Estados de Bloco</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova estados de blocos petrolíferos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome do estado"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={() => {
+                if (!name.trim()) {
+                  toast.error('Nome do estado é obrigatório');
+                  return;
+                }
+                if (editingState) {
+                  updateMutation.mutate({ id: editingState.id, name: name.trim() });
+                } else {
+                  createMutation.mutate(name.trim());
+                }
+              }} disabled={createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editingState ? 'Actualizar' : 'Adicionar'}
+              </Button>
+            </div>
+            {editingState && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingState(null);
+                  setName('');
+                }}
+                className="text-muted-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Cancelar edição
+              </Button>
+            )}
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="w-24 text-right">Acções</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {states.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        Nenhum estado cadastrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    states.map((state) => (
+                      <TableRow key={state.id}>
+                        <TableCell>{state.name}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingState(state);
+                                setName(state.name);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => setDeleteState(state)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteState} onOpenChange={() => setDeleteState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar Estado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja eliminar o estado "{deleteState?.name}"?
+              Esta acção não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteState && deleteMutation.mutate(deleteState.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+// Componente para gerenciar Operadores
+function OperatorsManager({ onOperatorCreated }: { onOperatorCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
+  const [deleteOperator, setDeleteOperator] = useState<Operator | null>(null);
+
+  const { data: operatorsResponse, refetch } = useQuery({
+    queryKey: ['operators-manager'],
+    queryFn: async () => {
+      const response = await api.get<OperatorsResponse>('/operations/operators', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await api.post('/operations/operators', { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onOperatorCreated();
+      toast.success('Operador criado com sucesso');
+      setName('');
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar operador');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await api.patch(`/operations/operators/${id}`, { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onOperatorCreated();
+      toast.success('Operador actualizado com sucesso');
+      setEditingOperator(null);
+      setName('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao actualizar operador');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/operations/operators/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onOperatorCreated();
+      toast.success('Operador eliminado com sucesso');
+      setDeleteOperator(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao eliminar operador');
+    },
+  });
+
+  const operators = operatorsResponse?.items || [];
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Gerir Operadores
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Gestão de Operadores</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova operadores de blocos petrolíferos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome do operador"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={() => {
+                if (!name.trim()) {
+                  toast.error('Nome do operador é obrigatório');
+                  return;
+                }
+                if (editingOperator) {
+                  updateMutation.mutate({ id: editingOperator.id, name: name.trim() });
+                } else {
+                  createMutation.mutate(name.trim());
+                }
+              }} disabled={createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editingOperator ? 'Actualizar' : 'Adicionar'}
+              </Button>
+            </div>
+            {editingOperator && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingOperator(null);
+                  setName('');
+                }}
+                className="text-muted-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Cancelar edição
+              </Button>
+            )}
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="w-24 text-right">Acções</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {operators.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        Nenhum operador cadastrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    operators.map((operator) => (
+                      <TableRow key={operator.id}>
+                        <TableCell>{operator.name}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingOperator(operator);
+                                setName(operator.name);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => setDeleteOperator(operator)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteOperator} onOpenChange={() => setDeleteOperator(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar Operador</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja eliminar o operador "{deleteOperator?.name}"?
+              Esta acção não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteOperator && deleteMutation.mutate(deleteOperator.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+// Componente para gerenciar Formações Geológicas
+function GeologicalFormationsManager({ onFormationCreated }: { onFormationCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [editingFormation, setEditingFormation] = useState<GeologicalFormation | null>(null);
+  const [deleteFormation, setDeleteFormation] = useState<GeologicalFormation | null>(null);
+
+  const { data: formationsResponse, refetch } = useQuery({
+    queryKey: ['geological-formations-manager'],
+    queryFn: async () => {
+      const response = await api.get<GeologicalFormationsResponse>('/operations/geological-formations', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await api.post('/operations/geological-formations', { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onFormationCreated();
+      toast.success('Formação geológica criada com sucesso');
+      setName('');
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar formação geológica');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await api.patch(`/operations/geological-formations/${id}`, { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onFormationCreated();
+      toast.success('Formação geológica actualizada com sucesso');
+      setEditingFormation(null);
+      setName('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao actualizar formação geológica');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/operations/geological-formations/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onFormationCreated();
+      toast.success('Formação geológica eliminada com sucesso');
+      setDeleteFormation(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao eliminar formação geológica');
+    },
+  });
+
+  const formations = formationsResponse?.items || [];
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Gerir Formações
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Gestão de Formações Geológicas</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova formações geológicas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome da formação"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={() => {
+                if (!name.trim()) {
+                  toast.error('Nome da formação é obrigatório');
+                  return;
+                }
+                if (editingFormation) {
+                  updateMutation.mutate({ id: editingFormation.id, name: name.trim() });
+                } else {
+                  createMutation.mutate(name.trim());
+                }
+              }} disabled={createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editingFormation ? 'Actualizar' : 'Adicionar'}
+              </Button>
+            </div>
+            {editingFormation && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingFormation(null);
+                  setName('');
+                }}
+                className="text-muted-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Cancelar edição
+              </Button>
+            )}
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="w-24 text-right">Acções</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {formations.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        Nenhuma formação cadastrada
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    formations.map((formation) => (
+                      <TableRow key={formation.id}>
+                        <TableCell>{formation.name}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingFormation(formation);
+                                setName(formation.name);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => setDeleteFormation(formation)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteFormation} onOpenChange={() => setDeleteFormation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar Formação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja eliminar a formação "{deleteFormation?.name}"?
+              Esta acção não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteFormation && deleteMutation.mutate(deleteFormation.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+// Componente para gerenciar Tipos de Reservatório
+function ReservoirTypesManager({ onTypeCreated }: { onTypeCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [editingType, setEditingType] = useState<ReservoirType | null>(null);
+  const [deleteType, setDeleteType] = useState<ReservoirType | null>(null);
+
+  const { data: typesResponse, refetch } = useQuery({
+    queryKey: ['reservoir-types-manager'],
+    queryFn: async () => {
+      const response = await api.get<ReservoirTypesResponse>('/operations/reservoir-types', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await api.post('/operations/reservoir-types', { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onTypeCreated();
+      toast.success('Tipo de reservatório criado com sucesso');
+      setName('');
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar tipo de reservatório');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await api.patch(`/operations/reservoir-types/${id}`, { name });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onTypeCreated();
+      toast.success('Tipo de reservatório actualizado com sucesso');
+      setEditingType(null);
+      setName('');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao actualizar tipo de reservatório');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/operations/reservoir-types/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onTypeCreated();
+      toast.success('Tipo de reservatório eliminado com sucesso');
+      setDeleteType(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao eliminar tipo de reservatório');
+    },
+  });
+
+  const types = typesResponse?.items || [];
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Gerir Tipos
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Gestão de Tipos de Reservatório</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova tipos de reservatório.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome do tipo"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={() => {
+                if (!name.trim()) {
+                  toast.error('Nome do tipo é obrigatório');
+                  return;
+                }
+                if (editingType) {
+                  updateMutation.mutate({ id: editingType.id, name: name.trim() });
+                } else {
+                  createMutation.mutate(name.trim());
+                }
+              }} disabled={createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editingType ? 'Actualizar' : 'Adicionar'}
+              </Button>
+            </div>
+            {editingType && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingType(null);
+                  setName('');
+                }}
+                className="text-muted-foreground"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Cancelar edição
+              </Button>
+            )}
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="w-24 text-right">Acções</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {types.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        Nenhum tipo de reservatório cadastrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    types.map((type) => (
+                      <TableRow key={type.id}>
+                        <TableCell>{type.name}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingType(type);
+                                setName(type.name);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => setDeleteType(type)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteType} onOpenChange={() => setDeleteType(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar Tipo de Reservatório</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja eliminar o tipo de reservatório "{deleteType?.name}"?
+              Esta acção não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteType && deleteMutation.mutate(deleteType.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+// Componente principal
+export default function AdminBlocksPage() {
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState('');
+  const [filterBasin, setFilterBasin] = useState<string>('all');
+  const [filterState, setFilterState] = useState<string>('all');
+  const [filterOperator, setFilterOperator] = useState<string>('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<OilBlock | null>(null);
+  const [deleteBlock, setDeleteBlock] = useState<OilBlock | null>(null);
+  const [formData, setFormData] = useState<OilBlockFormData>({
+    name: '',
+    basinId: '',
+    oilBlockStateId: '',
+    operatorId: '',
+    areaKm2: 0,
+    waterDepthMeters: 0,
+    description: '',
+    discoveryYear: 0,
+    estimatedReservesMMboe: 0,
+    geologicalFormationId: '',
+    reservoirTypeId: '',
+    licenseStartDate: '',
+    licenseEndDate: '',
+    totalWells: 0,
+    activeWells: 0,
+    fpsoName: '',
+    geologicalNotes: '',
+    isActive: true,
+  });
+
+  // Buscar bacias
+  const { data: basinsResponse } = useQuery({
+    queryKey: ['basins'],
+    queryFn: async () => {
+      const response = await api.get<BasinsResponse>('/operations/basins', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  // Buscar estados
+  const { data: statesResponse } = useQuery({
+    queryKey: ['oil-block-states'],
+    queryFn: async () => {
+      const response = await api.get<OilBlockStatesResponse>('/operations/oil-block-states', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  // Buscar operadores
+  const { data: operatorsResponse } = useQuery({
+    queryKey: ['operators'],
+    queryFn: async () => {
+      const response = await api.get<OperatorsResponse>('/operations/operators', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  // Buscar formações geológicas
+  const { data: formationsResponse } = useQuery({
+    queryKey: ['geological-formations'],
+    queryFn: async () => {
+      const response = await api.get<GeologicalFormationsResponse>('/operations/geological-formations', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  // Buscar tipos de reservatório
+  const { data: reservoirTypesResponse } = useQuery({
+    queryKey: ['reservoir-types'],
+    queryFn: async () => {
+      const response = await api.get<ReservoirTypesResponse>('/operations/reservoir-types', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  // Buscar blocos
+  const { data: blocksResponse, isLoading } = useQuery({
+    queryKey: ['admin-oil-blocks'],
+    queryFn: async () => {
+      const response = await api.get<OilBlocksResponse>('/operations/oil-blocks', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  const basins = basinsResponse?.items || [];
+  const states = statesResponse?.items || [];
+  const operators = operatorsResponse?.items || [];
+  const formations = formationsResponse?.items || [];
+  const reservoirTypes = reservoirTypesResponse?.items || [];
+  const blocks = blocksResponse?.items || [];
+
+  // Criar bloco
+  const createMutation = useMutation({
+    mutationFn: async (data: OilBlockFormData) => {
+      const response = await api.post('/operations/oil-blocks', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-oil-blocks'] });
       toast.success('Bloco criado com sucesso');
       handleCloseDialog();
     },
-    onError: (error) => {
-      toast.error(`Erro ao criar bloco: ${error.message}`);
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar bloco');
     },
   });
 
-  // Update mutation
+  // Atualizar bloco
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: TablesUpdate<'petroleum_blocks'> }) => {
-      const { error } = await supabase.from('petroleum_blocks').update(data).eq('id', id);
-      if (error) throw error;
+    mutationFn: async ({ id, data }: { id: string; data: Partial<OilBlockFormData> }) => {
+      const response = await api.patch(`/operations/oil-blocks/${id}`, data);
+      return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-oil-blocks'] });
       toast.success('Bloco actualizado com sucesso');
       handleCloseDialog();
     },
-    onError: (error) => {
-      toast.error(`Erro ao actualizar bloco: ${error.message}`);
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao actualizar bloco');
     },
   });
 
-  // Delete mutation
+  // Eliminar bloco
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('petroleum_blocks').delete().eq('id', id);
-      if (error) throw error;
+      const response = await api.delete(`/operations/oil-blocks/${id}`);
+      return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-blocks'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-oil-blocks'] });
       toast.success('Bloco eliminado com sucesso');
       setDeleteBlock(null);
     },
-    onError: (error) => {
-      toast.error(`Erro ao eliminar bloco: ${error.message}`);
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao eliminar bloco');
     },
   });
 
   const handleOpenCreate = () => {
     setEditingBlock(null);
-    setFormData(emptyBlock);
+    setFormData({
+      name: '',
+      basinId: '',
+      oilBlockStateId: '',
+      operatorId: '',
+      areaKm2: 0,
+      waterDepthMeters: 0,
+      description: '',
+      discoveryYear: 0,
+      estimatedReservesMMboe: 0,
+      geologicalFormationId: '',
+      reservoirTypeId: '',
+      licenseStartDate: '',
+      licenseEndDate: '',
+      totalWells: 0,
+      activeWells: 0,
+      fpsoName: '',
+      geologicalNotes: '',
+      isActive: true,
+    });
     setIsDialogOpen(true);
   };
 
-  const handleOpenEdit = (block: PetroleumBlock) => {
+  const handleOpenEdit = (block: OilBlock) => {
     setEditingBlock(block);
     setFormData({
-      block_name: block.block_name,
-      basin: block.basin || '',
-      operator: block.operator || '',
-      status: block.status || 'available',
-      area_km2: block.area_km2 ? Number(block.area_km2) : undefined,
-      water_depth_m: block.water_depth_m || undefined,
+      name: block.name,
+      basinId: block.basinId,
+      oilBlockStateId: block.oilBlockStateId,
+      operatorId: block.operatorId,
+      areaKm2: block.areaKm2,
+      waterDepthMeters: block.waterDepthMeters,
       description: block.description || '',
-      discovery_year: block.discovery_year || undefined,
-      geological_formation: block.geological_formation || '',
-      reservoir_type: block.reservoir_type || '',
-      estimated_reserves_mmboe: block.estimated_reserves_mmboe ? Number(block.estimated_reserves_mmboe) : undefined,
-      license_start: block.license_start || '',
-      license_end: block.license_end || '',
-      total_wells: block.total_wells || undefined,
-      active_wells: block.active_wells || undefined,
-      fpso_name: block.fpso_name || '',
-      geological_notes: block.geological_notes || '',
+      discoveryYear: block.discoveryYear || 0,
+      estimatedReservesMMboe: block.estimatedReservesMMboe || 0,
+      geologicalFormationId: block.geologicalFormationId || '',
+      reservoirTypeId: block.reservoirTypeId || '',
+      licenseStartDate: block.licenseStartDate?.split('T')[0] || '',
+      licenseEndDate: block.licenseEndDate?.split('T')[0] || '',
+      totalWells: block.totalWells || 0,
+      activeWells: block.activeWells || 0,
+      fpsoName: block.fpsoName || '',
+      geologicalNotes: block.geologicalNotes || '',
+      isActive: block.isActive,
     });
     setIsDialogOpen(true);
   };
@@ -196,59 +1419,61 @@ export default function AdminBlocksPage() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingBlock(null);
-    setFormData(emptyBlock);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.block_name) {
+
+    if (!formData.name) {
       toast.error('Nome do bloco é obrigatório');
       return;
     }
 
-    const submitData: TablesInsert<'petroleum_blocks'> = {
-      block_name: formData.block_name,
-      basin: formData.basin || null,
-      operator: formData.operator || null,
-      status: formData.status || 'available',
-      area_km2: formData.area_km2 || null,
-      water_depth_m: formData.water_depth_m || null,
-      description: formData.description || null,
-      discovery_year: formData.discovery_year || null,
-      geological_formation: formData.geological_formation || null,
-      reservoir_type: formData.reservoir_type || null,
-      estimated_reserves_mmboe: formData.estimated_reserves_mmboe || null,
-      license_start: formData.license_start || null,
-      license_end: formData.license_end || null,
-      total_wells: formData.total_wells || null,
-      active_wells: formData.active_wells || null,
-      fpso_name: formData.fpso_name || null,
-      geological_notes: formData.geological_notes || null,
-    };
+    if (!formData.basinId) {
+      toast.error('Selecione uma bacia');
+      return;
+    }
+
+    if (!formData.oilBlockStateId) {
+      toast.error('Selecione um estado');
+      return;
+    }
+
+    if (!formData.operatorId) {
+      toast.error('Selecione um operador');
+      return;
+    }
 
     if (editingBlock) {
-      updateMutation.mutate({ id: editingBlock.id, data: submitData });
+      updateMutation.mutate({ id: editingBlock.id, data: formData });
     } else {
-      createMutation.mutate(submitData);
+      createMutation.mutate(formData);
     }
   };
 
-  // Filter blocks
-  const filteredBlocks = blocks?.filter((block) => {
+  // Filtrar blocos
+  const filteredBlocks = blocks.filter((block) => {
     const matchesSearch =
-      block.block_name.toLowerCase().includes(search.toLowerCase()) ||
-      block.operator?.toLowerCase().includes(search.toLowerCase());
-    const matchesBasin = filterBasin === 'all' || block.basin === filterBasin;
-    const matchesStatus = filterStatus === 'all' || block.status === filterStatus;
-    return matchesSearch && matchesBasin && matchesStatus;
+      block.name.toLowerCase().includes(search.toLowerCase()) ||
+      block.operatorName?.toLowerCase().includes(search.toLowerCase());
+    const matchesBasin = filterBasin === 'all' || block.basinId === filterBasin;
+    const matchesState = filterState === 'all' || block.oilBlockStateId === filterState;
+    const matchesOperator = filterOperator === 'all' || block.operatorId === filterOperator;
+    return matchesSearch && matchesBasin && matchesState && matchesOperator;
   });
 
-  const getStatusBadge = (status: string | null) => {
-    const statusConfig = STATUSES.find((s) => s.value === status) || STATUSES[0];
+  const getStateBadge = (stateName: string) => {
+    const stateColors: Record<string, string> = {
+      'Disponível': 'bg-status-success',
+      'Licenciado': 'bg-status-info',
+      'Exploração': 'bg-status-warning',
+      'Produção': 'bg-primary',
+      'Devolvido': 'bg-status-neutral',
+    };
+    const color = stateColors[stateName] || 'bg-secondary';
     return (
-      <Badge variant="secondary" className={`${statusConfig.color} text-white`}>
-        {statusConfig.label}
+      <Badge className={`${color} text-white`}>
+        {stateName}
       </Badge>
     );
   };
@@ -257,8 +1482,6 @@ export default function AdminBlocksPage() {
 
   return (
     <AdminLayout title="Blocos Petrolíferos" subtitle="Gerir blocos de exploração e produção">
-
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
@@ -269,10 +1492,17 @@ export default function AdminBlocksPage() {
                   Gerir blocos petrolíferos, concessões e operadores
                 </CardDescription>
               </div>
-              <Button onClick={handleOpenCreate}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Bloco
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <BasinsManager onBasinCreated={() => queryClient.invalidateQueries({ queryKey: ['basins'] })} />
+                <OilBlockStatesManager onStateCreated={() => queryClient.invalidateQueries({ queryKey: ['oil-block-states'] })} />
+                <OperatorsManager onOperatorCreated={() => queryClient.invalidateQueries({ queryKey: ['operators'] })} />
+                <GeologicalFormationsManager onFormationCreated={() => queryClient.invalidateQueries({ queryKey: ['geological-formations'] })} />
+                <ReservoirTypesManager onTypeCreated={() => queryClient.invalidateQueries({ queryKey: ['reservoir-types'] })} />
+                <Button onClick={handleOpenCreate}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Bloco
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -294,22 +1524,35 @@ export default function AdminBlocksPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as Bacias</SelectItem>
-                  {BASINS.map((basin) => (
-                    <SelectItem key={basin} value={basin}>
-                      {basin}
+                  {basins.map((basin) => (
+                    <SelectItem key={basin.id} value={basin.id}>
+                      {basin.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterState} onValueChange={setFilterState}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os Estados</SelectItem>
-                  {STATUSES.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
+                  {states.map((state) => (
+                    <SelectItem key={state.id} value={state.id}>
+                      {state.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterOperator} onValueChange={setFilterOperator}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Operador" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Operadores</SelectItem>
+                  {operators.map((operator) => (
+                    <SelectItem key={operator.id} value={operator.id}>
+                      {operator.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -322,7 +1565,7 @@ export default function AdminBlocksPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -336,25 +1579,25 @@ export default function AdminBlocksPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredBlocks?.length === 0 ? (
+                    {filteredBlocks.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           Nenhum bloco encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredBlocks?.map((block) => (
+                      filteredBlocks.map((block) => (
                         <TableRow key={block.id}>
-                          <TableCell className="font-medium">{block.block_name}</TableCell>
-                          <TableCell>{block.basin || '—'}</TableCell>
-                          <TableCell>{block.operator || '—'}</TableCell>
+                          <TableCell className="font-medium">{block.name}</TableCell>
+                          <TableCell>{block.basinName || '—'}</TableCell>
+                          <TableCell>{block.operatorName || '—'}</TableCell>
                           <TableCell>
-                            {block.area_km2 ? Number(block.area_km2).toLocaleString() : '—'}
+                            {block.areaKm2 ? block.areaKm2.toLocaleString() : '—'}
                           </TableCell>
                           <TableCell>
-                            {block.water_depth_m ? block.water_depth_m.toLocaleString() : '—'}
+                            {block.waterDepthMeters ? block.waterDepthMeters.toLocaleString() : '—'}
                           </TableCell>
-                          <TableCell>{getStatusBadge(block.status)}</TableCell>
+                          <TableCell>{getStateBadge(block.oilBlockStateName)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
@@ -381,9 +1624,8 @@ export default function AdminBlocksPage() {
               </div>
             )}
 
-            {/* Stats */}
             <div className="mt-4 text-sm text-muted-foreground">
-              {filteredBlocks?.length || 0} bloco(s) encontrado(s)
+              {filteredBlocks.length} bloco(s) encontrado(s)
             </div>
           </CardContent>
         </Card>
@@ -391,7 +1633,7 @@ export default function AdminBlocksPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingBlock ? 'Editar Bloco' : 'Criar Novo Bloco'}
@@ -406,62 +1648,66 @@ export default function AdminBlocksPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="block_name">Nome do Bloco *</Label>
+                  <Label>Nome do Bloco *</Label>
                   <Input
-                    id="block_name"
-                    value={formData.block_name || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, block_name: e.target.value })
-                    }
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ex: Bloco 15"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="basin">Bacia</Label>
+                  <Label>Operador *</Label>
                   <Select
-                    value={formData.basin || ''}
-                    onValueChange={(value) => setFormData({ ...formData, basin: value })}
+                    value={formData.operatorId}
+                    onValueChange={(value) => setFormData({ ...formData, operatorId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar operador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {operators.map((operator) => (
+                        <SelectItem key={operator.id} value={operator.id}>
+                          {operator.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Bacia *</Label>
+                  <Select
+                    value={formData.basinId}
+                    onValueChange={(value) => setFormData({ ...formData, basinId: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar bacia" />
                     </SelectTrigger>
                     <SelectContent>
-                      {BASINS.map((basin) => (
-                        <SelectItem key={basin} value={basin}>
-                          {basin}
+                      {basins.map((basin) => (
+                        <SelectItem key={basin.id} value={basin.id}>
+                          {basin.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="operator">Operador</Label>
-                  <Input
-                    id="operator"
-                    value={formData.operator || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, operator: e.target.value })
-                    }
-                    placeholder="Ex: TotalEnergies"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Estado</Label>
+                  <Label>Estado *</Label>
                   <Select
-                    value={formData.status || 'available'}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                    value={formData.oilBlockStateId}
+                    onValueChange={(value) => setFormData({ ...formData, oilBlockStateId: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Seleccionar estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      {STATUSES.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          {status.label}
+                      {states.map((state) => (
+                        <SelectItem key={state.id} value={state.id}>
+                          {state.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -471,100 +1717,157 @@ export default function AdminBlocksPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="area_km2">Área (km²)</Label>
+                  <Label>Área (km²)</Label>
                   <Input
-                    id="area_km2"
                     type="number"
-                    value={formData.area_km2 || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        area_km2: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
-                    placeholder="Ex: 5000"
+                    value={formData.areaKm2 || ''}
+                    onChange={(e) => setFormData({ ...formData, areaKm2: Number(e.target.value) })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="water_depth_m">Profundidade da Água (m)</Label>
+                  <Label>Profundidade da Água (m)</Label>
                   <Input
-                    id="water_depth_m"
                     type="number"
-                    value={formData.water_depth_m || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        water_depth_m: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
-                    placeholder="Ex: 1500"
+                    value={formData.waterDepthMeters || ''}
+                    onChange={(e) => setFormData({ ...formData, waterDepthMeters: Number(e.target.value) })}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+                <Label>Descrição</Label>
                 <Textarea
-                  id="description"
-                  value={formData.description || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Informações adicionais sobre o bloco..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                 />
               </div>
 
-              {/* Geological & License Fields */}
+              {/* Geological Information */}
               <div className="border-t pt-4 mt-2">
                 <p className="text-sm font-medium text-muted-foreground mb-4">Informação Geológica e Licença</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="discovery_year">Ano de Descoberta</Label>
-                    <Input id="discovery_year" type="number" value={formData.discovery_year || ''} onChange={(e) => setFormData({ ...formData, discovery_year: e.target.value ? Number(e.target.value) : undefined })} placeholder="Ex: 1996" />
+                    <Label>Ano de Descoberta</Label>
+                    <Input
+                      type="number"
+                      value={formData.discoveryYear || ''}
+                      onChange={(e) => setFormData({ ...formData, discoveryYear: Number(e.target.value) })}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="estimated_reserves_mmboe">Reservas Estimadas (MMboe)</Label>
-                    <Input id="estimated_reserves_mmboe" type="number" value={formData.estimated_reserves_mmboe || ''} onChange={(e) => setFormData({ ...formData, estimated_reserves_mmboe: e.target.value ? Number(e.target.value) : undefined })} placeholder="Ex: 500" />
+                    <Label>Reservas Estimadas (MMboe)</Label>
+                    <Input
+                      type="number"
+                      value={formData.estimatedReservesMMboe || ''}
+                      onChange={(e) => setFormData({ ...formData, estimatedReservesMMboe: Number(e.target.value) })}
+                    />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="geological_formation">Formação Geológica</Label>
-                    <Input id="geological_formation" value={formData.geological_formation || ''} onChange={(e) => setFormData({ ...formData, geological_formation: e.target.value })} placeholder="Ex: Pinda, Albian" />
+                    <Label>Formação Geológica</Label>
+                    <Select
+                      value={formData.geologicalFormationId}
+                      onValueChange={(value) => setFormData({ ...formData, geologicalFormationId: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar formação" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formations.map((formation) => (
+                          <SelectItem key={formation.id} value={formation.id}>
+                            {formation.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reservoir_type">Tipo de Reservatório</Label>
-                    <Input id="reservoir_type" value={formData.reservoir_type || ''} onChange={(e) => setFormData({ ...formData, reservoir_type: e.target.value })} placeholder="Ex: Turbidítico, Carbonático" />
+                    <Label>Tipo de Reservatório</Label>
+                    <Select
+                      value={formData.reservoirTypeId}
+                      onValueChange={(value) => setFormData({ ...formData, reservoirTypeId: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {reservoirTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="license_start">Início da Licença</Label>
-                    <Input id="license_start" type="date" value={formData.license_start || ''} onChange={(e) => setFormData({ ...formData, license_start: e.target.value })} />
+                    <Label>Início da Licença</Label>
+                    <Input
+                      type="date"
+                      value={formData.licenseStartDate}
+                      onChange={(e) => setFormData({ ...formData, licenseStartDate: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="license_end">Fim da Licença</Label>
-                    <Input id="license_end" type="date" value={formData.license_end || ''} onChange={(e) => setFormData({ ...formData, license_end: e.target.value })} />
+                    <Label>Fim da Licença</Label>
+                    <Input
+                      type="date"
+                      value={formData.licenseEndDate}
+                      onChange={(e) => setFormData({ ...formData, licenseEndDate: e.target.value })}
+                    />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-3 gap-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="total_wells">Total de Poços</Label>
-                    <Input id="total_wells" type="number" value={formData.total_wells || ''} onChange={(e) => setFormData({ ...formData, total_wells: e.target.value ? Number(e.target.value) : undefined })} placeholder="0" />
+                    <Label>Total de Poços</Label>
+                    <Input
+                      type="number"
+                      value={formData.totalWells || ''}
+                      onChange={(e) => setFormData({ ...formData, totalWells: Number(e.target.value) })}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="active_wells">Poços Activos</Label>
-                    <Input id="active_wells" type="number" value={formData.active_wells || ''} onChange={(e) => setFormData({ ...formData, active_wells: e.target.value ? Number(e.target.value) : undefined })} placeholder="0" />
+                    <Label>Poços Activos</Label>
+                    <Input
+                      type="number"
+                      value={formData.activeWells || ''}
+                      onChange={(e) => setFormData({ ...formData, activeWells: Number(e.target.value) })}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fpso_name">Nome do FPSO</Label>
-                    <Input id="fpso_name" value={formData.fpso_name || ''} onChange={(e) => setFormData({ ...formData, fpso_name: e.target.value })} placeholder="Ex: FPSO Dália" />
+                    <Label>Nome do FPSO</Label>
+                    <Input
+                      value={formData.fpsoName}
+                      onChange={(e) => setFormData({ ...formData, fpsoName: e.target.value })}
+                      placeholder="Ex: FPSO Dália"
+                    />
                   </div>
                 </div>
+
                 <div className="space-y-2 mt-4">
-                  <Label htmlFor="geological_notes">Notas Geológicas</Label>
-                  <Textarea id="geological_notes" value={formData.geological_notes || ''} onChange={(e) => setFormData({ ...formData, geological_notes: e.target.value })} placeholder="Notas técnicas adicionais sobre a geologia do bloco..." rows={3} />
+                  <Label>Notas Geológicas</Label>
+                  <Textarea
+                    value={formData.geologicalNotes}
+                    onChange={(e) => setFormData({ ...formData, geologicalNotes: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 mt-4">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="isActive">Activo</Label>
                 </div>
               </div>
             </div>
@@ -587,7 +1890,8 @@ export default function AdminBlocksPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar Bloco</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem a certeza que deseja eliminar o bloco "{deleteBlock?.block_name}"? Esta acção não pode ser revertida.
+              Tem a certeza que deseja eliminar o bloco "{deleteBlock?.name}"?
+              Esta acção não pode ser revertida.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -596,11 +1900,8 @@ export default function AdminBlocksPage() {
               onClick={() => deleteBlock && deleteMutation.mutate(deleteBlock.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Eliminar'
-              )}
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

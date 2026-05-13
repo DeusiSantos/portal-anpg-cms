@@ -10,8 +10,66 @@ import { SectionTransition } from "@/components/layout/SectionTransition";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
+import api from "@/service/api";
+
+// Tipos da API
+interface Basin {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface OilBlockState {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface Operator {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface OilBlock {
+  id: string;
+  name: string;
+  basinId: string;
+  basinName: string;
+  oilBlockStateId: string;
+  oilBlockStateName: string;
+  operatorId: string;
+  operatorName: string;
+  areaKm2: number;
+  waterDepthMeters: number;
+  description: string;
+  discoveryYear: number;
+  estimatedReservesMMboe: number;
+  geologicalFormationId: string;
+  geologicalFormationName: string;
+  reservoirTypeId: string;
+  reservoirTypeName: string;
+  licenseStartDate: string;
+  licenseEndDate: string;
+  totalWells: number;
+  activeWells: number;
+  fpsoName: string;
+  geologicalNotes: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface OilBlocksResponse {
+  items: OilBlock[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
 
 const stepIcons = [Search, FileText, Handshake, Award];
 const advantageIcons = [Clock, Handshake, RefreshCw, Database];
@@ -42,23 +100,36 @@ export default function PermanentOfferPage() {
   const advantages = t("pages.permanentOffer.advantages", { returnObjects: true }) as Array<{ title: string; desc: string }>;
   const eligibility = t("pages.permanentOffer.eligibility", { returnObjects: true }) as string[];
 
-  const { data: blocks, isLoading } = useQuery({
+  // Buscar blocos da API
+  const { data: blocksResponse, isLoading } = useQuery({
     queryKey: ["permanent-offer-blocks"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("petroleum_blocks")
-        .select("id, block_name, basin, area_km2, status, depth_category, water_depth_m")
-        .eq("offer_type", "permanent_offer")
-        .order("block_name");
-      if (error) throw error;
-      return data;
+      const response = await api.get<OilBlocksResponse>('/operations/oil-blocks', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      // Filtrar apenas blocos ativos e disponíveis (estado "Disponível")
+      const availableBlocks = response.data.items.filter(block => 
+        block.isActive === true && 
+        block.oilBlockStateName?.toLowerCase() === 'disponível'
+      );
+      return availableBlocks;
     },
   });
 
-  const getStatusLabel = (status: string) => {
-    if (status === "available") return t("pages.permanentOffer.statusAvailable");
-    if (status === "negotiating") return t("pages.permanentOffer.statusNegotiating");
-    return status;
+  const blocks = blocksResponse || [];
+
+  const getStatusLabel = (stateName: string) => {
+    if (stateName === "Disponível") return t("pages.permanentOffer.statusAvailable");
+    if (stateName === "Negotiating") return t("pages.permanentOffer.statusNegotiating");
+    return stateName;
+  };
+
+  // Função para determinar categoria de profundidade
+  const getDepthCategory = (depthMeters: number): string => {
+    if (!depthMeters) return "—";
+    if (depthMeters < 500) return "Águas rasas";
+    if (depthMeters < 1500) return "Águas profundas";
+    return "Águas ultra-profundas";
   };
 
   return (
@@ -66,7 +137,6 @@ export default function PermanentOfferPage() {
       pageKey="permanent-offer"
       title={t("pages.permanentOffer.title")}
       subtitle={t("pages.permanentOffer.subtitle")}
-      
       breadcrumbs={[
         { label: t("nav.opportunities"), href: "/opportunities" },
         { label: t("nav.submenu.permanentOffer") },
@@ -142,7 +212,7 @@ export default function PermanentOfferPage() {
         <SectionDivider label={t("pages.permanentOffer.availableBlocksTitle")} icon={MapPin} />
       </SectionTransition>
 
-      {/* Available Blocks Table - Dynamic from DB */}
+      {/* Available Blocks Table - Dynamic from API */}
       <SectionTransition delay={0.3}>
         <section className="mb-16">
           <p className="text-muted-foreground mb-8 max-w-3xl">
@@ -166,25 +236,29 @@ export default function PermanentOfferPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {blocks?.map((block) => (
+                  {blocks.map((block) => (
                     <tr key={block.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/30 transition-colors">
-                      <td className="p-4 font-medium text-foreground">{block.block_name}</td>
-                      <td className="p-4 text-muted-foreground hidden sm:table-cell">{block.basin}</td>
-                      <td className="p-4 text-muted-foreground">{block.area_km2 ? `${Number(block.area_km2).toLocaleString()} km²` : "—"}</td>
-                      <td className="p-4 text-muted-foreground hidden md:table-cell">{block.depth_category || "—"}</td>
+                      <td className="p-4 font-medium text-foreground">{block.name}</td>
+                      <td className="p-4 text-muted-foreground hidden sm:table-cell">{block.basinName || "—"}</td>
+                      <td className="p-4 text-muted-foreground">
+                        {block.areaKm2 ? `${block.areaKm2.toLocaleString()} km²` : "—"}
+                      </td>
+                      <td className="p-4 text-muted-foreground hidden md:table-cell">
+                        {getDepthCategory(block.waterDepthMeters)}
+                      </td>
                       <td className="p-4">
                         <Badge variant="secondary" className={cn(
                           "text-xs",
-                          block.status === "available"
+                          block.oilBlockStateName === "Disponível"
                             ? "bg-status-success/10 text-status-success-foreground border-status-success/20 hover:bg-status-success/20"
                             : "bg-status-warning/10 text-status-warning-foreground border-status-warning/20 hover:bg-status-warning/20"
                         )}>
-                          {getStatusLabel(block.status || "available")}
+                          {getStatusLabel(block.oilBlockStateName)}
                         </Badge>
                       </td>
                     </tr>
                   ))}
-                  {(!blocks || blocks.length === 0) && (
+                  {blocks.length === 0 && (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-muted-foreground">
                         {t("common.noData", "Sem dados disponíveis")}

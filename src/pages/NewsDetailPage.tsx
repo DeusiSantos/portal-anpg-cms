@@ -2,8 +2,6 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { 
   Calendar, 
-  User, 
-  Tag, 
   ArrowLeft, 
   Share2, 
   Facebook, 
@@ -13,102 +11,101 @@ import {
   Newspaper,
   Loader2
 } from "lucide-react";
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionTransition } from "@/components/layout/SectionTransition";
-import { WPContent } from "@/components/wordpress/WPContent";
 import { StaggerContainer, StaggerItem } from "@/components/layout/StaggerContainer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import api from "@/service/api";
 
-// Interfaces baseadas na resposta da API
-interface Attachment {
+// Tipos da nova API
+type NewsState = 1 | 2 | 3;
+
+interface NewsContent {
+  lang: number;
+  title: string;
+  excerpt: string;
+  content: string;
+}
+
+interface NewsItem {
   id: string;
-  fileName: string;
-  storedFileName: string;
-  contentType: string;
-  size: number;
+  slug: string;
+  state: NewsState;
+  newsCategoryId: string;
+  destaqueImageUrl: string | null;
+  destaqueImagePath: string | null;
+  contents: NewsContent[];
+  createdAt: string;
+  updatedAt: string | null;
+  isDeleted: boolean;
+  isActive: boolean;
 }
 
-interface NewsDocument {
-  id: string;
-  titlePt: string;
-  slugOrURL: string | null;
-  excerptPt: string;
-  contentPt: string;
-  titleEn: string;
-  excerptEn: string;
-  contentEn: string;
-  publicationDate: string;
-  category: string;
-  contentCode: string;
-  status: string;
-  attachments: Attachment[];
+interface NewsApiResponse {
+  items: NewsItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
-interface ApiNewsResponse {
-  news: NewsDocument;
-}
-
-// Interface para o formato que o componente espera
 interface FormattedNews {
   id: string;
   title: string;
   excerpt: string;
   content: string;
   date: string;
+  rawDate: string;
   image: string;
-  category: string;
+  categoryId: string;
   slug: string;
-  author?: string;
-  tags?: string[];
-  attachmentId?: string;
+  isActive: boolean;
 }
 
-// Funções auxiliares para categorias
-const getCategoryLabel = (category: string): string => {
-  const categories: Record<string, string> = {
-    geral: "Geral",
-    producao: "Produção",
-    exploracao: "Exploração",
-    licitacao: "Licitação",
-    institucional: "Institucional",
-    sustentabilidade: "Sustentabilidade",
-  };
-  return categories[category] || category;
+// Mapeamento de categorias (a ser preenchido dinamicamente)
+const categoryNameMap: Record<string, string> = {
+  // Adicione os mapeamentos conforme necessário
 };
 
-const getCategoryColor = (category: string): string => {
+const getCategoryLabel = (categoryId: string): string => {
+  return categoryNameMap[categoryId] || "Geral";
+};
+
+const getCategoryColor = (categoryId: string): string => {
   const colors: Record<string, string> = {
-    geral: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    producao: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-    exploracao: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-    licitacao: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-    institucional: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-    sustentabilidade: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300",
+    // Adicione cores por categoria se necessário
   };
-  return colors[category] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+  return colors[categoryId] || "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
 };
 
 // Função para formatar a data
 const formatDate = (isoDateString: string): string => {
-  const date = new Date(isoDateString);
-  return date.toLocaleDateString('pt-PT', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  try {
+    const date = new Date(isoDateString);
+    return date.toLocaleDateString('pt-PT', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return 'Data não disponível';
+  }
 };
 
-// Função para obter a URL da imagem
-const getImageUrl = (newsId: string, attachment: Attachment | undefined): string => {
-  if (attachment && attachment.id) {
-    return `https://mwangobrainsa-001-site6.mtempurl.com/api/news/${newsId}/attachments/${attachment.id}`;
-  }
-  return '/placeholder-image.jpg';
+// Função para obter a URL completa da imagem
+const getFullImageUrl = (imageUrl: string | null): string => {
+  if (!imageUrl) return '/placeholder-image.jpg';
+  if (imageUrl.startsWith('http')) return imageUrl;
+  
+  const baseURL = api.defaults.baseURL?.replace('/api/', '') || '';
+  return `${baseURL}${imageUrl}`;
 };
 
 // Hook para buscar uma notícia específica
@@ -118,79 +115,80 @@ function useNewsArticle(newsId: string | undefined) {
     queryFn: async () => {
       if (!newsId) throw new Error('News ID is required');
       
-      const response = await api.get<ApiNewsResponse>(`/news/${newsId}`);
-      const document = response.data.news;
+      const response = await api.get<NewsItem>(`/news/${newsId}`);
+      const article = response.data;
       
-      // Encontrar o primeiro attachment de imagem
-      const imageAttachment = document.attachments.find(att => 
-        att.contentType?.startsWith('image/')
-      );
+      // Encontrar conteúdo em português (lang=1)
+      const portugueseContent = article.contents?.find(c => c.lang === 1);
+      const content = portugueseContent || article.contents?.[0];
       
-      // Formatar os dados para o formato esperado pelo componente
       const formattedNews: FormattedNews = {
-        id: document.id,
-        title: document.titlePt,
-        excerpt: document.excerptPt,
-        content: document.contentPt,
-        date: formatDate(document.publicationDate),
-        image: getImageUrl(document.id, imageAttachment),
-        category: document.category,
-        slug: document.slugOrURL || document.id,
-        attachmentId: imageAttachment?.id,
-        author: undefined, // A API não retorna autor no momento
-        tags: [], // A API não retorna tags no momento
+        id: article.id,
+        title: content?.title || 'Sem título',
+        excerpt: content?.excerpt || '',
+        content: content?.content || '',
+        date: formatDate(article.createdAt),
+        rawDate: article.createdAt,
+        image: getFullImageUrl(article.destaqueImageUrl),
+        categoryId: article.newsCategoryId,
+        slug: article.slug,
+        isActive: article.isActive,
       };
       
       return formattedNews;
     },
     enabled: !!newsId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 // Hook para buscar notícias relacionadas
-function useRelatedNews(currentNewsId: string, category: string, limit: number = 3) {
+function useRelatedNews(currentNewsId: string, currentCategoryId: string, limit: number = 3) {
   return useQuery({
-    queryKey: ['related-news', currentNewsId, category, limit],
+    queryKey: ['related-news', currentNewsId, currentCategoryId, limit],
     queryFn: async () => {
-      // Buscar todas as notícias e filtrar as relacionadas
-      const response = await api.get<{ news: { data: NewsDocument[] } }>('/news/published', {
+      // Buscar notícias da mesma categoria
+      const response = await api.get<NewsApiResponse>('/news', {
         params: {
-          PageIndex: 0,
-          PageSize: 50, // Buscar um número razoável para filtrar
+          page: 1,
+          pageSize: 100,
+          state: 2, // Apenas publicadas
         },
       });
       
-      const allNews = response.data.news.data;
+      const allNews = response.data.items;
       
       // Filtrar notícias da mesma categoria, excluindo a atual
       const related = allNews
-        .filter(item => item.id !== currentNewsId && item.category === category)
+        .filter(item => 
+          item.id !== currentNewsId && 
+          item.newsCategoryId === currentCategoryId &&
+          item.isActive === true
+        )
         .slice(0, limit);
       
       // Se não houver notícias da mesma categoria, pegar as mais recentes
       const fallbackNews = related.length === 0
-        ? allNews.filter(item => item.id !== currentNewsId).slice(0, limit)
+        ? allNews.filter(item => item.id !== currentNewsId && item.isActive === true).slice(0, limit)
         : related;
       
       // Formatar as notícias relacionadas
       return fallbackNews.map(item => {
-        const imageAttachment = item.attachments.find(att => 
-          att.contentType?.startsWith('image/')
-        );
+        const portugueseContent = item.contents?.find(c => c.lang === 1);
+        const content = portugueseContent || item.contents?.[0];
         
         return {
           id: item.id,
-          title: item.titlePt,
-          excerpt: item.excerptPt,
-          date: formatDate(item.publicationDate),
-          image: getImageUrl(item.id, imageAttachment),
-          category: item.category,
-          slug: item.slugOrURL || item.id,
+          title: content?.title || 'Sem título',
+          excerpt: content?.excerpt || '',
+          date: formatDate(item.createdAt),
+          image: getFullImageUrl(item.destaqueImageUrl),
+          categoryId: item.newsCategoryId,
+          slug: item.slug,
         };
       });
     },
-    enabled: !!currentNewsId && !!category,
+    enabled: !!currentNewsId && !!currentCategoryId,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -201,12 +199,11 @@ export default function NewsDetailPage() {
   const navigate = useNavigate();
 
   // Buscar a notícia atual
-  const { data: news, isLoading, isError, error } = useNewsArticle(newsId);
+  const { data: news, isLoading, isError } = useNewsArticle(newsId);
   
   // Buscar notícias relacionadas
-  const { data: relatedNews = [] } = useRelatedNews(newsId || '', news?.category || '', 3);
+  const { data: relatedNews = [] } = useRelatedNews(newsId || '', news?.categoryId || '', 3);
 
-  // Estado de loading
   if (isLoading) {
     return (
       <PageLayout
@@ -226,8 +223,7 @@ export default function NewsDetailPage() {
     );
   }
 
-  // Estado de erro
-  if (isError || !news) {
+  if (isError || !news || !news.isActive) {
     return (
       <PageLayout
         title="Notícia não encontrada"
@@ -254,7 +250,6 @@ export default function NewsDetailPage() {
     );
   }
 
-  // Funções de compartilhamento
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = news.title;
 
@@ -270,7 +265,7 @@ export default function NewsDetailPage() {
   return (
     <PageLayout
       title={news.title}
-      subtitle={getCategoryLabel(news.category)}
+      subtitle="Media"
       backgroundImage={news.image}
       icon={<Newspaper className="w-8 h-8 text-primary" />}
       breadcrumbs={[
@@ -279,7 +274,6 @@ export default function NewsDetailPage() {
       ]}
     >
       <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
         <SectionTransition>
           <Button 
             variant="ghost" 
@@ -291,13 +285,8 @@ export default function NewsDetailPage() {
           </Button>
         </SectionTransition>
 
-        {/* Article Header */}
         <SectionTransition delay={0.1}>
           <div className="mb-8">
-            <Badge className={cn("mb-4", getCategoryColor(news.category))}>
-              {getCategoryLabel(news.category)}
-            </Badge>
-            
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">
               {news.title}
             </h1>
@@ -311,7 +300,6 @@ export default function NewsDetailPage() {
           </div>
         </SectionTransition>
 
-        {/* Featured Image */}
         <SectionTransition delay={0.2}>
           <div className="rounded-2xl overflow-hidden mb-8 shadow-lg">
             <img
@@ -323,46 +311,18 @@ export default function NewsDetailPage() {
           </div>
         </SectionTransition>
 
-        {/* Article Content */}
         <SectionTransition delay={0.3}>
           <article className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-blockquote:border-primary prose-blockquote:text-muted-foreground prose-li:text-muted-foreground">
-            <div className="text-lg text-foreground font-medium mb-6 leading-relaxed">
-              {news.excerpt}
-            </div>
+            {news.excerpt && (
+              <div className="text-lg text-foreground font-medium mb-6 leading-relaxed">
+                {news.excerpt}
+              </div>
+            )}
             
-            <div className="article-content">
-              {news.content.includes('<') ? (
-                <WPContent html={news.content} maxWidth="none" />
-              ) : (
-                news.content.split('\n').map((paragraph, index) => {
-                  const trimmed = paragraph.trim();
-                  if (!trimmed) return null;
-                  
-                  if (trimmed.startsWith('## ')) {
-                    return <h2 key={index} className="text-2xl font-bold text-foreground mt-8 mb-4">{trimmed.replace('## ', '')}</h2>;
-                  }
-                  if (trimmed.startsWith('### ')) {
-                    return <h3 key={index} className="text-xl font-semibold text-foreground mt-6 mb-3">{trimmed.replace('### ', '')}</h3>;
-                  }
-                  if (trimmed.startsWith('> ')) {
-                    return <blockquote key={index} className="border-l-4 border-primary pl-4 my-6 italic text-muted-foreground bg-secondary/30 py-4 pr-4 rounded-r-lg">{trimmed.replace('> ', '')}</blockquote>;
-                  }
-                  if (trimmed.startsWith('- ')) {
-                    return <li key={index} className="text-muted-foreground ml-4 mb-2">{trimmed.replace('- ', '')}</li>;
-                  }
-                  if (/^\d+\.\s/.test(trimmed)) {
-                    return <li key={index} className="text-muted-foreground ml-4 mb-2 list-decimal">{trimmed.replace(/^\d+\.\s/, '')}</li>;
-                  }
-                  if (trimmed.startsWith('|')) return null;
-                  
-                  return <p key={index} className="text-muted-foreground mb-4 leading-relaxed">{trimmed}</p>;
-                })
-              )}
-            </div>
+            <div className="article-content" dangerouslySetInnerHTML={{ __html: news.content }} />
           </article>
         </SectionTransition>
 
-        {/* Share Section */}
         <SectionTransition delay={0.5}>
           <div className="mt-8 pt-8 border-t border-border">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -386,7 +346,6 @@ export default function NewsDetailPage() {
         </SectionTransition>
       </div>
 
-      {/* Related News */}
       {relatedNews.length > 0 && (
         <SectionTransition delay={0.6}>
           <div className="mt-16 pt-16 border-t border-border">
@@ -406,10 +365,7 @@ export default function NewsDetailPage() {
                         />
                       </div>
                       <div className="p-5 flex flex-col flex-1">
-                        <Badge className={cn("w-fit mb-3", getCategoryColor(item.category))}>
-                          {getCategoryLabel(item.category)}
-                        </Badge>
-                        <h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2 flex-1">
+                        <h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
                           {item.title}
                         </h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-auto pt-3 border-t border-border">

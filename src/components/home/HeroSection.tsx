@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, Play, BarChart3, Shield, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContentBlock } from "@/hooks/useCMSData";
-import { useHeroSlides } from "@/hooks/useHeroSlides";
+import { useHeroSlides, HeroSlideData } from "@/hooks/useHeroSlides";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import Fade from "embla-carousel-fade";
@@ -50,7 +50,8 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export function HeroSection() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === "en";
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -60,8 +61,10 @@ export function HeroSection() {
   const { data: cmsBlock } = useContentBlock("home", "hero");
   const cmsContent = cmsBlock?.content;
 
-  // Build slides: CMS hero-slide blocks or defaults
-  const { data: cmsSlides } = useHeroSlides();
+  // Buscar slides da API
+  const { data: cmsSlides, isLoading: slidesLoading } = useHeroSlides();
+  
+  // Usar slides do CMS ou fallback para defaults
   const slides = cmsSlides?.length
     ? cmsSlides.slice(0, 6)
     : defaultSlides;
@@ -103,19 +106,29 @@ export function HeroSection() {
       {/* Carousel Background */}
       <div ref={emblaRef} className="absolute inset-0 z-0 overflow-hidden">
         <div className="flex h-full">
-          {slides.map((slide: any, idx: number) => (
-            <div key={idx} className="flex-[0_0_100%] min-w-0 h-full relative">
-              <img
-                src={slide.image}
-                alt={`Slide ${idx + 1}`}
-                className="w-full h-full object-cover scale-110"
-              />
-            </div>
-          ))}
+          {slides.map((slide: HeroSlideData | { image: string }, idx: number) => {
+            const imageUrl = 'image' in slide ? slide.image : slide.image;
+            const title = 'title_pt' in slide && !isEn ? slide.title_pt : 
+                         'title_en' in slide ? (slide as HeroSlideData).title_en : '';
+            
+            return (
+              <div key={idx} className="flex-[0_0_100%] min-w-0 h-full relative">
+                <img
+                  src={imageUrl}
+                  alt={title || `Slide ${idx + 1}`}
+                  className="w-full h-full object-cover scale-110"
+                  onError={(e) => {
+                    console.error('Failed to load slide image:', imageUrl);
+                    e.currentTarget.src = '/placeholder-image.jpg';
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Overlay */}
+      {/* Rest of the component remains the same... */}
       <div className="absolute inset-0 z-[1] hero-overlay" />
 
       {/* Floating Orbs */}

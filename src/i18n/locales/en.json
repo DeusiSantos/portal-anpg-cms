@@ -569,6 +569,12 @@
         "production": "Monthly Production"
       },
       "noResults": "No news found",
+      "empty": {
+        "publications": "No publications available.",
+        "videos": "No videos available.",
+        "press": "No press clippings available.",
+        "events": "No events available."
+      },
       "resultsCount": "{{count}} article(s) found",
       "pageInfo": "Page {{current}} of {{total}} • {{count}} articles",
       "publicationsTitle": "\"Primeiro Óleo\" Newsletter",

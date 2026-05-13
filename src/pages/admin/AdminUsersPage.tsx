@@ -34,9 +34,6 @@ import { Search, Loader2, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import api from '@/service/api';
-
-
 interface User {
   id: string;
   fullName: string;
@@ -95,22 +92,9 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/users?PageIndex=0&PageSize=10');
-      
-      // Acessar a estrutura correta: response.data.users.data
-      const usersData = response.data?.users?.data || [];
-      const count = response.data?.users?.count || 0;
-      
-      setUsers(usersData);
-      setTotalCount(count);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar os utilizadores.',
-        variant: 'destructive',
-      });
+      // A API ANPG CMS (v1) não expõe CRUD de utilizadores neste Swagger — apenas auth/me, etc.
       setUsers([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -129,30 +113,12 @@ export default function AdminUsersPage() {
     setCreating(true);
 
     try {
-      await api.post('/users', {
-        fullName: newUser.fullName,
-        email: newUser.email,
-        password: newUser.password,
-        position: newUser.position,
-        phone: newUser.phone,
-        role: newUser.role,
-      });
-
       toast({
-        title: 'Utilizador criado',
-        description: `${newUser.fullName} foi adicionado com sucesso.`,
+        title: 'Indisponível',
+        description:
+          'A gestão de utilizadores não está exposta nesta versão da API. Contacte o administrador do backend.',
+        variant: 'destructive',
       });
-
-      setDialogOpen(false);
-      setNewUser({
-        fullName: '',
-        email: '',
-        password: '',
-        position: '',
-        phone: '',
-        role: '',
-      });
-      fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
@@ -210,6 +176,9 @@ export default function AdminUsersPage() {
   return (
     <AdminLayout title="Gestão de Utilizadores" subtitle="Gerir contas e permissões">
       <main className="container mx-auto px-4 py-8">
+        <p className="text-sm text-muted-foreground mb-6 max-w-3xl">
+          A API publicada (Swagger) não inclui endpoints de listagem ou criação de utilizadores — apenas autenticação (<code className="text-xs">auth/login</code>, <code className="text-xs">auth/me</code>). Os utilizadores devem ser geridos no backoffice servido pela equipa de backend ou quando esses endpoints forem adicionados.
+        </p>
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">

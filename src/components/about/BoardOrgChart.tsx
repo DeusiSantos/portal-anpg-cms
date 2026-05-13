@@ -2,8 +2,63 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Crown, ArrowRight, Shield, Briefcase } from "lucide-react";
-import { useBoardMembers, useBoardDepartments, type CMSBoardMember, type CMSBoardDepartment } from "@/hooks/useCMSData";
+import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import api, { getFullImageUrl } from "@/service/api";
+
+// Tipos da API
+interface GroupContent {
+  lang: number;
+  name: string;
+}
+
+interface CouncilGroup {
+  id: string;
+  displayOrder: number;
+  contents: GroupContent[];
+  isActive: boolean;
+}
+
+interface MemberContent {
+  lang: number;
+  title: string;
+  pelouro: string;
+  biography: string;
+  institutionalMessage: string;
+}
+
+interface CouncilMember {
+  id: string;
+  fullName: string;
+  slug: string;
+  councilMemberGroupId: string;
+  displayOrder: number;
+  photoUrl: string | null;
+  photoPath: string | null;
+  email: string | null;
+  phone: string | null;
+  officeLocation: string | null;
+  contents: MemberContent[];
+  isActive: boolean;
+}
+
+interface GroupsResponse {
+  items: CouncilGroup[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
+
+interface MembersResponse {
+  items: CouncilMember[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+}
 
 // Fallback photos from local assets
 import paulinoPhoto from "@/assets/board/paulino-jeronimo.jpg";
@@ -20,27 +75,41 @@ const photoFallbacks: Record<string, string> = {
   "alcides-andrade": alcidesPhoto,
 };
 
-const supervisionBodies = [
-  { name: "Conselho Fiscal", nameEn: "Fiscal Council" },
-  { name: "Conselho Técnico", nameEn: "Technical Council" },
-];
+// Função para obter nome do grupo em português
+const getGroupNamePt = (group: CouncilGroup): string => {
+  const ptContent = group.contents?.find(c => c.lang === 1);
+  return ptContent?.name || 'Sem nome';
+};
+
+// Função para obter conteúdo do membro em português
+const getMemberContentPt = (member: CouncilMember): MemberContent | undefined => {
+  return member.contents?.find(c => c.lang === 1);
+};
+
+// Função para obter conteúdo do membro em inglês
+const getMemberContentEn = (member: CouncilMember): MemberContent | undefined => {
+  return member.contents?.find(c => c.lang === 2);
+};
 
 function MemberCard({
   member,
   index,
   isPCA = false,
-  departments = [],
+  groupName = "",
 }: {
-  member: CMSBoardMember;
+  member: CouncilMember;
   index: number;
   isPCA?: boolean;
-  departments?: CMSBoardDepartment[];
+  groupName?: string;
 }) {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
-  const photo = member.photo_url || photoFallbacks[member.slug] || "";
+  const ptContent = getMemberContentPt(member);
+  const photo = member.photoUrl ? getFullImageUrl(member.photoUrl) : photoFallbacks[member.slug] || "";
 
+  const title = ptContent?.title || "";
+  const pelouro = ptContent?.pelouro || "";
 
   return (
     <motion.button
@@ -48,7 +117,7 @@ function MemberCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: isPCA ? 0 : 0.15 + index * 0.1 }}
-      onClick={() => navigate(`/about/board/${member.slug}`)}
+      onClick={() => navigate(`/about/board/${member.id}`)}
       className={`group relative text-left w-full cursor-pointer ${isPCA ? "max-w-sm mx-auto" : ""}`}
     >
       <div
@@ -69,7 +138,12 @@ function MemberCard({
                 ? "w-20 h-20 ring-3 ring-primary/30 shadow-lg"
                 : "w-16 h-16 ring-2 ring-border/50 group-hover:ring-primary/30 transition-all duration-300"
             }`}>
-              <img src={photo} alt={member.full_name} className={`w-full h-full object-cover ${member.slug === "ana-miala" ? "scale-110" : ""}`} />
+              <img 
+                src={photo} 
+                alt={member.fullName} 
+                className="w-full h-full object-cover"
+                onError={(e) => { e.currentTarget.src = photoFallbacks[member.slug] || ""; }}
+              />
               {isPCA && (
                 <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md z-10">
                   <Crown className="w-3.5 h-3.5 text-primary-foreground" />
@@ -78,33 +152,27 @@ function MemberCard({
             </div>
             <div className="flex-1 min-w-0">
               <h3 className={`font-bold text-foreground leading-tight ${isPCA ? "text-xl" : "text-lg"}`}>
-                {member.full_name}
+                {member.fullName}
               </h3>
               <p className={`mt-1 text-muted-foreground ${isPCA ? "text-sm" : "text-xs"}`}>
-                {member.role || member.title}
+                {title}
               </p>
             </div>
           </div>
 
-          {/* Pelouro / Departments */}
-          {departments.length > 0 && (
+          {/* Pelouro */}
+          {pelouro && (
             <div className="mt-3 pt-3 border-t border-border/40">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <Briefcase className="w-3 h-3 text-primary/60" />
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                  {isEn ? "Pelouro" : "Pelouro"}
+                  {isEn ? "Portfolio" : "Pelouro"}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {departments.map((dept) => (
-                  <span
-                    key={dept.acronym}
-                    className="inline-block px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/80 text-muted-foreground"
-                    title={isEn ? (dept.name_en || dept.name_pt) : dept.name_pt}
-                  >
-                    {dept.acronym}
-                  </span>
-                ))}
+                <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/80 text-muted-foreground">
+                  {pelouro}
+                </span>
               </div>
             </div>
           )}
@@ -168,11 +236,42 @@ function MobileConnector() {
   );
 }
 
+const supervisionBodies = [
+  { name: "Conselho Fiscal", nameEn: "Fiscal Council" },
+  { name: "Conselho Técnico", nameEn: "Technical Council" },
+];
+
 export function BoardOrgChart() {
   const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
-  const { data: members, isLoading } = useBoardMembers();
-  const { data: allDepartments } = useBoardDepartments();
+
+  // Buscar grupos
+  const { data: groupsData, isLoading: groupsLoading } = useQuery({
+    queryKey: ['council-groups-public'],
+    queryFn: async () => {
+      const response = await api.get<GroupsResponse>('/administrative-council/groups', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data.items.filter(g => g.isActive).sort((a, b) => a.displayOrder - b.displayOrder);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Buscar membros
+  const { data: membersData, isLoading: membersLoading } = useQuery({
+    queryKey: ['council-members-public'],
+    queryFn: async () => {
+      const response = await api.get<MembersResponse>('/administrative-council/members', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data.items.filter(m => m.isActive);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isLoading = groupsLoading || membersLoading;
+  const groups = groupsData || [];
+  const members = membersData || [];
 
   if (isLoading) {
     return (
@@ -187,14 +286,33 @@ export function BoardOrgChart() {
 
   if (!members || members.length === 0) return null;
 
-  const pca = members.find((m) => m.group_key === "pca") || members[0];
-  const admins = members.filter((m) => m.id !== pca.id);
-  const getDepts = (memberId: string) => allDepartments?.filter(d => d.member_id === memberId) || [];
+  // Encontrar o grupo "Conselho de Administração" ou similar para PCA
+  const boardGroup = groups.find(g => {
+    const name = getGroupNamePt(g).toLowerCase();
+    return name.includes('administração') || name.includes('board') || name.includes('conselho');
+  });
+
+  // PCA é o primeiro membro do grupo do conselho com menor displayOrder
+  const boardMembers = boardGroup 
+    ? members.filter(m => m.councilMemberGroupId === boardGroup.id).sort((a, b) => a.displayOrder - b.displayOrder)
+    : members;
+  
+  const pca = boardMembers[0] || members[0];
+  const admins = boardMembers.slice(1);
+  
+  // Outros membros de outros grupos vão para a linha inferior
+  const otherGroups = groups.filter(g => g.id !== boardGroup?.id);
+  const otherMembers = otherGroups.flatMap(g => 
+    members.filter(m => m.councilMemberGroupId === g.id).sort((a, b) => a.displayOrder - b.displayOrder)
+  );
+  
+  // Combinar admins com outros membros
+  const allOtherMembers = [...admins, ...otherMembers];
 
   return (
     <div className="space-y-0">
       <div className="flex flex-col items-center">
-        <MemberCard member={pca} index={0} isPCA departments={getDepts(pca.id)} />
+        <MemberCard member={pca} index={0} isPCA groupName={boardGroup ? getGroupNamePt(boardGroup) : ""} />
       </div>
 
       <VLine height="2.5rem" delay={0.25} gradient />
@@ -214,15 +332,27 @@ export function BoardOrgChart() {
         ))}
       </motion.div>
 
-      <VLine height="2.5rem" delay={0.5} />
-      <TreeConnector columnCount={admins.length} />
-      <MobileConnector />
+      {allOtherMembers.length > 0 && (
+        <>
+          <VLine height="2.5rem" delay={0.5} />
+          <TreeConnector columnCount={allOtherMembers.length} />
+          <MobileConnector />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {admins.map((member, index) => (
-          <MemberCard key={member.id} member={member} index={index} departments={getDepts(member.id)} />
-        ))}
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {allOtherMembers.map((member, index) => {
+              const memberGroup = groups.find(g => g.id === member.councilMemberGroupId);
+              return (
+                <MemberCard 
+                  key={member.id} 
+                  member={member} 
+                  index={index} 
+                  groupName={memberGroup ? getGroupNamePt(memberGroup) : ""}
+                />
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

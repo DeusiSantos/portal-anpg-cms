@@ -23,6 +23,7 @@ export default function AdminLoginPage() {
   const { login, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  // AdminLoginPage.tsx (apenas a parte relevante)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -43,28 +44,20 @@ export default function AdminLoginPage() {
 
     try {
       await login(email, password);
-      // Se o login for bem-sucedido, redireciona para o admin
       navigate('/admin');
     } catch (err: any) {
-      // Tratamento de erro baseado no formato da API
-      // A API retorna: { title: "Exception", status: 500, detail: "Email ou password inválidos", ... }
       const errorDetail = err?.response?.data?.detail || err?.response?.data?.message || err?.message || '';
-      const errorTitle = err?.response?.data?.title || '';
       const errorStatus = err?.response?.status;
-      
-      console.error('Erro no login:', { errorTitle, errorDetail, errorStatus });
-      
-      // Verificar se é erro de credenciais (baseado no status ou na mensagem)
-      if (errorStatus === 401 || errorStatus === 500 || 
-          errorDetail.includes('Email') || errorDetail.includes('password') ||
-          errorDetail.includes('inválidos') || errorDetail.includes('incorrectos')) {
+
+      console.error('Erro no login:', { errorDetail, errorStatus });
+
+      if (errorStatus === 401 || errorStatus === 500 ||
+        errorDetail.includes('Email') || errorDetail.includes('password') ||
+        errorDetail.includes('inválidos')) {
         setError('Email ou palavra-passe incorretos.');
-      } else if (errorDetail.includes('confirmado') || errorDetail.includes('confirmed')) {
+      } else if (errorDetail.includes('confirmado')) {
         setError('Por favor confirme o seu email antes de entrar.');
-      } else if (errorDetail.includes('encontrado') || errorDetail.includes('not found')) {
-        setError('Utilizador não encontrado.');
       } else if (errorDetail) {
-        // Mostrar a mensagem detalhada da API se disponível
         setError(errorDetail);
       } else {
         setError('Erro ao tentar fazer login. Tente novamente.');
@@ -72,11 +65,6 @@ export default function AdminLoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickAccess = (user: typeof quickAccessUsers[0]) => {
-    setEmail(user.email);
-    setPassword(user.password);
   };
 
   return (
@@ -198,9 +186,9 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-12 text-base font-semibold" 
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-semibold"
               disabled={loading || authLoading}
             >
               {loading || authLoading ? (
@@ -220,39 +208,6 @@ export default function AdminLoginPage() {
               <ForgotPasswordDialog />
             </div>
           </form>
-
-          {/* Quick Access - Apenas para desenvolvimento */}
-          {process.env.NODE_ENV !== 'production' && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Acesso Rápido (Dev)</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-
-              <div className="space-y-2">
-                {quickAccessUsers.map((user) => (
-                  <button
-                    key={user.email}
-                    type="button"
-                    onClick={() => handleQuickAccess(user)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30 transition-all text-left group"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                    </div>
-                    <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                      {user.role}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground pt-4">

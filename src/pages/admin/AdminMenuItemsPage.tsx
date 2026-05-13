@@ -21,98 +21,127 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import api from '@/service/api';
 
-// Interface para o item do menu baseada na API
+// Tipos da API
+interface MenuContent {
+  lang: number;
+  label: string;
+}
+
 interface MenuItem {
   id: string;
-  labelPt: string;
-  labelEn: string;
+  group: string;
+  url: string;
+  icon: string | null;
+  parentId: string | null;
+  displayOrder: number;
+  openInNewTab: boolean;
+  contents: MenuContent[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface MenusResponse {
+  items: MenuItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+interface MenuFormData {
+  group: string;
   url: string;
   icon: string;
-  group: string;
-  father: string;
-  order: number;
-  visibleStatus: 'Yes' | 'No';
-  newTabStatus: 'Active' | 'Inactive';
-}
-
-// Interface para a resposta da API
-interface ApiResponse {
-  menuItems: {
-    pageIndex: number;
-    pageSize: number;
-    count: number;
-    data: MenuItem[];
-  };
-}
-
-// Interface para criação/atualização - DTO da API
-interface MenuItemsDto {
-  id?: string;
+  parentId: string;
+  displayOrder: number;
+  openInNewTab: boolean;
   labelPt: string;
   labelEn: string;
-  url: string;
-  icon: string;
-  group: string;
-  father: string;
-  order: number;
-  visibleStatus: 'Yes' | 'No';
-  newTabStatus: 'Active' | 'Inactive';
+  isVisible: boolean;
 }
 
-// Interface para o wrapper que a API espera
-interface MenuItemsRequest {
-  menuItems: MenuItemsDto;
-}
+// Função para obter label por idioma
+const getLabel = (item: MenuItem, lang: number): string => {
+  const content = item.contents?.find(c => c.lang === lang);
+  return content?.label || 'Sem label';
+};
 
 export default function AdminMenuItemsPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MenuItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
-  const [formData, setFormData] = useState({
-    labelPt: '',
-    labelEn: '',
+  const [formData, setFormData] = useState<MenuFormData>({
+    group: 'main',
     url: '',
     icon: '',
-    group: 'main',
-    father: '',
-    order: 0,
-    visibleStatus: 'Yes' as 'Yes' | 'No',
-    newTabStatus: 'Inactive' as 'Active' | 'Inactive'
+    parentId: '',
+    displayOrder: 0,
+    openInNewTab: false,
+    labelPt: '',
+    labelEn: '',
+    isVisible: true,
   });
 
   // Buscar menus da API
-  const { data: response, isLoading } = useQuery({
-    queryKey: ['admin-menu-items'],
+  const { data: menusResponse, isLoading } = useQuery({
+    queryKey: ['admin-menus'],
     queryFn: async () => {
-      const { data } = await api.get<ApiResponse>('/menus');
-      console.log('API Response:', data); // Para debug
-      return data;
+      const response = await api.get<MenusResponse>('/cms/menus', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
     }
   });
 
-  // Extrair os items da estrutura correta da API
-  const items = response?.menuItems?.data || [];
+  const items = menusResponse?.items || [];
   
-  // Itens de topo (sem father/pai)
-  const topLevelItems = items.filter(i => !i.father || i.father === '');
-  
-  // Função para obter filhos
-  const getChildren = (parentId: string) => items.filter(i => i.father === parentId);
+  // Função recursiva para construir árvore de menus
+  const buildMenuTree = (parentId: string | null = null): MenuItem[] => {
+    return items
+      .filter(item => item.parentId === parentId)
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map(item => ({
+        ...item,
+        children: buildMenuTree(item.id)
+      }));
+  };
 
-  // Criar mutation - POST com wrapper menuItems
+  // Construir árvore de menus
+  const menuTree = buildMenuTree(null);
+
+  // Agrupar por grupo para exibição separada
+  const getItemsByGroup = (group: string) => {
+    return items.filter(item => item.group === group);
+  };
+
+  // Criar mutation
   const createMutation = useMutation({
-    mutationFn: async (data: MenuItemsDto) => {
-      const request: MenuItemsRequest = { menuItems: data };
-      const response = await api.post('/menus', request);
+    mutationFn: async (data: MenuFormData) => {
+      const payload = {
+        group: data.group,
+        url: data.url,
+        icon: data.icon || null,
+        parentId: data.parentId || null,
+        displayOrder: data.displayOrder,
+        openInNewTab: data.openInNewTab,
+        labelPt: data.labelPt,
+        labelEn: data.labelEn || '',
+        isVisible: data.isVisible,
+      };
+      const response = await api.post('/cms/menus', payload);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-menus'] });
       toast.success('Item criado com sucesso');
       handleClose();
     },
@@ -122,20 +151,25 @@ export default function AdminMenuItemsPage() {
     }
   });
 
-  // Atualizar mutation - PUT com wrapper menuItems
+  // Atualizar mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<MenuItemsDto> }) => {
-      const request: MenuItemsRequest = {
-        menuItems: {
-          ...data,
-          id: id
-        } as MenuItemsDto
-      };
-      const response = await api.put('/menus', request);
+    mutationFn: async ({ id, data }: { id: string; data: Partial<MenuFormData> }) => {
+      const payload: any = {};
+      if (data.group !== undefined) payload.group = data.group;
+      if (data.url !== undefined) payload.url = data.url;
+      if (data.icon !== undefined) payload.icon = data.icon || null;
+      if (data.parentId !== undefined) payload.parentId = data.parentId || null;
+      if (data.displayOrder !== undefined) payload.displayOrder = data.displayOrder;
+      if (data.openInNewTab !== undefined) payload.openInNewTab = data.openInNewTab;
+      if (data.labelPt !== undefined) payload.labelPt = data.labelPt;
+      if (data.labelEn !== undefined) payload.labelEn = data.labelEn || '';
+      if (data.isVisible !== undefined) payload.isVisible = data.isVisible;
+      
+      const response = await api.patch(`/cms/menus/${id}`, payload);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-menus'] });
       toast.success('Item actualizado com sucesso');
       handleClose();
     },
@@ -145,14 +179,14 @@ export default function AdminMenuItemsPage() {
     }
   });
 
-  // Deletar mutation - DELETE com ID
+  // Deletar mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/menus/${id}`);
+      const response = await api.delete(`/cms/menus/${id}`);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-menu-items'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-menus'] });
       toast.success('Item eliminado com sucesso');
       setDeleteItem(null);
     },
@@ -166,24 +200,30 @@ export default function AdminMenuItemsPage() {
     setIsDialogOpen(false);
     setEditing(null);
     setFormData({
-      labelPt: '', labelEn: '', url: '', icon: '',
-      group: 'main', father: '', order: 0,
-      visibleStatus: 'Yes', newTabStatus: 'Inactive'
+      group: 'main',
+      url: '',
+      icon: '',
+      parentId: '',
+      displayOrder: 0,
+      openInNewTab: false,
+      labelPt: '',
+      labelEn: '',
+      isVisible: true,
     });
   };
 
   const handleEdit = (item: MenuItem) => {
     setEditing(item);
     setFormData({
-      labelPt: item.labelPt,
-      labelEn: item.labelEn || '',
-      url: item.url || '',
-      icon: item.icon || '',
       group: item.group,
-      father: item.father || '',
-      order: item.order,
-      visibleStatus: item.visibleStatus,
-      newTabStatus: item.newTabStatus
+      url: item.url,
+      icon: item.icon || '',
+      parentId: item.parentId || '',
+      displayOrder: item.displayOrder,
+      openInNewTab: item.openInNewTab,
+      labelPt: getLabel(item, 1),
+      labelEn: getLabel(item, 2),
+      isVisible: item.isActive,
     });
     setIsDialogOpen(true);
   };
@@ -195,26 +235,61 @@ export default function AdminMenuItemsPage() {
       return;
     }
 
-    const submitData: MenuItemsDto = {
-      labelPt: formData.labelPt,
-      labelEn: formData.labelEn,
-      url: formData.url,
-      icon: formData.icon,
-      group: formData.group,
-      father: formData.father,
-      order: formData.order,
-      visibleStatus: formData.visibleStatus,
-      newTabStatus: formData.newTabStatus
-    };
-
     if (editing) {
-      updateMutation.mutate({ id: editing.id, data: submitData });
+      updateMutation.mutate({ id: editing.id, data: formData });
     } else {
-      createMutation.mutate(submitData);
+      createMutation.mutate(formData);
     }
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  // Opções de grupo
+  const groupOptions = [
+    { value: 'main', label: 'Principal' },
+    { value: 'footer-institutional', label: 'Rodapé - Institucional' },
+    { value: 'footer-investors', label: 'Rodapé - Investidores' },
+    { value: 'Administração', label: 'Administração' },
+  ];
+
+  // Componente para renderizar item de menu recursivamente
+  const renderMenuItem = (item: MenuItem, level: number = 0, isChild: boolean = false) => {
+    const children = items.filter(child => child.parentId === item.id);
+    const indent = level * 20;
+    
+    return (
+      <React.Fragment key={item.id}>
+        <TableRow className={isChild ? "bg-muted/30" : ""}>
+          <TableCell className="font-medium" style={{ paddingLeft: indent + 16 }}>
+            {level > 0 && "↳ "}{getLabel(item, 1)}
+          </TableCell>
+          <TableCell>{getLabel(item, 2) || '—'}</TableCell>
+          <TableCell className="flex items-center gap-1">
+            {item.url || '—'}
+            {item.openInNewTab && <ExternalLink className="h-3 w-3" />}
+          </TableCell>
+          <TableCell>{item.icon || '—'}</TableCell>
+          <TableCell>{item.displayOrder}</TableCell>
+          <TableCell>
+            <Badge variant={item.isActive ? 'default' : 'secondary'}>
+              {item.isActive ? 'Activo' : 'Inactivo'}
+            </Badge>
+          </TableCell>
+          <TableCell className="text-right">
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+        {children.map(child => renderMenuItem(child, level + 1, true))}
+      </React.Fragment>
+    );
+  };
 
   return (
     <AdminLayout title="Menu / Navegação" subtitle="Gerir itens de menu do site">
@@ -237,43 +312,67 @@ export default function AdminMenuItemsPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Label (PT)</TableHead>
-                      <TableHead>Label (EN)</TableHead>
-                      <TableHead>URL</TableHead>
-                      <TableHead>Grupo</TableHead>
-                      <TableHead>Ordem</TableHead>
-                      <TableHead>Visível</TableHead>
-                      <TableHead className="text-right">Acções</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {topLevelItems.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          Nenhum item de menu encontrado
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      topLevelItems.map(item => {
-                        const children = getChildren(item.id);
-                        return (
-                          <React.Fragment key={item.id}>
-                            <TableRow>
-                              <TableCell className="font-medium">{item.labelPt}</TableCell>
-                              <TableCell>{item.labelEn || '—'}</TableCell>
-                              <TableCell className="flex items-center gap-1">
-                                {item.url || '—'}
-                                {item.newTabStatus === 'Active' && <ExternalLink className="h-3 w-3" />}
-                              </TableCell>
-                              <TableCell><Badge variant="outline">{item.group}</Badge></TableCell>
-                              <TableCell>{item.order}</TableCell>
+              <div className="space-y-8">
+                {/* Menu Principal */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Menu Principal</h3>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Label (PT)</TableHead>
+                          <TableHead>Label (EN)</TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead>Ícone</TableHead>
+                          <TableHead>Ordem</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead className="text-right">Acções</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getItemsByGroup('main')
+                          .filter(item => !item.parentId)
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map(item => renderMenuItem(item, 0, false))}
+                        {getItemsByGroup('main').filter(item => !item.parentId).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                              Nenhum item no menu principal
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                {/* Rodapé - Institucional */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Rodapé - Institucional</h3>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Label (PT)</TableHead>
+                          <TableHead>Label (EN)</TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead>Ordem</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead className="text-right">Acções</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getItemsByGroup('footer-institutional')
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map(item => (
+                            <TableRow key={item.id}>
+                              <TableCell className="font-medium">{getLabel(item, 1)}</TableCell>
+                              <TableCell>{getLabel(item, 2) || '—'}</TableCell>
+                              <TableCell>{item.url || '—'}</TableCell>
+                              <TableCell>{item.displayOrder}</TableCell>
                               <TableCell>
-                                <Badge variant={item.visibleStatus === 'Yes' ? 'default' : 'secondary'}>
-                                  {item.visibleStatus === 'Yes' ? 'Sim' : 'Não'}
+                                <Badge variant={item.isActive ? 'default' : 'secondary'}>
+                                  {item.isActive ? 'Activo' : 'Inactivo'}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
@@ -287,36 +386,127 @@ export default function AdminMenuItemsPage() {
                                 </div>
                               </TableCell>
                             </TableRow>
-                            {children.map(child => (
-                              <TableRow key={child.id} className="bg-muted/30">
-                                <TableCell className="pl-8">↳ {child.labelPt}</TableCell>
-                                <TableCell>{child.labelEn || '—'}</TableCell>
-                                <TableCell>{child.url || '—'}</TableCell>
-                                <TableCell><Badge variant="outline">{child.group}</Badge></TableCell>
-                                <TableCell>{child.order}</TableCell>
+                          ))}
+                        {getItemsByGroup('footer-institutional').length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                              Nenhum item no rodapé institucional
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                {/* Rodapé - Investidores */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Rodapé - Investidores</h3>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Label (PT)</TableHead>
+                          <TableHead>Label (EN)</TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead>Ordem</TableHead>
+                          <TableHead>Estado</TableHead>
+                          <TableHead className="text-right">Acções</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getItemsByGroup('footer-investors')
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map(item => (
+                            <TableRow key={item.id}>
+                              <TableCell className="font-medium">{getLabel(item, 1)}</TableCell>
+                              <TableCell>{getLabel(item, 2) || '—'}</TableCell>
+                              <TableCell>{item.url || '—'}</TableCell>
+                              <TableCell>{item.displayOrder}</TableCell>
+                              <TableCell>
+                                <Badge variant={item.isActive ? 'default' : 'secondary'}>
+                                  {item.isActive ? 'Activo' : 'Inactivo'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        {getItemsByGroup('footer-investors').length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                              Nenhum item no rodapé de investidores
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                {/* Outros grupos */}
+                {Object.keys(items.reduce((acc, item) => {
+                  if (!acc[item.group] && !['main', 'footer-institutional', 'footer-investors'].includes(item.group)) {
+                    acc[item.group] = true;
+                  }
+                  return acc;
+                }, {} as Record<string, boolean>)).map(group => (
+                  <div key={group}>
+                    <h3 className="text-lg font-semibold mb-4 capitalize">{group}</h3>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Label (PT)</TableHead>
+                            <TableHead>Label (EN)</TableHead>
+                            <TableHead>URL</TableHead>
+                            <TableHead>Ícone</TableHead>
+                            <TableHead>Ordem</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead className="text-right">Acções</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {items
+                            .filter(item => item.group === group)
+                            .sort((a, b) => a.displayOrder - b.displayOrder)
+                            .map(item => (
+                              <TableRow key={item.id}>
+                                <TableCell className="font-medium">{getLabel(item, 1)}</TableCell>
+                                <TableCell>{getLabel(item, 2) || '—'}</TableCell>
+                                <TableCell>{item.url || '—'}</TableCell>
+                                <TableCell>{item.icon || '—'}</TableCell>
+                                <TableCell>{item.displayOrder}</TableCell>
                                 <TableCell>
-                                  <Badge variant={child.visibleStatus === 'Yes' ? 'default' : 'secondary'}>
-                                    {child.visibleStatus === 'Yes' ? 'Sim' : 'Não'}
+                                  <Badge variant={item.isActive ? 'default' : 'secondary'}>
+                                    {item.isActive ? 'Activo' : 'Inactivo'}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(child)}>
+                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
                                       <Pencil className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setDeleteItem(child)}>
+                                    <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}>
                                       <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                   </div>
                                 </TableCell>
                               </TableRow>
                             ))}
-                          </React.Fragment>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             <div className="mt-4 text-sm text-muted-foreground">
@@ -352,6 +542,7 @@ export default function AdminMenuItemsPage() {
                   />
                 </div>
               </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>URL</Label>
@@ -370,7 +561,8 @@ export default function AdminMenuItemsPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Grupo</Label>
                   <Select
@@ -381,57 +573,63 @@ export default function AdminMenuItemsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="main">Principal</SelectItem>
-                      <SelectItem value="footer">Rodapé</SelectItem>
-                      <SelectItem value="utility">Utilidades</SelectItem>
+                      {groupOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Item Pai</Label>
                   <Select
-                    value={formData.father || 'none'}
-                    onValueChange={v => setFormData({ ...formData, father: v === 'none' ? '' : v })}
+                    value={formData.parentId || 'none'}
+                    onValueChange={v => setFormData({ ...formData, parentId: v === 'none' ? '' : v })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— Nenhum (nível superior) —</SelectItem>
-                      {topLevelItems
-                        .filter(i => i.id !== editing?.id)
+                      {items
+                        .filter(i => i.id !== editing?.id && i.group === formData.group)
                         .map(i => (
                           <SelectItem key={i.id} value={i.id}>
-                            {i.labelPt}
+                            {getLabel(i, 1)}
                           </SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Ordem</Label>
                   <Input
                     type="number"
-                    value={formData.order}
-                    onChange={e => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                    value={formData.displayOrder}
+                    onChange={e => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 pt-6">
+                    <Switch
+                      checked={formData.openInNewTab}
+                      onCheckedChange={v => setFormData({ ...formData, openInNewTab: v })}
+                    />
+                    Abrir em nova aba
+                  </Label>
                 </div>
               </div>
-              <div className="flex gap-6">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={formData.visibleStatus === 'Yes'}
-                    onCheckedChange={v => setFormData({ ...formData, visibleStatus: v ? 'Yes' : 'No' })}
-                  />
-                  <Label>Visível no menu</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={formData.newTabStatus === 'Active'}
-                    onCheckedChange={v => setFormData({ ...formData, newTabStatus: v ? 'Active' : 'Inactive' })}
-                  />
-                  <Label>Abrir em nova aba</Label>
-                </div>
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.isVisible}
+                  onCheckedChange={v => setFormData({ ...formData, isVisible: v })}
+                />
+                <Label>Visível no menu</Label>
               </div>
             </div>
             <DialogFooter>
@@ -453,10 +651,10 @@ export default function AdminMenuItemsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Eliminação</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja eliminar o item "{deleteItem?.labelPt}"?
-              {getChildren(deleteItem?.id || '').length > 0 && (
+              Tem certeza que deseja eliminar o item "{deleteItem && getLabel(deleteItem, 1)}"?
+              {deleteItem && items.filter(child => child.parentId === deleteItem.id).length > 0 && (
                 <span className="block mt-2 text-destructive">
-                  Atenção: Este item tem sub-itens que ficarão sem pai!
+                  Atenção: Este item tem {items.filter(child => child.parentId === deleteItem.id).length} sub-item(ns) que ficarão sem pai!
                 </span>
               )}
             </AlertDialogDescription>

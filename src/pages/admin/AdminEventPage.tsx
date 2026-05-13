@@ -6,70 +6,63 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
+  Pagination, PaginationContent, PaginationEllipsis, PaginationItem,
+  PaginationLink, PaginationNext, PaginationPrevious
 } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Pencil, Trash2, Eye, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { pt } from 'date-fns/locale';
+import { Plus, Search, Pencil, Trash2, Eye, Loader2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/service/api';
 
-// Tipos da nova API
-type NewsState = 1 | 2 | 3; // 1 = Draft, 2 = Published, 3 = Archived
+// Tipos da API
+type EventStatus = 1 | 2 | 3; // 1 = Draft, 2 = Published, 3 = Archived
 
-interface NewsContent {
-  lang: number; // 1 = Portuguese, 2 = English
-  title: string;
-  excerpt: string;
-  content: string;
+interface EventCategoryContent {
+  lang: number;
+  name: string;
 }
 
-interface NewsItem {
+interface EventCategory {
   id: string;
   slug: string;
-  state: NewsState;
-  newsCategoryId: string;
-  destaqueImageUrl: string;
-  destaqueImagePath: string;
-  contents: NewsContent[];
-  createdAt: string;
-  createdBy: string | null;
-  updatedAt: string | null;
-  updatedBy: string | null;
-  isDeleted: boolean;
+  displayOrder: number;
+  contents: EventCategoryContent[];
   isActive: boolean;
-  deletedAt: string | null;
-  deletedBy: string | null;
 }
 
-interface NewsResponse {
-  items: NewsItem[];
+interface EventContent {
+  lang: number;
+  title: string;
+  description: string;
+  body: string;
+}
+
+interface EventItem {
+  id: string;
+  slug: string;
+  startAt: string;
+  endAt: string;
+  location: string;
+  mapUrl: string;
+  registrationUrl: string;
+  featuredImageUrl: string;
+  categoryId: string;
+  status: EventStatus;
+  contents: EventContent[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface EventsResponse {
+  items: EventItem[];
   page: number;
   pageSize: number;
   totalCount: number;
@@ -79,134 +72,131 @@ interface NewsResponse {
   hasPreviousPage: boolean;
 }
 
-interface NewsCategory {
-  id: string;
-  name: string;
-  isActive: boolean;
-}
-
-const STATE_LABELS: Record<NewsState, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+// STATUS CONFIG
+const STATUS_CONFIG: Record<EventStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   1: { label: 'Rascunho', variant: 'secondary' },
   2: { label: 'Publicado', variant: 'default' },
   3: { label: 'Arquivado', variant: 'outline' },
 };
 
-const STATE_OPTIONS = [
+const STATUS_OPTIONS = [
   { value: 'all', label: 'Todos os estados' },
   { value: '1', label: 'Rascunho' },
   { value: '2', label: 'Publicado' },
   { value: '3', label: 'Arquivado' },
 ];
 
-const PAGE_SIZE = 10;
+// Função para obter conteúdo por idioma
+const getContentByLang = (contents: EventContent[], lang: number): EventContent | undefined => {
+  return contents?.find(c => c.lang === lang);
+};
 
-export default function AdminNewsPage() {
+export default function AdminEventPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [deleteArticle, setDeleteArticle] = useState<NewsItem | null>(null);
+  const [deleteItem, setDeleteItem] = useState<EventItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [stateFilter, setStateFilter] = useState<string>('all'); // Filtro por estado
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Buscar categorias para mostrar o nome
-  const { data: categories } = useQuery({
-    queryKey: ['news-categories'],
+  // Buscar categorias
+  const { data: categoriesData } = useQuery({
+    queryKey: ['event-categories'],
     queryFn: async () => {
-      const response = await api.get<{ items: NewsCategory[] }>('/news-categories', {
-        params: { Page: 1, PageSize: 100 }
+      const response = await api.get<{ items: EventCategory[] }>('/event-categories', {
+        params: { page: 1, pageSize: 100 }
       });
-      return response.data.items;
-    },
-  });
-
-  const getCategoryName = (categoryId: string) => {
-    const category = categories?.find(cat => cat.id === categoryId);
-    return category?.name || categoryId;
-  };
-
-  // Fetch paginated news articles
-  const { data: newsData, isLoading } = useQuery({
-    queryKey: ['admin-news', currentPage, search, stateFilter],
-    queryFn: async () => {
-      const params: Record<string, string | number> = {
-        Page: currentPage,
-        PageSize: PAGE_SIZE,
-      };
-      
-      if (search) {
-        params.Search = search;
-      }
-      
-      if (stateFilter && stateFilter !== 'all') {
-        params.State = Number(stateFilter);
-      }
-      
-      const response = await api.get<NewsResponse>('/news', { params });
       return response.data;
     },
   });
 
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/news/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-news'] });
-      toast.success('Notícia eliminada com sucesso');
-      setDeleteArticle(null);
-    },
-    onError: (error: any) => {
-      toast.error(`Erro ao eliminar: ${error.response?.data?.message || error.message}`);
+  // Buscar eventos
+  const { data: eventsData, isLoading } = useQuery({
+    queryKey: ['admin-events', currentPage, search, statusFilter],
+    queryFn: async () => {
+      const params: Record<string, string | number> = {
+        page: currentPage,
+        pageSize: 10,
+      };
+      
+      if (search) {
+        params.search = search;
+      }
+      
+      if (statusFilter && statusFilter !== 'all') {
+        params.status = Number(statusFilter);
+      }
+      
+      const response = await api.get<EventsResponse>('/events', { params });
+      return response.data;
     },
   });
 
-  const totalCount = newsData?.totalCount || 0;
-  const articles = newsData?.items || [];
-  const totalPages = newsData?.totalPages || 1;
+  const categories = categoriesData?.items || [];
+  const events = eventsData?.items || [];
+  const totalCount = eventsData?.totalCount || 0;
+  const totalPages = eventsData?.totalPages || 1;
 
-  // Reset to page 1 when search or filter changes
+  // Eliminar evento
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/events/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+      toast.success('Evento eliminado com sucesso');
+      setDeleteItem(null);
+    },
+    onError: (error: any) => {
+      console.error('Erro ao eliminar evento:', error);
+      toast.error(error.response?.data?.message || 'Erro ao eliminar evento');
+    },
+  });
+
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setCurrentPage(1);
   };
 
-  const handleStateFilterChange = (value: string) => {
-    setStateFilter(value);
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
     setCurrentPage(1);
   };
 
-  const getStatusBadge = (state: NewsState) => {
-    const config = STATE_LABELS[state];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const getCategoryName = (categoryId: string): string => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return 'Sem categoria';
+    const ptContent = category.contents?.find(c => c.lang === 1);
+    return ptContent?.name || categoryId;
   };
 
-  const getContentTitle = (contents: NewsContent[]) => {
-    const portugueseContent = contents.find(c => c.lang === 1);
-    return portugueseContent?.title || contents[0]?.title || 'Sem título';
+  const getStatusBadge = (status: EventStatus) => {
+    const config = STATUS_CONFIG[status];
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), "d MMM yyyy", { locale: pt });
+      return new Date(dateString).toLocaleDateString('pt-PT');
     } catch {
       return 'Data inválida';
     }
   };
 
   return (
-    <AdminLayout title="Notícias" subtitle="Gerir artigos e publicações">
+    <AdminLayout title="Eventos" subtitle="Gerir eventos e agenda">
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>Notícias</CardTitle>
-                <CardDescription>Gerir artigos e comunicados de imprensa</CardDescription>
+                <CardTitle>Eventos</CardTitle>
+                <CardDescription>Gerir eventos, conferências e actividades da ANPG</CardDescription>
               </div>
               <Button asChild>
-                <Link to="/admin/news/new">
+                <Link to="/admin/events/new">
                   <Plus className="h-4 w-4 mr-2" />
-                  Nova Notícia
+                  Novo Evento
                 </Link>
               </Button>
             </div>
@@ -217,7 +207,7 @@ export default function AdminNewsPage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Pesquisar notícias..."
+                  placeholder="Pesquisar eventos..."
                   value={search}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10"
@@ -225,12 +215,12 @@ export default function AdminNewsPage() {
               </div>
               
               <div className="flex items-center gap-4">
-                <Select value={stateFilter} onValueChange={handleStateFilterChange}>
+                <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Todos os estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATE_OPTIONS.map((option) => (
+                    {STATUS_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -239,7 +229,7 @@ export default function AdminNewsPage() {
                 </Select>
                 
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  {totalCount} {totalCount === 1 ? 'notícia' : 'notícias'}
+                  {totalCount} {totalCount === 1 ? 'evento' : 'eventos'}
                 </span>
               </div>
             </div>
@@ -255,67 +245,71 @@ export default function AdminNewsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Título (PT)</TableHead>
-                      <TableHead>Slug</TableHead>
-                      <TableHead>Estado</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Local</TableHead>
                       <TableHead>Categoria</TableHead>
-                      <TableHead>Data de Criação</TableHead>
+                      <TableHead>Estado</TableHead>
                       <TableHead>Activo</TableHead>
                       <TableHead className="text-right">Acções</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {articles.length === 0 ? (
+                    {events.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          {search || stateFilter !== 'all' ? 'Nenhuma notícia encontrada com os filtros aplicados.' : 'Ainda não existem notícias. Crie a primeira!'}
+                          {search || statusFilter !== 'all' ? 'Nenhum evento encontrado com os filtros aplicados.' : 'Ainda não existem eventos. Crie o primeiro!'}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      articles.map((article) => (
-                        <TableRow key={article.id}>
-                          <TableCell className="font-medium max-w-[300px] truncate">
-                            {getContentTitle(article.contents)}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                            {article.slug}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(article.state)}</TableCell>
-                          <TableCell>
-                            {getCategoryName(article.newsCategoryId)}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {formatDate(article.createdAt)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={article.isActive ? 'default' : 'secondary'}>
-                              {article.isActive ? 'Sim' : 'Não'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {article.state === 2 && article.isActive && (
+                      events.map((event) => {
+                        const ptContent = getContentByLang(event.contents, 1);
+                        return (
+                          <TableRow key={event.id}>
+                            <TableCell className="font-medium max-w-[250px] truncate">
+                              {ptContent?.title || 'Sem título'}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-sm">{formatDate(event.startAt)}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="max-w-[150px] truncate">
+                              {event.location || '—'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {getCategoryName(event.categoryId)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(event.status)}</TableCell>
+                            <TableCell>
+                              <Badge variant={event.isActive ? 'default' : 'secondary'}>
+                                {event.isActive ? 'Sim' : 'Não'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                {event.status === 2 && event.isActive && (
+                                  <Button variant="ghost" size="icon" asChild>
+                                    <Link to={`/events/${event.id}`} target="_blank">
+                                      <Eye className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                )}
                                 <Button variant="ghost" size="icon" asChild>
-                                  <Link to={`/news/${article.slug}`} target="_blank">
-                                    <Eye className="h-4 w-4" />
+                                  <Link to={`/admin/events/${event.id}`}>
+                                    <Pencil className="h-4 w-4" />
                                   </Link>
                                 </Button>
-                              )}
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link to={`/admin/news/${article.id}`}>
-                                  <Pencil className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDeleteArticle(article)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                                <Button variant="ghost" size="icon" onClick={() => setDeleteItem(event)}>
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -388,19 +382,22 @@ export default function AdminNewsPage() {
       </main>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteArticle} onOpenChange={() => setDeleteArticle(null)}>
+      <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar Notícia</AlertDialogTitle>
+            <AlertDialogTitle>Eliminar Evento</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem a certeza que deseja eliminar "{deleteArticle && getContentTitle(deleteArticle.contents)}"?
+              Tem a certeza que deseja eliminar o evento "{deleteItem && (() => {
+                const ptContent = getContentByLang(deleteItem.contents, 1);
+                return ptContent?.title || 'Sem título';
+              })()}"?
               Esta acção não pode ser revertida.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteArticle && deleteMutation.mutate(deleteArticle.id)}
+              onClick={() => deleteItem && deleteMutation.mutate(deleteItem.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

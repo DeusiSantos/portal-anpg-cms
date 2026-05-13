@@ -15,17 +15,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-function getRoleBadge(role: string) {
+function getRoleBadge(roleCode: string) {
   const roleLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
-    admin: { label: 'Admin', variant: 'destructive' },
-    contentmanager: { label: 'Conteúdo', variant: 'default' },
-    operationsmanager: { label: 'Operações', variant: 'secondary' },
-    investorsmanager: { label: 'Investidores', variant: 'outline' },
-    editor_tecnico: { label: 'Técnico', variant: 'secondary' },
-    editor_comunicacao: { label: 'Comunicação', variant: 'default' },
+    ADMIN: { label: 'Admin', variant: 'destructive' },
+    CONTENT_MANAGER: { label: 'Conteúdo', variant: 'default' },
+    OPERATIONS_MANAGER: { label: 'Operações', variant: 'secondary' },
+    INVESTORS_MANAGER: { label: 'Investidores', variant: 'outline' },
   };
-  const key = role.toLowerCase();
-  return roleLabels[key] || { label: role, variant: 'outline' as const };
+  return roleLabels[roleCode] || { label: roleCode, variant: 'outline' as const };
 }
 
 interface AdminLayoutProps {
@@ -35,12 +32,13 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
-  const { userAllData, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   
   // Obter as iniciais do utilizador
-  const initials = userAllData?.fullName
-    ? userAllData.fullName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
-    : 'U';
+  const fullName = user ? `${user.firstName} ${user.lastName}` : '';
+  const initials = fullName
+    ? fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
     <SidebarProvider>
@@ -76,7 +74,7 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs transition-colors group-hover:bg-primary/20">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="hidden md:flex flex-col items-start gap-0.5 text-left transition-opacity">
-                      <span className="text-sm font-semibold leading-none text-foreground/90 group-hover:text-foreground">{userAllData?.fullName ?? '—'}</span>
+                      <span className="text-sm font-semibold leading-none text-foreground/90 group-hover:text-foreground">{fullName || user?.email || '—'}</span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity ml-1" />
                   </Button>
@@ -84,20 +82,20 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
                 <DropdownMenuContent className="w-64 border-border/50 shadow-lg rounded-xl" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal p-3">
                     <div className="flex flex-col space-y-2">
-                      <p className="text-sm font-semibold leading-none">{userAllData?.fullName ?? 'Utilizador desconhecido'}</p>
+                      <p className="text-sm font-semibold leading-none">{fullName || 'Utilizador'}</p>
                       <p className="text-xs leading-none text-muted-foreground font-medium">
-                        {userAllData?.email ?? ''}
+                        {user?.email || ''}
                       </p>
-                      {userAllData?.roles && userAllData.roles.length > 0 && (
+                      {user?.roleCode && (
                         <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border/40">
-                          {userAllData.roles.map((r: string, i: number) => {
-                            const { label, variant } = getRoleBadge(r);
+                          {(() => {
+                            const { label, variant } = getRoleBadge(user.roleCode);
                             return (
-                              <Badge key={i} variant={variant} className="text-[10px] px-2 py-0.5 shadow-none font-medium capitalize">
+                              <Badge key={user.roleCode} variant={variant} className="text-[10px] px-2 py-0.5 shadow-none font-medium capitalize">
                                 {label}
                               </Badge>
                             );
-                          })}
+                          })()}
                         </div>
                       )}
                     </div>

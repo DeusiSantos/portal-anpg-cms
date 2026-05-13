@@ -13,32 +13,34 @@ import { getIcon } from "@/lib/iconMap";
 import api from "@/service/api";
 import { useQuery } from "@tanstack/react-query";
 
-interface LucideIcon {
-  // Tipo simplificado para o ícone
+// Interface do item do menu baseada na nova API
+interface MenuContent {
+  lang: number;
+  label: string;
 }
 
-// Interface do item do menu baseada na API retornada
-interface MenuItemFromAPI {
+interface MenuItem {
   id: string;
-  labelPt: string;
-  labelEn: string;
-  url: string;
-  icon: string;
   group: string;
-  father: string;
-  order: number;
-  visibleStatus: 'Yes' | 'No';
-  newTabStatus: 'Active' | 'Inactive';
+  url: string;
+  icon: string | null;
+  parentId: string | null;
+  displayOrder: number;
+  openInNewTab: boolean;
+  contents: MenuContent[];
+  isActive: boolean;
+  createdAt: string;
 }
 
-// Interface da resposta da API
-interface ApiMenuResponse {
-  menuItems: {
-    pageIndex: number;
-    pageSize: number;
-    count: number;
-    data: MenuItemFromAPI[];
-  };
+interface MenusResponse {
+  items: MenuItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 // Interface para navegação
@@ -57,6 +59,77 @@ interface NavItem {
   megaMenuColumns?: 1 | 2 | 3;
 }
 
+// Função para obter label do menu por idioma
+const getMenuLabel = (item: MenuItem, lang: number): string => {
+  const content = item.contents?.find(c => c.lang === lang);
+  return content?.label || 'Sem label';
+};
+
+// Função para construir hierarquia de menus
+const buildMenuHierarchy = (items: MenuItem[], isEn: boolean): NavItem[] => {
+  if (!items || items.length === 0) return [];
+  
+  const lang = isEn ? 2 : 1;
+  
+  // CORRIGIDO: Filtrar itens do grupo "header" (não "main") e ativos
+  const headerItems = items.filter(item => 
+    item.group === 'header' && item.isActive === true
+  );
+  
+  console.log('📋 Header items filtrados:', headerItems);
+  
+  if (headerItems.length === 0) return [];
+  
+  // Itens de topo (sem parentId)
+  const topLevelItems = headerItems
+    .filter(item => !item.parentId)
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+  
+  console.log('📋 Top level items:', topLevelItems);
+  
+  if (topLevelItems.length === 0) return [];
+  
+  // Função para obter filhos de um item
+  const getChildren = (parentId: string): MenuItem[] => {
+    return headerItems
+      .filter(item => item.parentId === parentId)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+  };
+  
+  // Construir navegação
+  const navigation: NavItem[] = topLevelItems.map(item => {
+    const children = getChildren(item.id);
+    const hasChildren = children.length > 0;
+    
+    console.log(`📋 Item "${getMenuLabel(item, lang)}" tem ${children.length} filhos`);
+    
+    // Determinar número de colunas baseado na quantidade de filhos
+    const columns = hasChildren 
+      ? (children.length >= 6 ? 3 : children.length >= 3 ? 2 : 1)
+      : 1;
+    
+    return {
+      label: getMenuLabel(item, lang),
+      href: item.url || '#',
+      megaMenuColumns: hasChildren ? (columns as 1 | 2 | 3) : undefined,
+      submenu: hasChildren 
+        ? children.map(child => {
+            const Icon = getIcon(child.icon);
+            return {
+              label: getMenuLabel(child, lang),
+              href: child.url || '#',
+              icon: Icon || Building2,
+            };
+          })
+        : undefined,
+    };
+  });
+  
+  console.log('✅ Navegação construída:', navigation);
+  
+  return navigation;
+};
+
 // Fallback menu quando não há dados da API
 const FALLBACK_MENU: NavItem[] = [
   { label: "Institucional", href: "/about" },
@@ -66,75 +139,6 @@ const FALLBACK_MENU: NavItem[] = [
   { label: "Contactos", href: "/contacts" },
 ];
 
-function buildMenuHierarchy(items: MenuItemFromAPI[]): MenuItemFromAPI[] {
-  if (!items || items.length === 0) return [];
-  
-  const itemsMap = new Map<string, MenuItemFromAPI>();
-  const rootItems: MenuItemFromAPI[] = [];
-  
-  // Primeiro, mapear todos os itens por ID
-  items.forEach(item => {
-    itemsMap.set(item.id, { ...item });
-  });
-  
-  // Construir hierarquia
-  items.forEach(item => {
-    if (!item.father || item.father === '') {
-      rootItems.push(item);
-    }
-  });
-  
-  return rootItems;
-}
-
-function getChildren(itemId: string, allItems: MenuItemFromAPI[]): MenuItemFromAPI[] {
-  return allItems.filter(item => item.father === itemId);
-}
-
-function cmsToNavItems(cmsItems: MenuItemFromAPI[]): NavItem[] {
-  if (!cmsItems || cmsItems.length === 0) return FALLBACK_MENU;
-  
-  // Filtrar apenas itens visíveis e de grupo 'main' (principal)
-  const visibleItems = cmsItems.filter(item => 
-    item.visibleStatus === 'Yes' && item.group === 'main'
-  );
-  
-  if (visibleItems.length === 0) return FALLBACK_MENU;
-  
-  // Obter itens de topo (sem pai)
-  const topLevelItems = visibleItems.filter(item => !item.father || item.father === '');
-  
-  // Ordenar por ordem
-  const sortedItems = [...topLevelItems].sort((a, b) => a.order - b.order);
-  
-  return sortedItems.map((item) => {
-    // Buscar filhos deste item
-    const children = visibleItems.filter(child => child.father === item.id);
-    const hasChildren = children.length > 0;
-    
-    // Determinar número de colunas baseado na quantidade de filhos
-    const columns = hasChildren 
-      ? (children.length >= 5 ? 3 : children.length >= 3 ? 2 : 1)
-      : 1;
-    
-    return {
-      label: item.labelPt, // Usar labelPt como padrão
-      href: item.url || "#",
-      megaMenuColumns: hasChildren ? (columns as 1 | 2 | 3) : undefined,
-      submenu: hasChildren
-        ? children
-            .sort((a, b) => a.order - b.order)
-            .map((child) => ({
-              label: child.labelPt,
-              description: child.labelEn || "",
-              href: child.url || "#",
-              icon: getIcon(child.icon) || Building2,
-            }))
-        : undefined,
-    };
-  });
-}
-
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -143,30 +147,31 @@ export function Header() {
   const { t, i18n } = useTranslation();
   const { settings } = useSiteSettings();
   
-  // Buscar menus da API
-  const { data: apiResponse, isLoading } = useQuery({
-    queryKey: ['header-menu-items'],
+  const isEn = i18n.language === 'en';
+
+  const { data: menusResponse, isLoading } = useQuery({
+    queryKey: ['header-menu-items', isEn],
     queryFn: async () => {
-      const { data } = await api.get<ApiMenuResponse>('/menus');
-      console.log('Menu API Response:', data);
-      return data;
+      // CORRIGIDO: Filtrar por grupo header na query
+      const response = await api.get<MenusResponse>('/cms/menus', {
+        params: { page: 1, pageSize: 100, Group: 'header' }
+      });
+      console.log('📦 Resposta da API de menus (header):', response.data);
+      return response.data;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
+
+  const menuItems = menusResponse?.items || [];
   
-  // Extrair os items da resposta da API
-  const menuItems = apiResponse?.menuItems?.data || [];
-  
-  // Filtrar itens por visibilidade e grupo principal, e construir hierarquia
-  const visibleMenuItems = menuItems.filter(item => 
-    item.visibleStatus === 'Yes' && item.group === 'main'
-  );
-  
-  // Converter para formato de navegação
+  // Construir navegação a partir dos dados da API
   let navigation: NavItem[] = FALLBACK_MENU;
   
-  if (visibleMenuItems.length > 0) {
-    navigation = cmsToNavItems(visibleMenuItems);
+  if (menuItems.length > 0) {
+    const builtMenu = buildMenuHierarchy(menuItems, isEn);
+    if (builtMenu.length > 0) {
+      navigation = builtMenu;
+    }
   }
 
   const logoWhite = settings?.logo?.dark || logoWhiteStatic;
@@ -178,14 +183,23 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const getItemKey = (item: NavItem) => item.label || item.nameKey || item.href;
+  const getItemKey = (item: NavItem, index: number) => item.label || item.nameKey || `nav-${index}`;
   const getItemLabel = (item: NavItem) => {
-    // Se tiver label, usa direto
     if (item.label) return item.label;
-    // Se tiver nameKey, traduz
     if (item.nameKey) return t(item.nameKey);
     return "";
   };
+
+  // Fechar dropdown ao clicar fora (efeito global)
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenDropdown(null);
+    };
+    if (openDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openDropdown]);
 
   // Loading state
   if (isLoading) {
@@ -229,8 +243,10 @@ export function Header() {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navigation.map((item, index) => {
-              const key = getItemKey(item);
+              const key = getItemKey(item, index);
               const label = getItemLabel(item);
+              const hasSubmenu = item.submenu && item.submenu.length > 0;
+              
               return (
                 <motion.div
                   key={key}
@@ -238,7 +254,7 @@ export function Header() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="relative"
-                  onMouseEnter={() => item.submenu && setOpenDropdown(key)}
+                  onMouseEnter={() => hasSubmenu && setOpenDropdown(key)}
                   onMouseLeave={() => setOpenDropdown(null)}
                 >
                   <Link
@@ -252,13 +268,13 @@ export function Header() {
                     )}
                   >
                     {label}
-                    {item.submenu && (
+                    {hasSubmenu && (
                       <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", openDropdown === key && "rotate-180")} />
                     )}
                   </Link>
 
                   <AnimatePresence>
-                    {item.submenu && openDropdown === key && (
+                    {hasSubmenu && openDropdown === key && item.submenu && (
                       <MegaMenu
                         items={item.submenu.map((sub) => ({
                           nameKey: sub.nameKey || "",
@@ -318,12 +334,14 @@ export function Header() {
           >
             <div className="container mx-auto px-6 py-6">
               <nav className="flex flex-col gap-2">
-                {navigation.map((item) => {
-                  const key = getItemKey(item);
+                {navigation.map((item, index) => {
+                  const key = getItemKey(item, index);
                   const label = getItemLabel(item);
+                  const hasSubmenu = item.submenu && item.submenu.length > 0;
+                  
                   return (
                     <div key={key}>
-                      {item.submenu ? (
+                      {hasSubmenu ? (
                         <>
                           <button
                             onClick={() => setMobileOpenSubmenu(mobileOpenSubmenu === key ? null : key)}
@@ -346,12 +364,12 @@ export function Header() {
                                 transition={{ duration: 0.2 }}
                                 className="pl-2 border-l-2 border-primary/30 ml-2"
                               >
-                                {item.submenu.map((subItem) => {
+                                {item.submenu?.map((subItem, subIndex) => {
                                   const Icon = subItem.icon;
                                   const subLabel = subItem.label || (subItem.nameKey ? t(subItem.nameKey) : "");
                                   return (
                                     <Link
-                                      key={subItem.href}
+                                      key={subIndex}
                                       to={subItem.href}
                                       className="flex items-start gap-3 py-3 hover:bg-secondary rounded-md px-2 transition-colors"
                                       onClick={() => setIsMobileMenuOpen(false)}

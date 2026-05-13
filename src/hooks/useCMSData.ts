@@ -1,28 +1,37 @@
 // hooks/useCMSData.ts (versão completa e atualizada)
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import api from "@/service/api";
+import api, { getFullImageUrl } from "@/service/api";
 
 // ─── Types for API Response ───
-interface Attachment {
-  id: string;
-  fileName: string;
-  storedFileName: string;
-  contentType: string;
-  size: number;
+//Banner Types
+interface BannerContent {
+  lang: number;
+  title: string;
+  subtitle: string;
 }
 
-interface PageBannerAPI {
+interface Banner {
   id: string;
   pageKey: string;
-  titlePt: string | null;
-  subtitlePt: string | null;
-  titleEn: string | null;
-  subtitleEn: string | null;
-  publicationStatus: 'Draft' | 'Published';
-  status: 'Active' | 'Inactive';
-  bannerCode: string;
-  attachments: Attachment[];
+  imageUrl: string | null;
+  imagePath: string | null;
+  overlayOpacity: number;
+  contents: BannerContent[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+interface BannersResponse {
+  items: Banner[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface CMSPageBanner {
@@ -36,17 +45,20 @@ export interface CMSPageBanner {
 }
 
 // ─── Types for Menu API Response ───
-export interface APIMenuItem {
+interface MenuDto {
   id: string;
-  labelPt: string;
-  labelEn: string;
-  url: string;
-  icon: string;
-  group: string;
-  father: string | null;
-  order: number;
-  visibleStatus: 'Yes' | 'No';
-  newTabStatus: 'Active' | 'Inactive';
+  group: string | null;
+  url: string | null;
+  icon: string | null;
+  parentId: string | null;
+  displayOrder: number;
+  openInNewTab: boolean;
+  isActive: boolean;
+  contents: { lang: number; label: string | null }[] | null;
+}
+
+interface MenuDtoPaged {
+  items: MenuDto[];
 }
 
 export interface CMSMenuItem {
@@ -61,28 +73,12 @@ export interface CMSMenuItem {
   children: CMSMenuItem[];
 }
 
-// Cache para URLs de imagens blob
-const imageUrlCache = new Map<string, string>();
-
-// Função para buscar imagem do attachment via API REST
-async function fetchAttachmentImage(bannerId: string, attachmentId: string): Promise<string | null> {
-  const cacheKey = `${bannerId}/${attachmentId}`;
-  
-  if (imageUrlCache.has(cacheKey)) {
-    return imageUrlCache.get(cacheKey)!;
-  }
-  
-  try {
-    const response = await api.get(`/banner/${bannerId}/attachments/${attachmentId}`, {
-      responseType: 'blob'
-    });
-    const url = URL.createObjectURL(response.data);
-    imageUrlCache.set(cacheKey, url);
-    return url;
-  } catch (error) {
-    console.error('Erro ao carregar imagem do banner:', error);
-    return null;
-  }
+const getBannerContent = (banner: Banner, lang: number): { title: string; subtitle: string } => {
+  const content = banner.contents?.find(c => c.lang === lang);
+  return {
+    title: content?.title || '',
+    subtitle: content?.subtitle || ''
+  };
 }
 
 // Hook para buscar todos os banners (com cache)
@@ -93,34 +89,30 @@ export function useAllBanners() {
   return useQuery({
     queryKey: ["all_banners_api", isEn],
     queryFn: async () => {
-      const response = await api.get('/banner');
-      const banners: PageBannerAPI[] = response.data?.news?.data || [];
+      const response = await api.get<BannersResponse>('/cms/banners', {
+        params: { Page: 1, PageSize: 100 }
+      });
       
-      const activeBanners = banners.filter(b => b.status === 'Active');
+      const banners: Banner[] = response.data.items || [];
       
-      const bannersWithData = await Promise.all(
-        activeBanners.map(async (banner) => {
-          let imageUrl = null;
-          
-          if (banner.attachments && banner.attachments.length > 0) {
-            imageUrl = await fetchAttachmentImage(banner.id, banner.attachments[0].id);
-          }
-          
-          return {
-            id: banner.id,
-            page_key: banner.pageKey,
-            title: isEn ? (banner.titleEn || banner.titlePt) : banner.titlePt,
-            subtitle: isEn ? (banner.subtitleEn || banner.subtitlePt) : banner.subtitlePt,
-            image_url: imageUrl,
-            overlay_opacity: 0.6,
-            is_active: banner.status === 'Active',
-          } as CMSPageBanner;
-        })
-      );
+      // Filtrar apenas banners ativos
+      const activeBanners = banners.filter(b => b.isActive === true);
       
       const bannerMap = new Map<string, CMSPageBanner>();
-      bannersWithData.forEach(banner => {
-        bannerMap.set(banner.page_key, banner);
+      
+      activeBanners.forEach(banner => {
+        const ptContent = getBannerContent(banner, 1);
+        const enContent = getBannerContent(banner, 2);
+        
+        bannerMap.set(banner.pageKey, {
+          id: banner.id,
+          page_key: banner.pageKey,
+          title: isEn ? (enContent.title || ptContent.title) : ptContent.title,
+          subtitle: isEn ? (enContent.subtitle || ptContent.subtitle) : ptContent.subtitle,
+          image_url: banner.imageUrl ? getFullImageUrl(banner.imageUrl) : null,
+          overlay_opacity: banner.overlayOpacity,
+          is_active: banner.isActive,
+        });
       });
       
       return bannerMap;
@@ -143,16 +135,6 @@ export function usePageBanner(pageKey: string | undefined) {
   };
 }
 
-// Função para limpar cache de imagens
-export function cleanupBannerImages() {
-  imageUrlCache.forEach((url, key) => {
-    if (url && url.startsWith('blob:')) {
-      URL.revokeObjectURL(url);
-    }
-  });
-  imageUrlCache.clear();
-}
-
 export function useMenuItems(group: string = "main") {
   const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
@@ -161,63 +143,50 @@ export function useMenuItems(group: string = "main") {
     queryKey: ["menu_items_api", group, isEn],
     queryFn: async () => {
       try {
-        const response = await api.get('/menus?PageIndex=0&PageSize=10');
-        const menuItems: APIMenuItem[] = response.data?.news?.data || [];
-        
-        console.log('📦 Menu items from API:', menuItems);
-        
-        // Para o menu principal, aceitamos grupos "main" E "footer"
-        // Isso resolve o problema do seu dado "Institucional" estar com group "footer"
-        const allowedGroups = group === "main" ? ["main", "footer"] : [group];
-        
-        const filteredItems = menuItems.filter(
-          item => allowedGroups.includes(item.group) && item.visibleStatus === 'Yes'
+        const response = await api.get<MenuDtoPaged>("/cms/menus", {
+          params: { Page: 1, PageSize: 200, IsActive: true },
+        });
+        const raw = response.data.items ?? [];
+
+        const allowedGroups =
+          group === "main" ? ["main", "footer"] : [group];
+
+        const filteredItems = raw.filter((item) => {
+          const g = (item.group ?? "main").toLowerCase();
+          return allowedGroups.includes(g) && item.isActive;
+        });
+
+        const items: CMSMenuItem[] = filteredItems.map((item) => {
+          const pt = item.contents?.find((c) => c.lang === 1)?.label?.trim() ?? "";
+          const en = item.contents?.find((c) => c.lang === 2)?.label?.trim() ?? "";
+          return {
+            id: item.id,
+            label: isEn ? en || pt : pt,
+            description: null,
+            url: item.url || null,
+            icon: item.icon || null,
+            sort_order: item.displayOrder,
+            parent_id: item.parentId,
+            newTab: item.openInNewTab,
+            children: [],
+          };
+        });
+
+        const validItems = items.filter(
+          (item) => item.label && item.label !== "TESTE" && item.label !== "string"
         );
-        
-        console.log('🔍 Filtered items (allowed groups:', allowedGroups, '):', filteredItems);
-        
-        if (filteredItems.length === 0) {
-          console.warn('No menu items found for groups:', allowedGroups);
-          return [];
-        }
-        
-        // Transformar para o formato esperado
-        const items: CMSMenuItem[] = filteredItems.map((item) => ({
-          id: item.id,
-          label: isEn ? (item.labelEn || item.labelPt) : item.labelPt,
-          description: null,
-          url: item.url || null,
-          icon: item.icon || null,
-          sort_order: item.order,
-          // Tratar father vazio ou inválido
-          parent_id: item.father && item.father !== "" && item.father !== "string" && item.father !== "TESTE" ? item.father : null,
-          newTab: item.newTabStatus === 'Active',
-          children: [],
-        }));
-        
-        // Remover itens duplicados ou inválidos
-        const validItems = items.filter(item => 
-          item.label && item.label !== "TESTE" && item.label !== "Teste1" && item.label !== "string"
-        );
-        
-        // Ordenar por order
         validItems.sort((a, b) => a.sort_order - b.sort_order);
-        
-        // Construir árvore de menus
+
         const topLevel = validItems.filter((item) => !item.parent_id);
-        
         topLevel.forEach((parent) => {
           parent.children = validItems
             .filter((item) => item.parent_id === parent.id)
             .sort((a, b) => a.sort_order - b.sort_order);
         });
-        
-        const result = topLevel.sort((a, b) => a.sort_order - b.sort_order);
-        console.log('✅ Final menu tree:', result);
-        
-        return result;
+
+        return topLevel.sort((a, b) => a.sort_order - b.sort_order);
       } catch (error) {
-        console.error('❌ Erro ao carregar menus da API:', error);
+        console.error("Erro ao carregar menus da API:", error);
         return [];
       }
     },
@@ -226,6 +195,27 @@ export function useMenuItems(group: string = "main") {
 }
 
 // ─── FAQ Items ───
+interface FaqContentDto {
+  lang: number;
+  question: string | null;
+  answer: string | null;
+}
+
+interface FaqCategoryDtoLite {
+  id: string;
+  contents?: { lang: number; name: string | null }[];
+}
+
+interface FaqDtoLite {
+  faqCategoryId: string | null;
+  faqCategory?: FaqCategoryDtoLite;
+  contents: FaqContentDto[] | null;
+}
+
+interface FaqListResponse {
+  items: FaqDtoLite[];
+}
+
 export function useFAQItems() {
   const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
@@ -233,24 +223,64 @@ export function useFAQItems() {
   return useQuery({
     queryKey: ["faq_items", isEn],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return [];
+      const response = await api.get<FaqListResponse>("/faqs", {
+        params: { Page: 1, PageSize: 500, IsActive: true },
+      });
+      const items = response.data.items ?? [];
+
+      const catName = (faq: FaqDtoLite): string => {
+        const c = faq.faqCategory?.contents?.find((x) => x.lang === 1)?.name?.trim();
+        return c || "Geral";
+      };
+
+      return items.map((faq) => {
+        const pt = faq.contents?.find((c) => c.lang === 1);
+        const en = faq.contents?.find((c) => c.lang === 2);
+        return {
+          category: catName(faq),
+          question_pt: pt?.question ?? "",
+          answer_pt: pt?.answer ?? "",
+          question_en: en?.question ?? "",
+          answer_en: en?.answer ?? "",
+        };
+      });
     },
     select: (data) => {
-      const grouped = data.reduce((acc, item) => {
-        if (!acc[item.category]) acc[item.category] = [];
-        acc[item.category].push({
-          question: isEn ? (item.question_en || item.question_pt) : item.question_pt,
-          answer: isEn ? (item.answer_en || item.answer_pt) : item.answer_pt,
-        });
-        return acc;
-      }, {} as Record<string, { question: string; answer: string }[]>);
+      const grouped = data.reduce(
+        (acc, item) => {
+          if (!acc[item.category]) acc[item.category] = [];
+          acc[item.category].push({
+            question: isEn ? item.question_en || item.question_pt : item.question_pt,
+            answer: isEn ? item.answer_en || item.answer_pt : item.answer_pt,
+          });
+          return acc;
+        },
+        {} as Record<string, { question: string; answer: string }[]>
+      );
       return grouped;
     },
   });
 }
 
 // ─── History Events ───
+interface TimelineContentDto {
+  lang: number;
+  title: string | null;
+  description: string | null;
+}
+
+interface TimelineDtoLite {
+  id: string;
+  year: number;
+  displayOrder: number;
+  imageUrl: string | null;
+  contents: TimelineContentDto[] | null;
+}
+
+interface TimelineListResponse {
+  items: TimelineDtoLite[];
+}
+
 export function useHistoryEvents() {
   const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
@@ -258,17 +288,28 @@ export function useHistoryEvents() {
   return useQuery({
     queryKey: ["history_events", isEn],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return [];
+      const response = await api.get<TimelineListResponse>("/timelines", {
+        params: { Page: 1, PageSize: 200, IsActive: true },
+      });
+      return response.data.items ?? [];
     },
     select: (data) =>
-      data.map((e) => ({
-        id: e.id,
-        year: e.year.toString(),
-        title: isEn ? (e.title_en || e.title_pt) : e.title_pt,
-        description: isEn ? (e.description_en || e.description_pt || "") : (e.description_pt || ""),
-        image: e.image_url || undefined,
-      })),
+      data
+        .slice()
+        .sort((a, b) => a.year - b.year || a.displayOrder - b.displayOrder)
+        .map((e) => {
+          const pt = e.contents?.find((c) => c.lang === 1);
+          const en = e.contents?.find((c) => c.lang === 2);
+          return {
+            id: e.id,
+            year: String(e.year),
+            title: isEn ? en?.title || pt?.title || "" : pt?.title || "",
+            description: isEn
+              ? en?.description || pt?.description || ""
+              : pt?.description || "",
+            image: e.imageUrl ? getFullImageUrl(e.imageUrl) : undefined,
+          };
+        }),
   });
 }
 
@@ -290,6 +331,44 @@ export interface CMSBoardMember {
   is_active: boolean;
 }
 
+interface CouncilMemberContentDto {
+  lang: number;
+  title: string | null;
+  pelouro: string | null;
+  biography: string | null;
+  institutionalMessage: string | null;
+}
+
+interface CouncilGroupDtoLite {
+  id: string;
+  contents?: { lang: number; name: string | null }[];
+}
+
+interface CouncilMemberDtoLite {
+  id: string;
+  slug: string | null;
+  displayOrder: number;
+  photoUrl: string | null;
+  email: string | null;
+  phone: string | null;
+  officeLocation: string | null;
+  fullName: string | null;
+  isActive: boolean;
+  contents: CouncilMemberContentDto[] | null;
+  group?: CouncilGroupDtoLite;
+}
+
+interface CouncilMemberListResponse {
+  items: CouncilMemberDtoLite[];
+}
+
+function groupKeyFromMember(m: CouncilMemberDtoLite): string {
+  const pt =
+    m.group?.contents?.find((c) => c.lang === 1)?.name?.trim().toLowerCase() ||
+    "conselho";
+  return pt.replace(/\s+/g, "-");
+}
+
 export function useBoardMembers() {
   const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
@@ -297,26 +376,38 @@ export function useBoardMembers() {
   return useQuery({
     queryKey: ["board_members", isEn],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return [];
+      const response = await api.get<CouncilMemberListResponse>(
+        "/administrative-council/members",
+        { params: { Page: 1, PageSize: 500, IsActive: true } }
+      );
+      return response.data.items ?? [];
     },
     select: (data) =>
-      data.map((m) => ({
-        id: m.id,
-        slug: m.slug,
-        full_name: m.full_name,
-        title: isEn ? (m.title_en || m.title_pt) : m.title_pt,
-        role: isEn ? (m.role_en || m.role_pt) : m.role_pt,
-        bio: isEn ? (m.bio_en || m.bio_pt) : m.bio_pt,
-        message: isEn ? (m.message_en || m.message_pt) : m.message_pt,
-        photo_url: m.photo_url,
-        email: m.email,
-        phone: m.phone,
-        office_location: m.office_location,
-        group_key: m.group_key,
-        sort_order: m.sort_order,
-        is_active: m.is_active,
-      } as CMSBoardMember)),
+      data
+        .slice()
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map((m) => {
+          const pt = m.contents?.find((c) => c.lang === 1);
+          const en = m.contents?.find((c) => c.lang === 2);
+          return {
+            id: m.id,
+            slug: m.slug || m.id,
+            full_name: m.fullName || "",
+            title: isEn ? en?.title || pt?.title || "" : pt?.title || "",
+            role: isEn ? en?.pelouro || pt?.pelouro || "" : pt?.pelouro || "",
+            bio: isEn ? en?.biography || pt?.biography || "" : pt?.biography || "",
+            message: isEn
+              ? en?.institutionalMessage || pt?.institutionalMessage || ""
+              : pt?.institutionalMessage || "",
+            photo_url: m.photoUrl ? getFullImageUrl(m.photoUrl) : null,
+            email: m.email,
+            phone: m.phone,
+            office_location: m.officeLocation,
+            group_key: groupKeyFromMember(m),
+            sort_order: m.displayOrder,
+            is_active: m.isActive,
+          } as CMSBoardMember;
+        }),
   });
 }
 
@@ -328,10 +419,40 @@ export function useBoardMemberBySlug(slug: string | undefined) {
     queryKey: ["board_member", slug, isEn],
     queryFn: async () => {
       if (!slug) return null;
-      // TODO: Migrar para API quando disponível
-      return null;
+      const response = await api.get<CouncilMemberListResponse>(
+        "/administrative-council/members",
+        { params: { Page: 1, PageSize: 200, Search: slug, IsActive: true } }
+      );
+      const found =
+        response.data.items?.find(
+          (m) => (m.slug || "").toLowerCase() === slug.toLowerCase()
+        ) || null;
+      return found;
     },
     enabled: !!slug,
+    select: (m) => {
+      if (!m) return null;
+      const pt = m.contents?.find((c) => c.lang === 1);
+      const en = m.contents?.find((c) => c.lang === 2);
+      return {
+        id: m.id,
+        slug: m.slug || m.id,
+        full_name: m.fullName || "",
+        title: isEn ? en?.title || pt?.title || "" : pt?.title || "",
+        role: isEn ? en?.pelouro || pt?.pelouro || "" : pt?.pelouro || "",
+        bio: isEn ? en?.biography || pt?.biography || "" : pt?.biography || "",
+        message: isEn
+          ? en?.institutionalMessage || pt?.institutionalMessage || ""
+          : pt?.institutionalMessage || "",
+        photo_url: m.photoUrl ? getFullImageUrl(m.photoUrl) : null,
+        email: m.email,
+        phone: m.phone,
+        office_location: m.officeLocation,
+        group_key: groupKeyFromMember(m),
+        sort_order: m.displayOrder,
+        is_active: m.isActive,
+      } as CMSBoardMember;
+    },
   });
 }
 
@@ -345,28 +466,105 @@ export interface CMSContentBlock {
   is_active: boolean;
 }
 
+interface ContentBlockContentDto {
+  lang: number;
+  contentJson: string | null;
+}
+
+interface ContentBlockDto {
+  id: string;
+  pageKey: string | null;
+  sectionKey: string | null;
+  order: number;
+  isActive: boolean;
+  contents: ContentBlockContentDto[] | null;
+}
+
+interface ContentBlockListResponse {
+  items: ContentBlockDto[];
+  totalCount?: number;
+}
+
+function parseBlockJson(json: string | null): Record<string, unknown> {
+  if (!json || !json.trim()) return {};
+  try {
+    const v = JSON.parse(json) as unknown;
+    return typeof v === "object" && v !== null && !Array.isArray(v)
+      ? (v as Record<string, unknown>)
+      : { value: v };
+  } catch {
+    return { html: json };
+  }
+}
+
 export function useContentBlock(pageKey: string, sectionKey: string) {
   const { i18n } = useTranslation();
-  const lang = i18n.language === "en" ? "en" : "pt";
+  const langNum = i18n.language === "en" ? 2 : 1;
 
   return useQuery({
-    queryKey: ["content_block", pageKey, sectionKey, lang],
+    queryKey: ["content_block", pageKey, sectionKey, langNum],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return null;
+      const response = await api.get<ContentBlockListResponse>("/content-blocks", {
+        params: {
+          Page: 1,
+          PageSize: 50,
+          PageKeyFilter: pageKey,
+          SectionKeyFilter: sectionKey,
+          IsActive: true,
+        },
+      });
+      const items = response.data.items ?? [];
+      const block =
+        items.slice().sort((a, b) => a.order - b.order)[0] ?? null;
+      if (!block) return null;
+      const entry =
+        block.contents?.find((c) => c.lang === langNum) ?? block.contents?.[0];
+      const content = parseBlockJson(entry?.contentJson ?? null);
+      return {
+        id: block.id,
+        page_key: block.pageKey ?? pageKey,
+        section_key: block.sectionKey ?? sectionKey,
+        content,
+        sort_order: block.order,
+        is_active: block.isActive,
+      } as CMSContentBlock;
     },
   });
 }
 
 export function useContentBlocks(pageKey: string) {
   const { i18n } = useTranslation();
-  const lang = i18n.language === "en" ? "en" : "pt";
+  const langNum = i18n.language === "en" ? 2 : 1;
 
   return useQuery({
-    queryKey: ["content_blocks", pageKey, lang],
+    queryKey: ["content_blocks", pageKey, langNum],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return [];
+      const response = await api.get<ContentBlockListResponse>("/content-blocks", {
+        params: {
+          Page: 1,
+          PageSize: 100,
+          PageKeyFilter: pageKey,
+          IsActive: true,
+        },
+      });
+      const items = response.data.items ?? [];
+      return items
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((block) => {
+          const entry =
+            block.contents?.find((c) => c.lang === langNum) ??
+            block.contents?.[0];
+          const content = parseBlockJson(entry?.contentJson ?? null);
+          return {
+            id: block.id,
+            page_key: block.pageKey ?? pageKey,
+            section_key: block.sectionKey ?? "",
+            content,
+            sort_order: block.order,
+            is_active: block.isActive,
+          } as CMSContentBlock;
+        });
     },
   });
 }
@@ -396,6 +594,35 @@ export interface CMSNewsArticle {
   published_at: string | null;
 }
 
+interface NewsContentDto {
+  lang: number;
+  title: string | null;
+  excerpt: string | null;
+  content: string | null;
+}
+
+interface NewsDtoLite {
+  id: string;
+  slug: string | null;
+  newsCategoryId: string;
+  destaqueImageUrl: string | null;
+  createdAt: string;
+  contents: NewsContentDto[] | null;
+}
+
+interface NewsPagedResponse {
+  items: NewsDtoLite[];
+  totalCount?: number;
+}
+
+const NEWS_CATEGORY_SLUG: Record<string, string> = {
+  "07fb6a37-c9ed-4f59-91c4-4b9a20894a02": "geral",
+};
+
+function mapNewsCategoryId(categoryId: string): string {
+  return NEWS_CATEGORY_SLUG[categoryId] || "geral";
+}
+
 export function useNewsArticles(options?: {
   category?: string;
   limit?: number;
@@ -406,21 +633,42 @@ export function useNewsArticles(options?: {
   return useQuery({
     queryKey: ["news_articles", options?.category, options?.limit, isEn],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return [];
+      const response = await api.get<NewsPagedResponse>("/news", {
+        params: {
+          Page: 1,
+          PageSize: options?.limit ?? 50,
+          State: 2,
+        },
+      });
+      let items = response.data.items ?? [];
+      if (options?.category && options.category !== "all") {
+        items = items.filter(
+          (n) => mapNewsCategoryId(n.newsCategoryId) === options.category
+        );
+      }
+      return items;
     },
     select: (data) =>
-      data.map((a) => ({
-        id: a.slug,
-        slug: a.slug,
-        title: isEn ? ((a as any).title_en || a.title) : a.title,
-        date: formatPortugueseDate(a.published_at),
-        category: a.category || "geral",
-        image: a.featured_image || "/placeholder.svg",
-        excerpt: isEn ? ((a as any).excerpt_en || a.excerpt || "") : (a.excerpt || ""),
-        content: isEn ? ((a as any).content_en || a.content || "") : (a.content || ""),
-        published_at: a.published_at,
-      } as CMSNewsArticle)),
+      data.map((item) => {
+        const pt = item.contents?.find((c) => c.lang === 1);
+        const en = item.contents?.find((c) => c.lang === 2);
+        const title = isEn ? en?.title || pt?.title || "" : pt?.title || "";
+        const excerpt = isEn ? en?.excerpt || pt?.excerpt || "" : pt?.excerpt || "";
+        const content = isEn ? en?.content || pt?.content || "" : pt?.content || "";
+        return {
+          id: item.slug || item.id,
+          slug: item.slug || item.id,
+          title,
+          date: formatPortugueseDate(item.createdAt),
+          category: mapNewsCategoryId(item.newsCategoryId),
+          image: item.destaqueImageUrl
+            ? getFullImageUrl(item.destaqueImageUrl)
+            : "/placeholder.svg",
+          excerpt,
+          content,
+          published_at: item.createdAt,
+        } as CMSNewsArticle;
+      }),
   });
 }
 
@@ -432,10 +680,35 @@ export function useNewsArticleBySlug(slug: string | undefined) {
     queryKey: ["news_article", slug, isEn],
     queryFn: async () => {
       if (!slug) return null;
-      // TODO: Migrar para API quando disponível
-      return null;
+      const bySlug = await api.get<NewsPagedResponse>("/news", {
+        params: { Page: 1, PageSize: 5, Slug: slug, State: 2 },
+      });
+      let item = bySlug.data.items?.[0];
+      if (!item && /^[0-9a-fA-F-]{36}$/.test(slug)) {
+        const response = await api.get<NewsDtoLite>(`/news/${slug}`);
+        item = response.data;
+      }
+      return item ?? null;
     },
     enabled: !!slug,
+    select: (item) => {
+      if (!item) return null;
+      const pt = item.contents?.find((c) => c.lang === 1);
+      const en = item.contents?.find((c) => c.lang === 2);
+      return {
+        id: item.slug || item.id,
+        slug: item.slug || item.id,
+        title: isEn ? en?.title || pt?.title || "" : pt?.title || "",
+        date: formatPortugueseDate(item.createdAt),
+        category: mapNewsCategoryId(item.newsCategoryId),
+        image: item.destaqueImageUrl
+          ? getFullImageUrl(item.destaqueImageUrl)
+          : "/placeholder.svg",
+        excerpt: isEn ? en?.excerpt || pt?.excerpt || "" : pt?.excerpt || "",
+        content: isEn ? en?.content || pt?.content || "" : pt?.content || "",
+        published_at: item.createdAt,
+      } as CMSNewsArticle;
+    },
   });
 }
 
@@ -444,12 +717,23 @@ export function useDashboardCounts() {
   return useQuery({
     queryKey: ["dashboard_counts"],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
+      const [newsRes, blocksRes, oilRes] = await Promise.all([
+        api.get<NewsPagedResponse>("/news", {
+          params: { Page: 1, PageSize: 1 },
+        }),
+        api.get<ContentBlockListResponse>("/content-blocks", {
+          params: { Page: 1, PageSize: 1 },
+        }),
+        api.get<{ items: unknown[] }>("/operations/oil-blocks", {
+          params: { Page: 1, PageSize: 1 },
+        }),
+      ]);
       return {
-        newsCount: 0,
-        blocksCount: 0,
+        newsCount: newsRes.data.totalCount ?? newsRes.data.items?.length ?? 0,
+        blocksCount:
+          blocksRes.data.totalCount ?? blocksRes.data.items?.length ?? 0,
         eoisCount: 0,
-        docsCount: 0,
+        docsCount: oilRes.data.totalCount ?? oilRes.data.items?.length ?? 0,
       };
     },
   });
@@ -460,9 +744,11 @@ export function usePendingCounts() {
   return useQuery({
     queryKey: ["pending_counts"],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
+      const drafts = await api.get<NewsPagedResponse>("/news", {
+        params: { Page: 1, PageSize: 1, State: 1 },
+      });
       return {
-        draftNews: 0,
+        draftNews: drafts.data.totalCount ?? 0,
         pendingInvestors: 0,
         pendingEois: 0,
       };
@@ -483,14 +769,126 @@ export interface CMSInvestorDocument {
   created_at: string;
 }
 
+interface InvestorDocumentContentDto {
+  lang: number;
+  title: string | null;
+  description: string | null;
+}
+
+interface InvestorDocumentDto {
+  id: string;
+  category: string | null;
+  fileUrl: string | null;
+  contents: InvestorDocumentContentDto[] | null;
+  publishedAt: string | null;
+}
+
+interface InvestorDocPaged {
+  items: InvestorDocumentDto[];
+}
+
 export function useInvestorDocuments(category?: string) {
   return useQuery({
     queryKey: ["investor_documents", category],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return [];
+      const response = await api.get<InvestorDocPaged>("/investor-documents", {
+        params: { Page: 1, PageSize: 200, IsActive: true },
+      });
+      let items = response.data.items ?? [];
+      if (category) {
+        items = items.filter(
+          (d) => (d.category || "").toLowerCase() === category.toLowerCase()
+        );
+      }
+      return items.map((d) => {
+        const pt = d.contents?.find((c) => c.lang === 1);
+        return {
+          id: d.id,
+          document_name: pt?.title || "",
+          description: pt?.description || null,
+          category: d.category || "geral",
+          file_url: d.fileUrl ? getFullImageUrl(d.fileUrl) : "",
+          file_size_bytes: null as number | null,
+          is_public: true,
+          created_at: d.publishedAt || "",
+        } as CMSInvestorDocument;
+      });
     },
   });
+}
+
+interface EventContentDto {
+  lang: number;
+  title: string | null;
+  description: string | null;
+}
+
+interface EventDtoLite {
+  id: string;
+  slug: string | null;
+  startAt: string;
+  location: string | null;
+  registrationUrl: string | null;
+  featuredImageUrl: string | null;
+  contents: EventContentDto[] | null;
+}
+
+interface EventPaged {
+  items: EventDtoLite[];
+}
+
+interface PublicationDtoLite {
+  id: string;
+  slug: string | null;
+  year: number;
+  publishedAt: string | null;
+  fileUrl: string | null;
+  coverImageUrl: string | null;
+  contents: { lang: number; title: string | null; description: string | null; summary: string | null }[] | null;
+}
+
+interface PublicationPaged {
+  items: PublicationDtoLite[];
+}
+
+interface VideoDtoLite {
+  id: string;
+  slug: string | null;
+  embedUrl: string | null;
+  thumbnailUrl: string | null;
+  publishedAt: string | null;
+  contents: { lang: number; title: string | null; description: string | null }[] | null;
+}
+
+interface VideoPaged {
+  items: VideoDtoLite[];
+}
+
+interface PressClippingDtoLite {
+  id: string;
+  slug: string | null;
+  source: string | null;
+  externalUrl: string | null;
+  publishedAt: string;
+  thumbnailUrl: string | null;
+  contents: { lang: number; title: string | null; summary: string | null }[] | null;
+}
+
+interface PressPaged {
+  items: PressClippingDtoLite[];
+}
+
+/** Item genérico para separadores Media (Imprensa). */
+export interface MediaCardItem {
+  id: string;
+  title: string;
+  title_en: string;
+  description: string;
+  description_en: string;
+  image_url: string | null;
+  external_url: string;
+  event_date?: string;
+  source?: string;
 }
 
 // ─── Media Items ───
@@ -500,15 +898,132 @@ export function useMediaItems(mediaType: string) {
 
   return useQuery({
     queryKey: ["media_items", mediaType, isEn],
-    queryFn: async () => {
-      // TODO: Migrar para API quando disponível
+    queryFn: async (): Promise<MediaCardItem[]> => {
+      const baseParams = { Page: 1, PageSize: 100, IsActive: true };
+
+      if (mediaType === "event") {
+        const response = await api.get<EventPaged>("/events", {
+          params: baseParams,
+        });
+        return (response.data.items ?? []).map((e) => {
+          const pt = e.contents?.find((c) => c.lang === 1);
+          const en = e.contents?.find((c) => c.lang === 2);
+          const titlePt = pt?.title || "";
+          const titleEn = en?.title || "";
+          const descPt = pt?.description || "";
+          const descEn = en?.description || "";
+          const date = new Date(e.startAt).toLocaleDateString(
+            isEn ? "en-GB" : "pt-PT"
+          );
+          return {
+            id: e.id,
+            title: titlePt,
+            title_en: titleEn,
+            description: descPt,
+            description_en: descEn,
+            event_date: date,
+            image_url: e.featuredImageUrl
+              ? getFullImageUrl(e.featuredImageUrl)
+              : null,
+            external_url:
+              e.registrationUrl ||
+              (e.slug ? `/media/events/${e.slug}` : "#"),
+          };
+        });
+      }
+
+      if (mediaType === "publication") {
+        const response = await api.get<PublicationPaged>("/publications", {
+          params: baseParams,
+        });
+        return (response.data.items ?? []).map((p) => {
+          const pt = p.contents?.find((c) => c.lang === 1);
+          const en = p.contents?.find((c) => c.lang === 2);
+          const titlePt = pt?.title || `Publicação ${p.year}`;
+          const titleEn = en?.title || titlePt;
+          const descPt = pt?.description || pt?.summary || "";
+          const descEn = en?.description || en?.summary || descPt;
+          const dateStr = p.publishedAt
+            ? new Date(p.publishedAt).toLocaleDateString(isEn ? "en-GB" : "pt-PT")
+            : String(p.year);
+          const file = p.fileUrl ? getFullImageUrl(p.fileUrl) : "#";
+          return {
+            id: p.id,
+            title: titlePt,
+            title_en: titleEn,
+            description: descPt,
+            description_en: descEn,
+            image_url: p.coverImageUrl ? getFullImageUrl(p.coverImageUrl) : null,
+            external_url: p.fileUrl ? getFullImageUrl(p.fileUrl) : file,
+            event_date: dateStr,
+          };
+        });
+      }
+
+      if (mediaType === "video") {
+        const response = await api.get<VideoPaged>("/videos", {
+          params: baseParams,
+        });
+        return (response.data.items ?? []).map((v) => {
+          const pt = v.contents?.find((c) => c.lang === 1);
+          const en = v.contents?.find((c) => c.lang === 2);
+          const titlePt = pt?.title || "Vídeo";
+          const titleEn = en?.title || titlePt;
+          const descPt = pt?.description || "";
+          const descEn = en?.description || descPt;
+          const dateStr = v.publishedAt
+            ? new Date(v.publishedAt).toLocaleDateString(isEn ? "en-GB" : "pt-PT")
+            : "";
+          return {
+            id: v.id,
+            title: titlePt,
+            title_en: titleEn,
+            description: descPt,
+            description_en: descEn,
+            image_url: v.thumbnailUrl ? getFullImageUrl(v.thumbnailUrl) : null,
+            external_url: v.embedUrl || "#",
+            event_date: dateStr,
+          };
+        });
+      }
+
+      if (mediaType === "press") {
+        const response = await api.get<PressPaged>("/press-clippings", {
+          params: baseParams,
+        });
+        return (response.data.items ?? []).map((c) => {
+          const pt = c.contents?.find((x) => x.lang === 1);
+          const en = c.contents?.find((x) => x.lang === 2);
+          const titlePt = pt?.title || "Recorte";
+          const titleEn = en?.title || titlePt;
+          const descPt = pt?.summary || "";
+          const descEn = en?.summary || descPt;
+          const dateStr = new Date(c.publishedAt).toLocaleDateString(
+            isEn ? "en-GB" : "pt-PT"
+          );
+          return {
+            id: c.id,
+            title: titlePt,
+            title_en: titleEn,
+            description: descPt,
+            description_en: descEn,
+            image_url: c.thumbnailUrl ? getFullImageUrl(c.thumbnailUrl) : null,
+            external_url: c.externalUrl || "#",
+            event_date: dateStr,
+            source: c.source || undefined,
+          };
+        });
+      }
+
       return [];
     },
     select: (data) =>
       data.map((item) => ({
         ...item,
-        title: isEn ? ((item as any).title_en || item.title) : item.title,
-        description: isEn ? ((item as any).description_en || item.description) : item.description,
+        title: isEn ? item.title_en || item.title : item.title,
+        description: isEn
+          ? item.description_en || item.description
+          : item.description,
       })),
   });
 }
@@ -540,10 +1055,12 @@ export function useBoardDepartments(memberId?: string) {
   return useQuery({
     queryKey: ["board_departments", memberId, isEn],
     queryFn: async () => {
-      // TODO: Migrar para API quando disponível
-      return [];
+      // A API expõe grupos/membros do conselho, não uma árvore “departamentos”.
+      // Quando existir endpoint dedicado, mapear aqui para CMSBoardDepartment.
+      void isEn;
+      return [] as CMSBoardDepartment[];
     },
-    enabled: memberId !== "",
+    enabled: !!memberId && memberId !== "",
   });
 }
 

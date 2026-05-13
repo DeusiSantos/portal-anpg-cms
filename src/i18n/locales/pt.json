@@ -569,6 +569,12 @@
         "production": "Produção Mensal"
       },
       "noResults": "Nenhuma notícia encontrada",
+      "empty": {
+        "publications": "Nenhuma publicação disponível.",
+        "videos": "Nenhum vídeo disponível.",
+        "press": "Nenhum recorte de imprensa disponível.",
+        "events": "Nenhum evento disponível."
+      },
       "resultsCount": "{{count}} notícia(s) encontrada(s)",
       "pageInfo": "Página {{current}} de {{total}} • {{count}} notícias",
       "publicationsTitle": "Boletim \"Primeiro Óleo\"",

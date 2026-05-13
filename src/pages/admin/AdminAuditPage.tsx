@@ -52,11 +52,40 @@ interface WorkflowHistory {
   createdAt: string;
 }
 
-interface HistoryResponse {
-  pageIndex: number;
-  pageSize: number;
-  count: number;
-  data: WorkflowHistory[];
+interface AuditTrialDto {
+  id: string;
+  action: string | null;
+  entityName: string | null;
+  entityPrimaryKey: string | null;
+  before: string | null;
+  after: string | null;
+  userName: string | null;
+  userEmail: string | null;
+  createdAt: string;
+}
+
+interface AuditTrialsPaged {
+  items: AuditTrialDto[];
+  totalCount?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+function auditTrialToRow(a: AuditTrialDto): WorkflowHistory {
+  const snippet = (s: string | null, n: number) =>
+    (s || "").replace(/\s+/g, " ").trim().slice(0, n) || "—";
+  return {
+    id: a.id,
+    entityId: a.entityPrimaryKey || "",
+    entityName: a.entityName || "(desconhecido)",
+    fromStatus: snippet(a.before, 48),
+    toStatus: snippet(a.after, 48),
+    comment: a.action,
+    changedBy: a.userEmail,
+    userName: a.userName,
+    ipAddress: "—",
+    createdAt: a.createdAt,
+  };
 }
 
 const ENTITY_TYPES = [
@@ -97,23 +126,18 @@ export default function AdminAuditPage() {
 
   // Fetch workflow history
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['workflow-history', filterEntity, pageIndex],
+    queryKey: ['audit-trials', filterEntity, pageIndex],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        PageIndex: pageIndex.toString(),
-        PageSize: pageSize.toString(),
+      const response = await api.get<AuditTrialsPaged>('/audit-trials', {
+        params: {
+          Page: pageIndex + 1,
+          PageSize: pageSize,
+        },
       });
-      
-      const response = await api.get(`/workflow/history?${params}`);
-      
-      // Acessar a estrutura correta: response.data.histories
-      const historyData = response.data?.histories || response.data;
-      
+      const items = (response.data.items ?? []).map(auditTrialToRow);
       return {
-        items: historyData?.data || [],
-        totalCount: historyData?.count || 0,
-        pageIndex: historyData?.pageIndex || 0,
-        pageSize: historyData?.pageSize || pageSize,
+        items,
+        totalCount: response.data.totalCount ?? items.length,
       };
     },
   });

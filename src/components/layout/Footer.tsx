@@ -17,7 +17,10 @@ import { useMenuItems } from "@/hooks/useCMSData";
 export function Footer() {
   const { t } = useTranslation();
   const { settings } = useSiteSettings();
-  const { data: footerMenuItems } = useMenuItems("footer");
+  
+  // Buscar menus para o rodapé - grupos específicos da nova API
+  const { data: footerInstitutional } = useMenuItems("footer-institutional");
+  const { data: footerInvestors } = useMenuItems("footer-investors");
 
   // Get dynamic settings with fallbacks
   const logoUrl = settings.logo?.dark || logoWhite;
@@ -37,7 +40,6 @@ export function Footer() {
     copyright: settings.footer?.copyright || "",
     tagline: settings.footer?.tagline || ""
   };
-
 
   return (
     <footer className="bg-foreground text-pearl">
@@ -68,21 +70,71 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links Columns - Dynamic from CMS */}
-          {footerMenuItems?.map((column) => (
-            <div key={column.id}>
-              <h4 className="footer-heading text-primary-foreground">{column.label}</h4>
+          {/* Institutional Column - Dinâmico do CMS */}
+          {footerInstitutional && footerInstitutional.length > 0 && (
+            <div>
+              <h4 className="footer-heading text-primary-foreground mb-4">
+                {t("footer.institutional")}
+              </h4>
               <ul className="space-y-3">
-                {column.children.map((link) => (
-                  <li key={link.id}>
-                    <Link to={link.url || "#"} className="footer-link">
-                      {link.label}
+                {footerInstitutional.map((item) => (
+                  <li key={item.id}>
+                    <Link to={item.url || "#"} className="footer-link text-pearl/70 hover:text-primary transition-colors">
+                      {item.label}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
-          ))}
+          )}
+
+          {/* Investors Column - Dinâmico do CMS */}
+          {footerInvestors && footerInvestors.length > 0 && (
+            <div>
+              <h4 className="footer-heading text-primary-foreground mb-4">
+                {t("footer.investors")}
+              </h4>
+              <ul className="space-y-3">
+                {footerInvestors.map((item) => (
+                  <li key={item.id}>
+                    <Link to={item.url || "#"} className="footer-link text-pearl/70 hover:text-primary transition-colors">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Links úteis - Fallback caso não haja dados do CMS */}
+          {(!footerInstitutional || footerInstitutional.length === 0) && (
+            <div>
+              <h4 className="footer-heading text-primary-foreground mb-4">
+                {t("footer.institutional")}
+              </h4>
+              <ul className="space-y-3">
+                <li><Link to="/about" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.aboutUs")}</Link></li>
+                <li><Link to="/about/anpg" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.anpg")}</Link></li>
+                <li><Link to="/about/social-responsibility" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.socialResponsibility")}</Link></li>
+                <li><Link to="/about/history" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.history")}</Link></li>
+              </ul>
+            </div>
+          )}
+
+          {(!footerInvestors || footerInvestors.length === 0) && (
+            <div>
+              <h4 className="footer-heading text-primary-foreground mb-4">
+                {t("footer.investors")}
+              </h4>
+              <ul className="space-y-3">
+                <li><Link to="/opportunities" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.opportunities")}</Link></li>
+                <li><Link to="/investor-portal" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.investorPortal")}</Link></li>
+                <li><Link to="/ep-data/maps" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.availableBlocks")}</Link></li>
+                <li><Link to="/faq" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.faq")}</Link></li>
+                <li><Link to="/contacts" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.contacts")}</Link></li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 

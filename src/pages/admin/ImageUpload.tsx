@@ -42,16 +42,13 @@ export function ImageUpload({ value, onChange, folder = 'banners', label = 'Imag
     // Upload para o servidor
     setIsUploading(true);
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', folder);
+    formData.append('File', file);
 
     try {
-      // Ajuste o endpoint conforme sua API de upload
-      const response = await api.post('/upload', formData, {
+      const response = await api.post('/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      // Assumindo que sua API retorna { url: "..." }
       const imageUrl = response.data.url || response.data.imageUrl;
       onChange(imageUrl);
       setPreview(imageUrl);

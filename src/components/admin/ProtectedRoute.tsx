@@ -1,52 +1,44 @@
+// ProtectedRoute.tsx
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredPermission?: 'admin' | 'content' | 'operations' | 'investors';
+  requiredPermission?: 'ADMIN' | 'content' | 'operations' | 'investors';
 }
 
 export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteProps) {
-  const { user, isLoading, userAllData } = useAuth();
+  const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  // Funções auxiliares para verificar permissões baseadas nos roles do userAllData
-  // ProtectedRoute.tsx
-
-  const hasBackofficeAccess = (): boolean => {
-    if (!userAllData?.roles || userAllData.roles.length === 0) return false;
-    const normalized = userAllData.roles.map(r => r.toLowerCase());
-    return normalized.some(role =>
-      ['admin', 'editor_comunicacao', 'editor_tecnico', 'gestor_investidores' , 'viewer'].includes(role)
-    );
+  // Verificar permissões baseado no roleCode do usuário
+  const hasAccess = (): boolean => {
+    if (!user) return false;
+    
+    // Por enquanto, apenas ADMIN tem acesso ao backoffice
+    // Se no futuro houver mais roles, adicionar aqui
+    return user.roleCode === 'ADMIN';
   };
 
-  const isAdmin = (): boolean => {
-    return userAllData?.roles?.map(r => r.toLowerCase()).includes('admin') ?? false;
+  const isADMIN = (): boolean => {
+    return user?.roleCode === 'ADMIN';
   };
 
   const canManageContent = (): boolean => {
-    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
-    return roles.includes('editor_comunicacao') || roles.includes('admin');
+    return user?.roleCode === 'ADMIN'; // Apenas ADMIN por enquanto
   };
 
   const canManageOperations = (): boolean => {
-    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
-    return roles.includes('editor_tecnico') || roles.includes('admin');
+    return user?.roleCode === 'ADMIN';
   };
 
   const canManageInvestors = (): boolean => {
-    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
-    return roles.includes('gestor_investidores') || roles.includes('admin');
+    return user?.roleCode === 'ADMIN';
   };
-  const canView = (): boolean => {
-    const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
-    return roles.includes('viewer') || roles.includes('admin');
-    }
 
-  // Loading state - aguarda o carregamento do user e dos dados completos
-  if (isLoading || (!userAllData && user)) {
+  // Loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -60,7 +52,7 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   }
 
   // No backoffice access - redireciona para home
-  if (!hasBackofficeAccess()) {
+  if (!hasAccess()) {
     return <Navigate to="/" replace />;
   }
 
@@ -68,8 +60,8 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   if (requiredPermission) {
     let hasPermission = false;
     switch (requiredPermission) {
-      case 'admin':
-        hasPermission = isAdmin();
+      case 'ADMIN':
+        hasPermission = isADMIN();
         break;
       case 'content':
         hasPermission = canManageContent();

@@ -110,10 +110,17 @@ function getActionLabel(action: string, tableName: string, newData: any) {
 }
 
 export default function AdminDashboard() {
-  const { profile, isAdmin, canManageContent, canManageOperations, canManageInvestors } = useAuth();
+  const { user } = useAuth(); // Mudado de profile, isAdmin, etc. para user apenas
+  
+  // Determinar permissões baseado no roleCode do user
+  const roleCode = user?.roleCode ?? '';
+  const isAdmin = roleCode === 'ADMIN';
+  const canManageContent = isAdmin || roleCode === 'CONTENT_MANAGER';
+  const canManageOperations = isAdmin || roleCode === 'OPERATIONS_MANAGER';
+  const canManageInvestors = isAdmin || roleCode === 'INVESTORS_MANAGER';
+  
   const { data: counts } = useDashboardCounts();
   const { data: activity } = useRecentActivity();
-
   const { data: chartData } = useActivityChart();
 
   const hasPermission = (permission: string) => {
@@ -126,12 +133,25 @@ export default function AdminDashboard() {
     }
   };
 
+  // Filtrar quickLinks baseado nas permissões (opcional)
+  const visibleQuickLinks = quickLinks.filter(link => {
+    if (link.title === 'Blocos Petrolíferos' || link.title === 'Produção') {
+      return canManageOperations;
+    }
+    if (link.title === 'Investidores') {
+      return canManageInvestors;
+    }
+    return canManageContent || isAdmin;
+  });
+
   return (
     <AdminLayout title="Dashboard" subtitle="Visão geral do backoffice">
       <div className="p-6 space-y-8">
         {/* Welcome */}
         <div>
-          <h2 className="text-2xl font-bold">Bem-vindo, {profile?.full_name?.split(' ')[0]}</h2>
+          <h2 className="text-2xl font-bold">
+            Bem-vindo, {user?.firstName?.split(' ')[0] || user?.email?.split('@')[0] || 'Utilizador'}
+          </h2>
           <p className="text-muted-foreground text-sm mt-1">
             Seleccione um módulo na barra lateral para gerir o conteúdo do site.
           </p>
@@ -199,7 +219,7 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2">
             <h3 className="text-lg font-semibold mb-3">Acesso Rápido</h3>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {quickLinks.map((link) => (
+              {visibleQuickLinks.map((link) => (
                 <Link key={link.href} to={link.href}>
                   <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
                     <CardHeader className="pb-2">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import {
   Save,
@@ -38,90 +39,111 @@ import {
   Globe,
   FileText,
   AlertCircle,
+  Calendar,
+  MapPin,
+  Link as LinkIcon,
+  X,
 } from 'lucide-react';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { cn } from '@/lib/utils';
 import api, { getFullImageUrl } from '@/service/api';
 import { fileService } from '@/service/fileService';
 
-// Tipos da nova API
-type NewsState = 1 | 2 | 3;
+// Tipos da API
+type EventStatus = 1 | 2 | 3; // 1 = Draft, 2 = Published, 3 = Archived
 
-interface NewsContent {
+interface EventCategoryContent {
   lang: number;
-  title: string;
-  excerpt: string;
-  content: string;
+  name: string;
+  description: string;
 }
 
-interface NewsItem {
+interface EventCategory {
   id: string;
   slug: string;
-  state: NewsState;
-  newsCategoryId: string;
-  destaqueImageUrl: string | null;
-  destaqueImagePath: string | null;
-  contents: NewsContent[];
+  displayOrder: number;
+  contents: EventCategoryContent[];
+  isActive: boolean;
   createdAt: string;
-  isActive: boolean;
 }
 
-interface NewsCategory {
-  id: string;
-  name: string;
-  isActive: boolean;
-}
-
-interface NewsCategoryResponse {
-  items: NewsCategory[];
+interface EventCategoriesResponse {
+  items: EventCategory[];
   page: number;
   pageSize: number;
   totalCount: number;
   totalActive: number;
   totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
 }
 
-interface NewsFormData {
+interface EventContent {
+  lang: number;
+  title: string;
+  description: string;
+  body: string;
+}
+
+interface EventItem {
+  id: string;
+  slug: string;
+  startAt: string;
+  endAt: string;
+  location: string;
+  mapUrl: string;
+  registrationUrl: string;
+  featuredImageUrl: string | null;
+  featuredImagePath: string | null;
+  categoryId: string;
+  status: EventStatus;
+  contents: EventContent[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface EventFormData {
   id?: string;
   slug: string;
-  state: NewsState;
-  newsCategoryId: string;
+  startAt: string;
+  endAt: string;
+  location: string;
+  mapUrl: string;
+  registrationUrl: string;
+  categoryId: string;
+  status: EventStatus;
   existingImageUrl?: string | null;
-  destaqueImageFile?: File;
+  featuredImageFile?: File;
   titlePt: string;
-  excerptPt: string;
-  contentPt: string;
+  descriptionPt: string;
+  bodyPt: string;
   titleEn: string;
-  excerptEn: string;
-  contentEn: string;
+  descriptionEn: string;
+  bodyEn: string;
   isActive: boolean;
 }
 
-const STATE_CONFIG: Record<NewsState, { label: string; color: string; icon: any; description: string }> = {
+const STATUS_CONFIG: Record<EventStatus, { label: string; color: string; icon: any; description: string }> = {
   1: {
     label: 'Rascunho',
     color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
     icon: Edit,
-    description: 'Rascunho da notícia. Pode ser editado livremente.'
+    description: 'Rascunho do evento. Pode ser editado livremente.'
   },
   2: {
     label: 'Publicado',
     color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
     icon: Send,
-    description: 'Notícia publicada no site. Visível para o público.'
+    description: 'Evento publicado no site. Visível para o público.'
   },
   3: {
     label: 'Arquivado',
     color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
     icon: Archive,
-    description: 'Notícia arquivada. Não está visível no site principal.'
+    description: 'Evento arquivado. Não está visível no site principal.'
   }
 };
 
-function StatusBadge({ state, size = 'default' }: { state: NewsState; size?: 'sm' | 'default' }) {
-  const config = STATE_CONFIG[state];
+function StatusBadge({ status, size = 'default' }: { status: EventStatus; size?: 'sm' | 'default' }) {
+  const config = STATUS_CONFIG[status];
   const Icon = config?.icon || Edit;
   return (
     <div className={cn(
@@ -130,29 +152,60 @@ function StatusBadge({ state, size = 'default' }: { state: NewsState; size?: 'sm
       config?.color
     )}>
       <Icon className={size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'} />
-      {config?.label || state}
+      {config?.label || status}
     </div>
   );
 }
 
-function CreateCategoryModal({ onCategoryCreated }: { onCategoryCreated: (category: NewsCategory) => void }) {
+// Modal de criação de categoria
+function CreateCategoryModal({ onCategoryCreated }: { onCategoryCreated: (category: EventCategory) => void }) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
+  const [formData, setFormData] = useState({
+    slug: '',
+    displayOrder: 0,
+    namePt: '',
+    descriptionPt: '',
+    nameEn: '',
+    descriptionEn: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
 
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
   const handleSubmit = async () => {
-    if (!name.trim()) {
-      toast.error('Nome da categoria é obrigatório');
+    if (!formData.namePt.trim()) {
+      toast.error('Nome da categoria em português é obrigatório');
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await api.post<NewsCategory>('/news-categories', { name: name.trim() });
+      const response = await api.post<EventCategory>('/event-categories', {
+        slug: formData.slug || generateSlug(formData.namePt),
+        displayOrder: formData.displayOrder,
+        namePt: formData.namePt.trim(),
+        descriptionPt: formData.descriptionPt.trim() || '',
+        nameEn: formData.nameEn.trim() || '',
+        descriptionEn: formData.descriptionEn.trim() || '',
+      });
       toast.success('Categoria criada com sucesso!');
       onCategoryCreated(response.data);
       setOpen(false);
-      setName('');
+      setFormData({
+        slug: '',
+        displayOrder: 0,
+        namePt: '',
+        descriptionPt: '',
+        nameEn: '',
+        descriptionEn: '',
+      });
     } catch (error: any) {
       console.error('Erro ao criar categoria:', error);
       toast.error(error.response?.data?.message || 'Erro ao criar categoria');
@@ -169,23 +222,69 @@ function CreateCategoryModal({ onCategoryCreated }: { onCategoryCreated: (catego
           Nova Categoria
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Criar Nova Categoria</DialogTitle>
+          <DialogTitle>Criar Nova Categoria de Evento</DialogTitle>
           <DialogDescription>
-            Adicione uma nova categoria para as notícias.
+            Adicione uma nova categoria para organizar os eventos.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="categoryName">Nome da Categoria</Label>
-            <Input
-              id="categoryName"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Tecnologia, Esportes, etc."
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome (Português) *</Label>
+              <Input
+                value={formData.namePt}
+                onChange={(e) => setFormData({ ...formData, namePt: e.target.value })}
+                placeholder="Ex: Conferências"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Name (English)</Label>
+              <Input
+                value={formData.nameEn}
+                onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
+                placeholder="Ex: Conferences"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Descrição (Português)</Label>
+              <Textarea
+                value={formData.descriptionPt}
+                onChange={(e) => setFormData({ ...formData, descriptionPt: e.target.value })}
+                rows={2}
+                placeholder="Breve descrição da categoria"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description (English)</Label>
+              <Textarea
+                value={formData.descriptionEn}
+                onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+                rows={2}
+                placeholder="Brief category description"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Slug</Label>
+              <Input
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: generateSlug(e.target.value) })}
+                placeholder="url-amigavel"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Ordem de Exibição</Label>
+              <Input
+                type="number"
+                value={formData.displayOrder}
+                onChange={(e) => setFormData({ ...formData, displayOrder: Number(e.target.value) })}
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -202,42 +301,65 @@ function CreateCategoryModal({ onCategoryCreated }: { onCategoryCreated: (catego
   );
 }
 
-export default function AdminNewsEditorPage() {
+// Função para obter conteúdo por idioma
+const getContentByLang = (contents: EventContent[], lang: number): EventContent | undefined => {
+  return contents?.find(c => c.lang === lang);
+};
+
+// Função para gerar slug
+const generateSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+export default function AdminEventsEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isNew = !id || id === 'new';
 
-  const [formData, setFormData] = useState<NewsFormData>({
+  const [formData, setFormData] = useState<EventFormData>({
     slug: '',
-    state: 1,
-    newsCategoryId: '',
-    existingImageUrl: null,
+    startAt: '',
+    endAt: '',
+    location: '',
+    mapUrl: '',
+    registrationUrl: '',
+    categoryId: '',
+    status: 1,
     titlePt: '',
-    excerptPt: '',
-    contentPt: '',
+    descriptionPt: '',
+    bodyPt: '',
     titleEn: '',
-    excerptEn: '',
-    contentEn: '',
+    descriptionEn: '',
+    bodyEn: '',
     isActive: true,
   });
 
-  const [currentState, setCurrentState] = useState<NewsState>(1);
+  const [currentStatus, setCurrentStatus] = useState<EventStatus>(1);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState('pt');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [categories, setCategories] = useState<NewsCategory[]>([]);
+  const [categories, setCategories] = useState<EventCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
+  // Buscar categorias
   const fetchCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const response = await api.get<NewsCategoryResponse>('/news-categories', {
-        params: { Page: 1, PageSize: 100 }
+      const response = await api.get<EventCategoriesResponse>('/event-categories', {
+        params: { page: 1, pageSize: 100 }
       });
-      setCategories(response.data.items);
+      setCategories(response.data.items.filter(c => c.isActive));
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
       toast.error('Erro ao carregar categorias');
@@ -252,48 +374,53 @@ export default function AdminNewsEditorPage() {
 
   useEffect(() => {
     if (!isNew && id) {
-      fetchArticle();
+      fetchEvent();
     }
   }, [id, isNew]);
 
-  const fetchArticle = async () => {
+  const fetchEvent = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get<NewsItem>(`/news/${id}`);
-      const article = response.data;
+      const response = await api.get<EventItem>(`/events/${id}`);
+      const event = response.data;
 
-      const portugueseContent = article.contents?.find(c => c.lang === 1);
-      const englishContent = article.contents?.find(c => c.lang === 2);
+      const portugueseContent = getContentByLang(event.contents, 1);
+      const englishContent = getContentByLang(event.contents, 2);
 
       setFormData({
-        id: article.id,
-        slug: article.slug || '',
-        state: article.state || 1,
-        newsCategoryId: article.newsCategoryId || '',
-        existingImageUrl: article.destaqueImageUrl,
+        id: event.id,
+        slug: event.slug || '',
+        startAt: event.startAt?.split('T')[0] || '',
+        endAt: event.endAt?.split('T')[0] || '',
+        location: event.location || '',
+        mapUrl: event.mapUrl || '',
+        registrationUrl: event.registrationUrl || '',
+        categoryId: event.categoryId || '',
+        status: event.status || 1,
+        existingImageUrl: event.featuredImageUrl,
         titlePt: portugueseContent?.title || '',
-        excerptPt: portugueseContent?.excerpt || '',
-        contentPt: portugueseContent?.content || '',
+        descriptionPt: portugueseContent?.description || '',
+        bodyPt: portugueseContent?.body || '',
         titleEn: englishContent?.title || '',
-        excerptEn: englishContent?.excerpt || '',
-        contentEn: englishContent?.content || '',
-        isActive: article.isActive ?? true,
+        descriptionEn: englishContent?.description || '',
+        bodyEn: englishContent?.body || '',
+        isActive: event.isActive ?? true,
       });
 
-      setCurrentState(article.state || 1);
+      setCurrentStatus(event.status || 1);
 
-      if (article.destaqueImageUrl) {
-        const fullImageUrl = getFullImageUrl(article.destaqueImageUrl);
-        setCurrentImageUrl(fullImageUrl);
+      if (event.featuredImageUrl) {
+        setCurrentImageUrl(getFullImageUrl(event.featuredImageUrl));
       }
     } catch (error) {
-      console.error('Erro ao carregar artigo:', error);
-      toast.error('Erro ao carregar os dados da notícia');
+      console.error('Erro ao carregar evento:', error);
+      toast.error('Erro ao carregar os dados do evento');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Função para fazer upload de imagem
   const handleImageUpload = async (file: File): Promise<string> => {
     setIsUploadingImage(true);
     try {
@@ -309,76 +436,66 @@ export default function AdminNewsEditorPage() {
     }
   };
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
-
   const saveMutation = useMutation({
-    mutationFn: async (data: NewsFormData) => {
+    mutationFn: async (data: EventFormData) => {
       const formDataToSend = new FormData();
 
       if (isNew) {
-        // Criar nova notícia
+        // Criar novo evento
         formDataToSend.append('Slug', data.slug || generateSlug(data.titlePt));
-        formDataToSend.append('State', String(data.state));
-        formDataToSend.append('NewsCategoryId', data.newsCategoryId);
+        formDataToSend.append('StartAt', data.startAt);
+        formDataToSend.append('EndAt', data.endAt || '');
+        formDataToSend.append('Location', data.location || '');
+        formDataToSend.append('MapUrl', data.mapUrl || '');
+        formDataToSend.append('RegistrationUrl', data.registrationUrl || '');
+        formDataToSend.append('CategoryId', data.categoryId);
+        formDataToSend.append('Status', String(data.status));
         formDataToSend.append('TitlePt', data.titlePt);
-        formDataToSend.append('ExcerptPt', data.excerptPt || '');
-        formDataToSend.append('ContentPt', data.contentPt);
+        formDataToSend.append('DescriptionPt', data.descriptionPt || '');
+        formDataToSend.append('BodyPt', data.bodyPt || '');
         formDataToSend.append('TitleEn', data.titleEn || '');
-        formDataToSend.append('ExcerptEn', data.excerptEn || '');
-        formDataToSend.append('ContentEn', data.contentEn || '');
+        formDataToSend.append('DescriptionEn', data.descriptionEn || '');
+        formDataToSend.append('BodyEn', data.bodyEn || '');
         formDataToSend.append('IsActive', String(data.isActive));
 
-        if (data.destaqueImageFile) {
-          formDataToSend.append('DestaqueImageAttachment', data.destaqueImageFile);
+        if (data.featuredImageFile) {
+          formDataToSend.append('FeaturedImageAttachment', data.featuredImageFile);
         }
 
-        const response = await api.post('/news/from-form', formDataToSend, {
+        const response = await api.post('/events/from-form', formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' },
           timeout: 30000,
         });
         return response.data;
       } else {
-        // Atualizar notícia existente - usa PATCH com /from-form
-        formDataToSend.append('Id', id!);
+        // Atualizar evento existente
         formDataToSend.append('Slug', data.slug || generateSlug(data.titlePt));
-        formDataToSend.append('State', String(data.state));
-        formDataToSend.append('NewsCategoryId', data.newsCategoryId);
+        formDataToSend.append('StartAt', data.startAt);
+        formDataToSend.append('EndAt', data.endAt || '');
+        formDataToSend.append('Location', data.location || '');
+        formDataToSend.append('MapUrl', data.mapUrl || '');
+        formDataToSend.append('RegistrationUrl', data.registrationUrl || '');
+        formDataToSend.append('CategoryId', data.categoryId);
+        formDataToSend.append('Status', String(data.status));
         formDataToSend.append('TitlePt', data.titlePt);
-        formDataToSend.append('ExcerptPt', data.excerptPt || '');
-        formDataToSend.append('ContentPt', data.contentPt);
+        formDataToSend.append('DescriptionPt', data.descriptionPt || '');
+        formDataToSend.append('BodyPt', data.bodyPt || '');
         formDataToSend.append('TitleEn', data.titleEn || '');
-        formDataToSend.append('ExcerptEn', data.excerptEn || '');
-        formDataToSend.append('ContentEn', data.contentEn || '');
+        formDataToSend.append('DescriptionEn', data.descriptionEn || '');
+        formDataToSend.append('BodyEn', data.bodyEn || '');
         formDataToSend.append('IsActive', String(data.isActive));
 
-        // Verificar se deve remover a imagem de destaque:
-        // Remove apenas se o usuário selecionou explicitamente um novo arquivo
-        // NÃO remove se não há arquivo selecionado E já existe uma imagem
         const hasExistingImage = !!data.existingImageUrl;
-        const hasNewImage = !!data.destaqueImageFile;
+        const hasNewImage = !!data.featuredImageFile;
+        const shouldRemoveImage = !hasExistingImage && !hasNewImage;
         
-        // Remove apenas se o usuário explicitamente quer substituir a imagem
-        // ou se não há imagem existente (caso raro)
-        const shouldRemoveImage = hasNewImage || (!hasExistingImage && !hasNewImage);
-        
-        formDataToSend.append('RemoveDestaqueImage', String(shouldRemoveImage));
+        formDataToSend.append('RemoveFeaturedImage', String(shouldRemoveImage));
 
-        if (data.destaqueImageFile) {
-          formDataToSend.append('DestaqueImageAttachment', data.destaqueImageFile);
+        if (data.featuredImageFile) {
+          formDataToSend.append('FeaturedImageAttachment', data.featuredImageFile);
         }
 
-        // Verificar se deve remover o conteúdo em inglês
-        const shouldRemoveEnglish = !data.titleEn && !data.excerptEn && !data.contentEn;
-        formDataToSend.append('RemoveEnglish', String(shouldRemoveEnglish));
-
-        const response = await api.patch(`/news/from-form`, formDataToSend, {
+        const response = await api.patch(`/events/${id}/from-form`, formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' },
           timeout: 30000,
         });
@@ -386,18 +503,18 @@ export default function AdminNewsEditorPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-news'] });
-      toast.success(isNew ? 'Notícia criada com sucesso' : 'Notícia actualizada com sucesso');
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+      toast.success(isNew ? 'Evento criado com sucesso' : 'Evento actualizado com sucesso');
 
       if (isNew) {
-        navigate('/admin/news');
+        navigate('/admin/events');
       } else {
-        fetchArticle();
+        fetchEvent();
       }
     },
     onError: (error: any) => {
       console.error('Erro detalhado:', error.response?.data);
-      const errorMessage = error.response?.data?.message || error.message || 'Erro ao guardar a notícia';
+      const errorMessage = error.response?.data?.message || error.message || 'Erro ao guardar o evento';
       toast.error(`Erro ao guardar: ${errorMessage}`);
     },
   });
@@ -410,8 +527,13 @@ export default function AdminNewsEditorPage() {
       return;
     }
 
-    if (!formData.newsCategoryId) {
+    if (!formData.categoryId) {
       toast.error('Selecione uma categoria');
+      return;
+    }
+
+    if (!formData.startAt) {
+      toast.error('Data de início é obrigatória');
       return;
     }
 
@@ -423,13 +545,12 @@ export default function AdminNewsEditorPage() {
     const dataToSubmit = {
       ...formData,
       slug: formData.slug || generateSlug(formData.titlePt),
-      destaqueImageFile: selectedImageFile || undefined,
+      featuredImageFile: selectedImageFile || undefined,
     };
 
     saveMutation.mutate(dataToSubmit);
   };
 
-  // Função para remover a imagem existente
   const handleRemoveExistingImage = () => {
     setSelectedImageFile(null);
     setFormData(prev => ({ ...prev, existingImageUrl: null }));
@@ -437,15 +558,23 @@ export default function AdminNewsEditorPage() {
     toast.info('Imagem será removida ao guardar');
   };
 
-  const handleCategoryCreated = (newCategory: NewsCategory) => {
+  const handleCategoryCreated = (newCategory: EventCategory) => {
     setCategories(prev => [...prev, newCategory]);
-    setFormData(prev => ({ ...prev, newsCategoryId: newCategory.id }));
-    toast.success(`Categoria "${newCategory.name}" adicionada e selecionada!`);
+    setFormData(prev => ({ ...prev, categoryId: newCategory.id }));
+    const ptContent = newCategory.contents?.find(c => c.lang === 1);
+    toast.success(`Categoria "${ptContent?.name}" adicionada e selecionada!`);
+  };
+
+  const getCategoryName = (categoryId: string): string => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return 'Selecione uma categoria';
+    const ptContent = category.contents?.find(c => c.lang === 1);
+    return ptContent?.name || categoryId;
   };
 
   if (isLoading) {
     return (
-      <AdminLayout title="Editor de Notícias">
+      <AdminLayout title="Editor de Eventos">
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -454,15 +583,15 @@ export default function AdminNewsEditorPage() {
   }
 
   return (
-    <AdminLayout title="Editor de Notícias">
+    <AdminLayout title="Editor de Eventos">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
-          <Button variant="outline" onClick={() => navigate('/admin/news')} className="gap-2">
+          <Button variant="outline" onClick={() => navigate('/admin/events')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
           <div className="flex items-center gap-3">
-            {!isNew && <StatusBadge state={currentState} />}
+            {!isNew && <StatusBadge status={currentStatus} />}
           </div>
         </div>
 
@@ -484,7 +613,7 @@ export default function AdminNewsEditorPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Conteúdo em Português</CardTitle>
-                    <CardDescription>Preencha os detalhes da notícia em português</CardDescription>
+                    <CardDescription>Preencha os detalhes do evento em português</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -500,7 +629,7 @@ export default function AdminNewsEditorPage() {
                             slug: formData.slug || generateSlug(title),
                           });
                         }}
-                        placeholder="Digite o título da notícia"
+                        placeholder="Digite o título do evento"
                         className="text-lg"
                       />
                     </div>
@@ -513,15 +642,18 @@ export default function AdminNewsEditorPage() {
                         onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                         placeholder="exemplo-de-url"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Deixe em branco para gerar automaticamente a partir do título
+                      </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="excerptPt">Excerto / Resumo</Label>
+                      <Label htmlFor="descriptionPt">Descrição Curta</Label>
                       <Textarea
-                        id="excerptPt"
-                        value={formData.excerptPt}
-                        onChange={(e) => setFormData({ ...formData, excerptPt: e.target.value })}
-                        placeholder="Breve resumo da notícia..."
+                        id="descriptionPt"
+                        value={formData.descriptionPt}
+                        onChange={(e) => setFormData({ ...formData, descriptionPt: e.target.value })}
+                        placeholder="Breve descrição do evento que aparecerá nas listagens..."
                         rows={3}
                       />
                     </div>
@@ -529,9 +661,9 @@ export default function AdminNewsEditorPage() {
                     <div className="space-y-2">
                       <Label>Conteúdo Completo</Label>
                       <RichTextEditor
-                        content={formData.contentPt}
-                        onChange={(html) => setFormData({ ...formData, contentPt: html })}
-                        placeholder="Escreva o conteúdo da notícia aqui..."
+                        content={formData.bodyPt}
+                        onChange={(html) => setFormData({ ...formData, bodyPt: html })}
+                        placeholder="Escreva o conteúdo detalhado do evento aqui..."
                         onImageUpload={handleImageUpload}
                       />
                       {isUploadingImage && (
@@ -558,17 +690,17 @@ export default function AdminNewsEditorPage() {
                         id="titleEn"
                         value={formData.titleEn}
                         onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
-                        placeholder="Enter the article title in English"
+                        placeholder="Enter the event title in English"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="excerptEn">Excerpt</Label>
+                      <Label htmlFor="descriptionEn">Short Description</Label>
                       <Textarea
-                        id="excerptEn"
-                        value={formData.excerptEn}
-                        onChange={(e) => setFormData({ ...formData, excerptEn: e.target.value })}
-                        placeholder="Brief summary of the article..."
+                        id="descriptionEn"
+                        value={formData.descriptionEn}
+                        onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+                        placeholder="Brief description of the event..."
                         rows={3}
                       />
                     </div>
@@ -576,9 +708,9 @@ export default function AdminNewsEditorPage() {
                     <div className="space-y-2">
                       <Label>Full Content</Label>
                       <RichTextEditor
-                        content={formData.contentEn}
-                        onChange={(html) => setFormData({ ...formData, contentEn: html })}
-                        placeholder="Write the article content in English here..."
+                        content={formData.bodyEn}
+                        onChange={(html) => setFormData({ ...formData, bodyEn: html })}
+                        placeholder="Write the detailed event content in English here..."
                         onImageUpload={handleImageUpload}
                       />
                     </div>
@@ -600,27 +732,76 @@ export default function AdminNewsEditorPage() {
                     <CreateCategoryModal onCategoryCreated={handleCategoryCreated} />
                   </div>
                   <Select
-                    value={formData.newsCategoryId}
-                    onValueChange={(value) => setFormData({ ...formData, newsCategoryId: value })}
+                    value={formData.categoryId}
+                    onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={isLoadingCategories ? "A carregar..." : "Selecione uma categoria"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
+                      {categories.map((cat) => {
+                        const ptContent = cat.contents?.find(c => c.lang === 1);
+                        return (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {ptContent?.name || cat.id}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data de Início *</Label>
+                    <Input
+                      type="date"
+                      value={formData.startAt}
+                      onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data de Fim</Label>
+                    <Input
+                      type="date"
+                      value={formData.endAt}
+                      onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Local</Label>
+                  <Input
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="Ex: Luanda, Angola"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>URL do Mapa</Label>
+                  <Input
+                    value={formData.mapUrl}
+                    onChange={(e) => setFormData({ ...formData, mapUrl: e.target.value })}
+                    placeholder="https://maps.google.com/..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>URL de Registo</Label>
+                  <Input
+                    value={formData.registrationUrl}
+                    onChange={(e) => setFormData({ ...formData, registrationUrl: e.target.value })}
+                    placeholder="https://..."
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Estado</Label>
                   <Select
-                    value={String(formData.state)}
-                    onValueChange={(value) => setFormData({ ...formData, state: Number(value) as NewsState })}
+                    value={String(formData.status)}
+                    onValueChange={(value) => setFormData({ ...formData, status: Number(value) as EventStatus })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -633,25 +814,21 @@ export default function AdminNewsEditorPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.isActive}
-                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                      className="rounded border-gray-300"
-                    />
-                    Activo
-                  </Label>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={formData.isActive}
+                    onCheckedChange={(v) => setFormData({ ...formData, isActive: v })}
+                  />
+                  <Label>Activo</Label>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Imagem de Destaque {!isNew && '(opcional)'} *</CardTitle>
+                <CardTitle className="text-lg">Imagem de Destaque {!isNew && '(opcional)'}</CardTitle>
                 <CardDescription>
-                  {isNew ? 'Obrigatória para novas notícias' : 'Selecione uma nova imagem para substituir a atual'}
+                  {isNew ? 'Obrigatória para novos eventos' : 'Selecione uma nova imagem para substituir a atual'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -672,7 +849,7 @@ export default function AdminNewsEditorPage() {
                 
                 {currentImageUrl && (
                   <div className="relative rounded-md overflow-hidden border">
-                    <img src={currentImageUrl} alt="Preview" className="w-full h-40 object-cover" />
+                    <img src={currentImageUrl} alt="Preview" className="w-full h-48 object-cover" />
                     {!isNew && !selectedImageFile && formData.existingImageUrl && (
                       <Button
                         type="button"
@@ -681,6 +858,7 @@ export default function AdminNewsEditorPage() {
                         onClick={handleRemoveExistingImage}
                         className="absolute top-2 right-2"
                       >
+                        <X className="h-4 w-4 mr-1" />
                         Remover
                       </Button>
                     )}
@@ -702,8 +880,8 @@ export default function AdminNewsEditorPage() {
                   <div className="text-sm text-blue-800">
                     <p className="font-medium mb-1">Informação:</p>
                     <ul className="list-disc list-inside space-y-1 text-xs">
-                      <li>As imagens são enviadas automaticamente ao servidor quando inseridas</li>
-                      <li>Pode adicionar novas categorias</li>
+                      <li>As imagens são enviadas automaticamente ao servidor quando inseridas no conteúdo</li>
+                      <li>Pode adicionar novas categorias clicando no botão "+ Nova Categoria"</li>
                       <li>A imagem de destaque só é removida se clicar em "Remover" ou enviar uma nova</li>
                     </ul>
                   </div>
@@ -718,7 +896,7 @@ export default function AdminNewsEditorPage() {
               </Button>
 
               {!isNew && formData.slug && (
-                <Button type="button" variant="outline" onClick={() => window.open(`/news/${formData.slug}`, '_blank')}>
+                <Button type="button" variant="outline" onClick={() => window.open(`/events/${formData.slug}`, '_blank')}>
                   <Eye className="h-4 w-4" />
                 </Button>
               )}

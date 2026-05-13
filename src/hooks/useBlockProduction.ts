@@ -1,11 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/service/api";
 
-export interface BlockProductionEntry {
+/** Pontos anuais para gráficos (valores médios diários derivados dos totais anuais da API). */
+export interface BlockProductionYear {
   year: number;
-  month: number | null;
-  oil_bpd: number | null;
-  gas_mmscfd: number | null;
+  oil_bpd: number;
+  gas_mmscfd: number;
+}
+
+interface ProductionHistoryDto {
+  year: number;
+  totalOilBbl: number | null;
+  totalGasMcf: number | null;
+}
+
+interface ProductionHistoryPaged {
+  items: ProductionHistoryDto[];
 }
 
 export function useBlockProduction(blockId: string | undefined) {
@@ -13,21 +23,29 @@ export function useBlockProduction(blockId: string | undefined) {
     queryKey: ["block_production", blockId],
     queryFn: async () => {
       if (!blockId) return [];
-      const { data, error } = await supabase
-        .from("production_statistics")
-        .select("year, month, oil_production_bpd, gas_production_mmscfd")
-        .eq("block_id", blockId)
-        .order("year")
-        .order("month");
-
-      if (error) throw error;
-      return (data || []).map((r) => ({
-        year: r.year,
-        month: r.month,
-        oil_bpd: r.oil_production_bpd ? Number(r.oil_production_bpd) : null,
-        gas_mmscfd: r.gas_production_mmscfd ? Number(r.gas_production_mmscfd) : null,
-      })) as BlockProductionEntry[];
+      const res = await api.get<ProductionHistoryPaged>("/production-history", {
+        params: {
+          Page: 1,
+          PageSize: 200,
+          OilBlockId: blockId,
+          IsActive: true,
+        },
+      });
+      const items = res.data.items ?? [];
+      return items
+        .slice()
+        .sort((a, b) => a.year - b.year)
+        .map((row): BlockProductionYear => ({
+          year: row.year,
+          oil_bpd:
+            row.totalOilBbl != null ? Math.round(row.totalOilBbl / 365) : 0,
+          gas_mmscfd:
+            row.totalGasMcf != null
+              ? Number((row.totalGasMcf / 365 / 1000).toFixed(4))
+              : 0,
+        }));
     },
     enabled: !!blockId,
+    staleTime: 5 * 60 * 1000,
   });
 }

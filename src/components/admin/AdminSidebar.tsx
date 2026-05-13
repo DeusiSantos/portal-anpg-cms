@@ -39,6 +39,7 @@ import {
   Globe,
   ExternalLink,
   ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import {
   Collapsible,
@@ -58,6 +59,7 @@ const contentItems: NavItem[] = [
   { title: 'Páginas do Site', href: '/admin/site-pages', icon: Globe, permission: 'content' },
   { title: 'Homepage', href: '/admin/homepage-content', icon: SlidersHorizontal, permission: 'content' },
   { title: 'Notícias', href: '/admin/news', icon: Newspaper, permission: 'content', badgeKey: 'draftNews' },
+  { title: 'Eventos', href: '/admin/events', icon: Calendar, permission: 'content', badgeKey: 'draftEvents' },
   { title: 'Banners', href: '/admin/page-banners', icon: Image, permission: 'content' },
   { title: 'Blocos de Conteúdo', href: '/admin/content-blocks', icon: LayoutGrid, permission: 'content' },
   { title: 'Slides Hero', href: '/admin/hero-slides', icon: SlidersHorizontal, permission: 'content' },
@@ -87,12 +89,11 @@ const systemItems: NavItem[] = [
   { title: 'Configurações', href: '/admin/settings', icon: Settings, permission: 'admin' },
 ];
 
-
 export function AdminSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { userAllData } = useAuth();
+  const { user } = useAuth();
   const { data: pending } = usePendingCounts();
 
   const badgeCounts: Record<string, number> = {
@@ -101,11 +102,12 @@ export function AdminSidebar() {
     pendingEois: pending?.pendingEois ?? 0,
   };
 
-  const roles = userAllData?.roles?.map(r => r.toLowerCase()) ?? [];
-  const isAdmin = roles.includes('admin');
-  const canManageContent = isAdmin || roles.includes('contentmanager');
-  const canManageOperations = isAdmin || roles.includes('operationsmanager');
-  const canManageInvestors = isAdmin || roles.includes('investorsmanager');
+  // Determinar permissões baseado no roleCode do AuthUser (em maiúsculas)
+  const roleCode = user?.roleCode ?? '';
+  const isAdmin = roleCode === 'ADMIN';
+  const canManageContent = isAdmin || roleCode === 'CONTENT_MANAGER';
+  const canManageOperations = isAdmin || roleCode === 'OPERATIONS_MANAGER';
+  const canManageInvestors = isAdmin || roleCode === 'INVESTORS_MANAGER';
 
   const hasPermission = (permission: string) => {
     switch (permission) {
@@ -119,14 +121,13 @@ export function AdminSidebar() {
 
   const isActive = (href: string) => location.pathname === href;
 
-  // Novo: controlar qual grupo está aberto
   const [openGroup, setOpenGroup] = React.useState<string | null>('Conteúdo');
 
   const handleGroupToggle = (label: string) => {
     setOpenGroup((prev) => (prev === label ? null : label));
   };
 
-  const renderGroup = (label: string, items: NavItem[], defaultOpen = false) => {
+  const renderGroup = (label: string, items: NavItem[]) => {
     const filtered = items.filter(i => hasPermission(i.permission));
     if (filtered.length === 0) return null;
 
@@ -198,7 +199,6 @@ export function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Dashboard */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -219,7 +219,7 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {renderGroup('Conteúdo', contentItems, true)}
+        {renderGroup('Conteúdo', contentItems)}
         {renderGroup('Operações', operationsItems)}
         {renderGroup('Investidores', investorItems)}
         {renderGroup('Sistema', systemItems)}

@@ -7,7 +7,6 @@ import {
   Users,
   ShieldCheck,
 } from "lucide-react";
-import type { CMSContentBlock } from "@/hooks/useCMSData";
 
 interface PrincipleItem {
   titleKey: string;
@@ -24,11 +23,7 @@ const defaultPrinciples: PrincipleItem[] = [
 ];
 
 interface InstitutionalContentProps {
-  cmsBlocks?: CMSContentBlock[];
-}
-
-function getSection(blocks: CMSContentBlock[] | undefined, key: string) {
-  return blocks?.find(b => b.section_key === key)?.content;
+  cmsBlocks?: any[]; // Mantido para compatibilidade
 }
 
 function SectionIcon({ icon: Icon, delay = 0 }: { icon: typeof Handshake; delay?: number }) {
@@ -59,7 +54,7 @@ function SectionTitle({ children, delay = 0 }: { children: React.ReactNode; dela
   );
 }
 
-function PurposeSection({ cms }: { cms?: Record<string, any> }) {
+function PurposeSection() {
   const { t } = useTranslation();
 
   return (
@@ -72,19 +67,16 @@ function PurposeSection({ cms }: { cms?: Record<string, any> }) {
     >
       <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
       <SectionIcon icon={Handshake} />
-      <SectionTitle>{cms?.title || t("pages.anpg.institutional.purpose.title")}</SectionTitle>
+      <SectionTitle>{t("pages.anpg.institutional.purpose.title")}</SectionTitle>
       <p className="text-muted-foreground leading-relaxed text-base">
-        {cms?.desc || t("pages.anpg.institutional.purpose.desc")}
+        {t("pages.anpg.institutional.purpose.desc")}
       </p>
     </motion.div>
   );
 }
 
-function PrinciplesSection({ cms }: { cms?: Record<string, any> }) {
+function PrinciplesSection() {
   const { t } = useTranslation();
-
-  // CMS principles come as an array: [{title, desc}, ...]
-  const cmsPrinciples = cms?.items as Array<{ title: string; desc: string }> | undefined;
 
   return (
     <motion.div
@@ -95,24 +87,12 @@ function PrinciplesSection({ cms }: { cms?: Record<string, any> }) {
       className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 md:p-10 shadow-card"
     >
       <SectionIcon icon={HandHeart} delay={0.1} />
-      <SectionTitle delay={0.1}>{cms?.title || t("pages.anpg.institutional.principles.title")}</SectionTitle>
+      <SectionTitle delay={0.1}>{t("pages.anpg.institutional.principles.title")}</SectionTitle>
       <p className="text-muted-foreground leading-relaxed mb-6">
-        {cms?.subtitle || t("pages.anpg.institutional.principles.subtitle")}
+        {t("pages.anpg.institutional.principles.subtitle")}
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {cmsPrinciples ? cmsPrinciples.map((p, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.15 + i * 0.07 }}
-            className="space-y-1.5"
-          >
-            <h4 className="text-sm font-bold text-primary">{p.title}</h4>
-            <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
-          </motion.div>
-        )) : defaultPrinciples.map((p, i) => (
+        {defaultPrinciples.map((p, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 15 }}
@@ -130,10 +110,9 @@ function PrinciplesSection({ cms }: { cms?: Record<string, any> }) {
   );
 }
 
-function ObjectivesSection({ cms }: { cms?: Record<string, any> }) {
+function ObjectivesSection() {
   const { t } = useTranslation();
-  const cmsItems = cms?.items as string[] | undefined;
-  const objectives = cmsItems || (t("pages.anpg.institutional.objectives.items", { returnObjects: true }) as string[]);
+  const objectives = t("pages.anpg.institutional.objectives.items", { returnObjects: true }) as string[];
 
   return (
     <motion.div
@@ -144,7 +123,7 @@ function ObjectivesSection({ cms }: { cms?: Record<string, any> }) {
       className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
     >
       <SectionIcon icon={Target} delay={0.1} />
-      <SectionTitle delay={0.1}>{cms?.title || t("pages.anpg.institutional.objectives.title")}</SectionTitle>
+      <SectionTitle delay={0.1}>{t("pages.anpg.institutional.objectives.title")}</SectionTitle>
       <ol className="space-y-4">
         {objectives.map((item, i) => (
           <motion.li
@@ -166,7 +145,7 @@ function ObjectivesSection({ cms }: { cms?: Record<string, any> }) {
   );
 }
 
-function SocialResponsibilitySection({ cms }: { cms?: Record<string, any> }) {
+function SocialResponsibilitySection() {
   const { t } = useTranslation();
 
   return (
@@ -178,15 +157,15 @@ function SocialResponsibilitySection({ cms }: { cms?: Record<string, any> }) {
       className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
     >
       <SectionIcon icon={Users} delay={0.2} />
-      <SectionTitle delay={0.2}>{cms?.title || t("pages.anpg.institutional.socialResp.title")}</SectionTitle>
+      <SectionTitle delay={0.2}>{t("pages.anpg.institutional.socialResp.title")}</SectionTitle>
       <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-        {cms?.desc || t("pages.anpg.institutional.socialResp.desc")}
+        {t("pages.anpg.institutional.socialResp.desc")}
       </p>
     </motion.div>
   );
 }
 
-function EnvironmentSection({ cms }: { cms?: Record<string, any> }) {
+function EnvironmentSection() {
   const { t } = useTranslation();
 
   return (
@@ -198,31 +177,25 @@ function EnvironmentSection({ cms }: { cms?: Record<string, any> }) {
       className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
     >
       <SectionIcon icon={ShieldCheck} delay={0.3} />
-      <SectionTitle delay={0.3}>{cms?.title || t("pages.anpg.institutional.environment.title")}</SectionTitle>
+      <SectionTitle delay={0.3}>{t("pages.anpg.institutional.environment.title")}</SectionTitle>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        {cms?.desc || t("pages.anpg.institutional.environment.desc")}
+        {t("pages.anpg.institutional.environment.desc")}
       </p>
     </motion.div>
   );
 }
 
 export function InstitutionalContent({ cmsBlocks }: InstitutionalContentProps) {
-  const purpose = getSection(cmsBlocks, "purpose");
-  const principles = getSection(cmsBlocks, "principles");
-  const objectives = getSection(cmsBlocks, "objectives");
-  const socialResp = getSection(cmsBlocks, "social-responsibility");
-  const environment = getSection(cmsBlocks, "environment");
-
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PurposeSection cms={purpose} />
-        <PrinciplesSection cms={principles} />
+        <PurposeSection />
+        <PrinciplesSection />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <ObjectivesSection cms={objectives} />
-        <SocialResponsibilitySection cms={socialResp} />
-        <EnvironmentSection cms={environment} />
+        <ObjectivesSection />
+        <SocialResponsibilitySection />
+        <EnvironmentSection />
       </div>
     </div>
   );

@@ -1,10 +1,71 @@
 import { History, Calendar, Droplets, Factory, Ship, Building2, Award, TrendingUp, Flame, Landmark } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useHistoryEvents } from "@/hooks/useCMSData";
+import api, { getFullImageUrl } from "@/service/api";
+
+// Tipos da API
+interface TimelineContent {
+  lang: number;
+  title: string;
+  description: string;
+}
+
+interface TimelineItem {
+  id: string;
+  year: number;
+  displayOrder: number;
+  imageUrl: string | null;
+  imagePath: string | null;
+  contents: TimelineContent[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface TimelineResponse {
+  items: TimelineItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+// Função para obter conteúdo em português
+const getPortugueseContent = (item: TimelineItem): TimelineContent | undefined => {
+  return item.contents?.find(c => c.lang === 1);
+};
+
+// Função para obter conteúdo em inglês
+const getEnglishContent = (item: TimelineItem): TimelineContent | undefined => {
+  return item.contents?.find(c => c.lang === 2);
+};
+
+// Função para buscar eventos da timeline
+const fetchTimelineEvents = async (): Promise<TimelineItem[]> => {
+  try {
+    const response = await api.get<TimelineResponse>('/timelines', {
+      params: { Page: 1, PageSize: 100 }
+    });
+    
+    // Filtrar apenas eventos ativos
+    const activeEvents = response.data.items.filter(event => event.isActive);
+    
+    // Ordenar por ano e displayOrder
+    return activeEvents.sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return a.displayOrder - b.displayOrder;
+    });
+  } catch (error) {
+    console.error('Erro ao buscar eventos da timeline:', error);
+    throw error;
+  }
+};
 
 // Icon rotation for events without specific icon mapping
 const iconPool = [
@@ -19,7 +80,7 @@ const iconPool = [
 ];
 
 // Highlight years (key milestones)
-const highlightYears = new Set(["1968", "1976", "1999", "2007", "2008", "2013", "2019"]);
+const highlightYears = new Set([1968, 1976, 1999, 2007, 2008, 2013, 2019]);
 
 const getEras = (t: (key: string) => string) => [
   { name: t("pages.history.eras.pioneering"), years: "1910-1955", color: "from-status-warning/20 to-status-warning/30" },
@@ -29,9 +90,41 @@ const getEras = (t: (key: string) => string) => [
 ];
 
 export default function HistoryPage() {
-  const { t } = useTranslation();
-  const { data: events, isLoading } = useHistoryEvents();
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === "en";
+  
+  const { data: events, isLoading, error } = useQuery({
+    queryKey: ['timeline-events-public'],
+    queryFn: fetchTimelineEvents,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+  
   const eras = getEras(t);
+
+  if (error) {
+    return (
+      <PageLayout
+        pageKey="history"
+        titleKey="pages.history.title"
+        subtitleKey="pages.history.subtitle"
+        descriptionKey="pages.history.description"
+        icon={<History className="w-8 h-8 text-primary" />}
+        breadcrumbs={[
+          { labelKey: "nav.aboutUs", href: "/about" },
+          { labelKey: "nav.submenu.ourHistory" },
+        ]}
+      >
+        <div className="max-w-4xl mx-auto text-center py-12">
+          <History className="w-16 h-16 text-red-500 mx-auto mb-4 opacity-50" />
+          <p className="text-red-500">
+            {isEn 
+              ? "Error loading history events. Please try again later." 
+              : "Erro ao carregar eventos históricos. Por favor, tente novamente mais tarde."}
+          </p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout
@@ -39,7 +132,6 @@ export default function HistoryPage() {
       titleKey="pages.history.title"
       subtitleKey="pages.history.subtitle"
       descriptionKey="pages.history.description"
-      
       icon={<History className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.aboutUs", href: "/about" },
@@ -103,9 +195,16 @@ export default function HistoryPage() {
               <div className="space-y-8 md:space-y-0">
                 {events.map((event, index) => {
                   const isLeft = index % 2 === 0;
-                  const hasImage = !!event.image;
+                  const ptContent = getPortugueseContent(event);
+                  const enContent = getEnglishContent(event);
+                  
+                  // Use o idioma correto
+                  const title = isEn && enContent?.title ? enContent.title : ptContent?.title || 'Sem título';
+                  const description = isEn && enContent?.description ? enContent.description : ptContent?.description || '';
+                  const hasImage = !!event.imageUrl;
                   const isHighlight = highlightYears.has(event.year);
                   const icon = iconPool[index % iconPool.length];
+                  const imageUrl = event.imageUrl ? getFullImageUrl(event.imageUrl) : null;
 
                   return (
                     <motion.div
@@ -132,9 +231,14 @@ export default function HistoryPage() {
                         <div className={`group relative overflow-hidden rounded-2xl ${
                           hasImage ? "bg-foreground text-pearl" : "bg-secondary/50 border border-border/50"
                         } ${isHighlight ? "ring-2 ring-primary/30 shadow-lg" : ""} hover:shadow-xl transition-all duration-500`}>
-                          {hasImage && (
+                          {hasImage && imageUrl && (
                             <div className="absolute inset-0">
-                              <img src={event.image} alt={event.title} className="w-full h-full object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700" />
+                              <img 
+                                src={imageUrl} 
+                                alt={title} 
+                                className="w-full h-full object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
                               <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/80 to-foreground/40" />
                             </div>
                           )}
@@ -145,10 +249,10 @@ export default function HistoryPage() {
                               <span className="font-bold text-lg">{event.year}</span>
                             </div>
                             <h3 className={`text-xl md:text-2xl font-bold mb-3 ${hasImage ? "text-pearl" : "text-foreground"}`}>
-                              {event.title}
+                              {title}
                             </h3>
                             <p className={`leading-relaxed ${hasImage ? "text-pearl/80" : "text-muted-foreground"}`}>
-                              {event.description}
+                              {description}
                             </p>
                             {isHighlight && !hasImage && (
                               <div className="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-2xl" />
@@ -175,7 +279,9 @@ export default function HistoryPage() {
               </motion.div>
             </div>
           ) : (
-            <p className="text-center text-muted-foreground">Sem eventos disponíveis.</p>
+            <p className="text-center text-muted-foreground">
+              {isEn ? "No historical events available." : "Sem eventos históricos disponíveis."}
+            </p>
           )}
         </section>
       </SectionTransition>

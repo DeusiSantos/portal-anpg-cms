@@ -20,36 +20,48 @@ import {
   ChevronDown, ChevronRight, Building2, Fuel, TrendingUp, 
   Scale, Database, Wallet, FileText, Upload, X 
 } from 'lucide-react';
-import api from '@/service/api';
+import api, { getFullImageUrl } from '@/service/api';
+import { fileService } from '@/service/fileService';
 import React from 'react';
 
-interface Attachment {
-  id: string;
-  fileName: string;
-  storedFileName: string;
-  contentType: string;
-  size: number;
+// Tipos da API
+interface BannerContent {
+  lang: number;
+  title: string;
+  subtitle: string;
 }
 
-interface PageBanner {
+interface Banner {
   id: string;
   pageKey: string;
-  titlePt: string | null;
-  subtitlePt: string | null;
-  titleEn: string | null;
-  subtitleEn: string | null;
-  publicationStatus: 'Draft' | 'Published';
-  status: 'Active' | 'Inactive';
-  bannerCode: string;
-  attachments: Attachment[];
+  imageUrl: string | null;
+  imagePath: string | null;
+  overlayOpacity: number;
+  contents: BannerContent[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string | null;
 }
 
-interface PageBannerFormData {
+interface BannersResponse {
+  items: Banner[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+interface BannerFormData {
   pageKey: string;
+  overlayOpacity: number;
   titlePt: string;
   subtitlePt: string;
   titleEn: string;
   subtitleEn: string;
+  isActive: boolean;
 }
 
 const SECTION_MAP: Record<string, { label: string; order: number; icon: React.ReactNode }> = {
@@ -84,49 +96,64 @@ function getSection(pageKey: string): string {
   return map[pageKey] || 'Outras';
 }
 
+// Função para obter conteúdo do banner por idioma
+const getBannerContent = (banner: Banner, lang: number): { title: string; subtitle: string } => {
+  const content = banner.contents?.find(c => c.lang === lang);
+  return {
+    title: content?.title || '',
+    subtitle: content?.subtitle || ''
+  };
+};
+
 export default function AdminPageBannersPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<PageBanner | null>(null);
-  const [deleteItem, setDeleteItem] = useState<PageBanner | null>(null);
+  const [editing, setEditing] = useState<Banner | null>(null);
+  const [deleteItem, setDeleteItem] = useState<Banner | null>(null);
   const [search, setSearch] = useState('');
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
-  const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
-  const [selectedImagePreview, setSelectedImagePreview] = useState<string>('');
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
-  const [shouldUpdateImage, setShouldUpdateImage] = useState(false);
-  const [formData, setFormData] = useState<PageBannerFormData>({
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [formData, setFormData] = useState<BannerFormData>({
     pageKey: '',
+    overlayOpacity: 0,
     titlePt: '',
-    titleEn: '',
     subtitlePt: '',
-    subtitleEn: ''
+    titleEn: '',
+    subtitleEn: '',
+    isActive: true
   });
 
+  // Buscar banners
   const { data: bannersResponse, isLoading } = useQuery({
-    queryKey: ['admin-page-banners'],
+    queryKey: ['admin-banners'],
     queryFn: async () => {
-      const response = await api.get('/banner');
+      const response = await api.get<BannersResponse>('/cms/banners', {
+        params: { Page: 1, PageSize: 100 }
+      });
       return response.data;
     }
   });
 
   const banners = useMemo(() => {
-    return bannersResponse?.news?.data || [];
+    return bannersResponse?.items || [];
   }, [bannersResponse]);
 
+  // Agrupar banners por secção
   const grouped = useMemo(() => {
     if (!banners.length) return [];
-    const filtered = banners.filter((b: PageBanner) => {
+    const filtered = banners.filter((b: Banner) => {
       if (!search) return true;
       const q = search.toLowerCase();
+      const ptContent = getBannerContent(b, 1);
+      const enContent = getBannerContent(b, 2);
       return b.pageKey.toLowerCase().includes(q) || 
-             (b.titlePt || '').toLowerCase().includes(q) || 
-             (b.titleEn || '').toLowerCase().includes(q);
+             ptContent.title.toLowerCase().includes(q) || 
+             enContent.title.toLowerCase().includes(q);
     });
-    const groups: Record<string, PageBanner[]> = {};
-    filtered.forEach((b: PageBanner) => {
+    const groups: Record<string, Banner[]> = {};
+    filtered.forEach((b: Banner) => {
       const section = getSection(b.pageKey);
       if (!groups[section]) groups[section] = [];
       groups[section].push(b);
@@ -144,142 +171,96 @@ export default function AdminPageBannersPage() {
     });
   };
 
-  // Função para buscar imagem do attachment
-  const getAttachmentImageUrl = useCallback(async (bannerId: string, attachmentId: string) => {
+  // Função para fazer upload de imagem
+  const handleImageUpload = async (file: File): Promise<string> => {
+    setIsUploadingImage(true);
     try {
-      const response = await api.get(`/banner/${bannerId}/attachments/${attachmentId}`, {
-        responseType: 'blob'
-      });
-      return URL.createObjectURL(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar imagem:', error);
-      return null;
+      const imageUrl = await fileService.uploadImage(file);
+      toast.success('Imagem enviada com sucesso!');
+      return imageUrl;
+    } catch (error: any) {
+      console.error('Erro no upload:', error);
+      toast.error(error.message || 'Erro ao fazer upload da imagem');
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
     }
-  }, []);
+  };
 
-  // Estado para armazenar URLs das imagens carregadas
-  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
-
-  // Carregar imagens dos banners
-  const loadBannerImage = useCallback(async (banner: PageBanner) => {
-    if (banner.attachments && banner.attachments.length > 0) {
-      const firstAttachment = banner.attachments[0];
-      const url = await getAttachmentImageUrl(banner.id, firstAttachment.id);
-      if (url) {
-        setImageUrls(prev => ({ ...prev, [banner.id]: url }));
-      }
-    }
-  }, [getAttachmentImageUrl]);
-
-  // Carregar imagens quando os banners são carregados
-  useEffect(() => {
-    banners.forEach((banner: PageBanner) => {
-      loadBannerImage(banner);
-    });
-    
-    return () => {
-      Object.values(imageUrls).forEach(url => {
-        if (url && url.startsWith('blob:')) {
-          URL.revokeObjectURL(url);
-        }
-      });
-    };
-  }, [banners, loadBannerImage]);
-
-  // Carregar imagem atual ao editar
-  useEffect(() => {
-    if (editing && editing.attachments && editing.attachments.length > 0 && !selectedImageFile) {
-      const loadCurrentImage = async () => {
-        const url = await getAttachmentImageUrl(editing.id, editing.attachments[0].id);
-        if (url) {
-          setCurrentImageUrl(url);
-        }
-      };
-      loadCurrentImage();
-    }
-  }, [editing, getAttachmentImageUrl, selectedImageFile]);
-
+  // Criar banner
   const createMutation = useMutation({
-    mutationFn: async (data: PageBannerFormData) => {
+    mutationFn: async (data: BannerFormData) => {
+      if (!selectedImageFile) {
+        throw new Error('A imagem é obrigatória');
+      }
+
       const formDataToSend = new FormData();
-      formDataToSend.append('pageKey', data.pageKey);
-      formDataToSend.append('titlePt', data.titlePt);
-      formDataToSend.append('subtitlePt', data.subtitlePt);
-      formDataToSend.append('titleEn', data.titleEn);
-      formDataToSend.append('subtitleEn', data.subtitleEn);
-      
-      if (selectedImageFile) {
-        formDataToSend.append('uploadDocs', selectedImageFile);
-      }
-      
-      if (additionalFiles.length > 0) {
-        additionalFiles.forEach(file => {
-          formDataToSend.append('uploadDocs', file);
-        });
-      }
-      
-      const response = await api.post('/banner', formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      formDataToSend.append('PageKey', data.pageKey);
+      formDataToSend.append('OverlayOpacity', String(data.overlayOpacity));
+      formDataToSend.append('TitlePt', data.titlePt);
+      formDataToSend.append('SubtitlePt', data.subtitlePt);
+      formDataToSend.append('TitleEn', data.titleEn);
+      formDataToSend.append('SubtitleEn', data.subtitleEn);
+      formDataToSend.append('IsActive', String(data.isActive));
+      formDataToSend.append('ImageAttachment', selectedImageFile);
+
+      const response = await api.post('/cms/banners/from-form', formDataToSend, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
       });
       return response.data;
     },
     onSuccess: () => { 
-      queryClient.invalidateQueries({ queryKey: ['admin-page-banners'] }); 
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] }); 
       toast.success('Banner criado com sucesso'); 
       handleClose(); 
     },
     onError: (e: any) => toast.error(`Erro ao criar: ${e.response?.data?.message || e.message}`) 
   });
 
+  // Atualizar banner
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: PageBannerFormData }) => {
-      const updateData = {
-        banner: {
-          id: id,
-          pageKey: data.pageKey,
-          titlePt: data.titlePt,
-          subtitlePt: data.subtitlePt,
-          titleEn: data.titleEn,
-          subtitleEn: data.subtitleEn
-        }
-      };
-      
-      const response = await api.put(`/banner/`, updateData);
-      return response.data;
-    },
-    onSuccess: () => { 
-      queryClient.invalidateQueries({ queryKey: ['admin-page-banners'] }); 
-      toast.success('Dados do banner actualizados com sucesso'); 
-    },
-    onError: (e: any) => toast.error(`Erro ao actualizar dados: ${e.response?.data?.message || e.message}`) 
-  });
-
-  const updateImageMutation = useMutation({
-    mutationFn: async ({ bannerId, attachmentId, file }: { bannerId: string; attachmentId: string; file: File }) => {
+    mutationFn: async ({ id, data, imageFile }: { id: string; data: BannerFormData; imageFile?: File }) => {
       const formDataToSend = new FormData();
-      formDataToSend.append('bannerId', bannerId);
-      formDataToSend.append('attachmentId', attachmentId);
-      formDataToSend.append('newFile', file);
-      
-      const response = await api.patch('/banner/file', formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      formDataToSend.append('PageKey', data.pageKey);
+      formDataToSend.append('OverlayOpacity', String(data.overlayOpacity));
+      formDataToSend.append('TitlePt', data.titlePt);
+      formDataToSend.append('SubtitlePt', data.subtitlePt);
+      formDataToSend.append('TitleEn', data.titleEn);
+      formDataToSend.append('SubtitleEn', data.subtitleEn);
+      formDataToSend.append('IsActive', String(data.isActive));
+
+      const hasExistingImage = !!editing?.imageUrl;
+      const hasNewImage = !!imageFile;
+      const shouldRemoveImage = !hasExistingImage && !hasNewImage;
+      formDataToSend.append('RemoveImage', String(shouldRemoveImage));
+
+      if (imageFile) {
+        formDataToSend.append('ImageAttachment', imageFile);
+      }
+
+      const response = await api.patch(`/cms/banners/${id}/from-form`, formDataToSend, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
       });
       return response.data;
     },
     onSuccess: () => { 
-      queryClient.invalidateQueries({ queryKey: ['admin-page-banners'] }); 
-      toast.success('Imagem do banner actualizada com sucesso'); 
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] }); 
+      toast.success('Banner actualizado com sucesso'); 
+      handleClose(); 
     },
-    onError: (e: any) => toast.error(`Erro ao actualizar imagem: ${e.response?.data?.message || e.message}`) 
+    onError: (e: any) => toast.error(`Erro ao actualizar: ${e.response?.data?.message || e.message}`) 
   });
 
+  // Eliminar banner
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/banner/${id}`);
+      const response = await api.delete(`/cms/banners/${id}`);
       return response.data;
     },
     onSuccess: () => { 
-      queryClient.invalidateQueries({ queryKey: ['admin-page-banners'] }); 
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] }); 
       toast.success('Banner eliminado com sucesso'); 
       setDeleteItem(null); 
     },
@@ -289,41 +270,42 @@ export default function AdminPageBannersPage() {
   const handleClose = () => { 
     setIsDialogOpen(false); 
     setEditing(null); 
-    setAdditionalFiles([]);
-    // Limpar previews
-    if (selectedImagePreview && selectedImagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(selectedImagePreview);
-    }
     if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(currentImageUrl);
     }
-    setSelectedImagePreview('');
     setSelectedImageFile(null);
     setCurrentImageUrl('');
-    setShouldUpdateImage(false);
     setFormData({ 
       pageKey: '', 
+      overlayOpacity: 0,
       titlePt: '', 
-      titleEn: '', 
       subtitlePt: '', 
-      subtitleEn: ''
+      titleEn: '', 
+      subtitleEn: '',
+      isActive: true
     }); 
   };
 
-  const handleEdit = (b: PageBanner) => {
-    setEditing(b);
+  const handleEdit = (banner: Banner) => {
+    const ptContent = getBannerContent(banner, 1);
+    const enContent = getBannerContent(banner, 2);
+    
+    setEditing(banner);
     setFormData({ 
-      pageKey: b.pageKey, 
-      titlePt: b.titlePt || '', 
-      titleEn: b.titleEn || '', 
-      subtitlePt: b.subtitlePt || '', 
-      subtitleEn: b.subtitleEn || ''
+      pageKey: banner.pageKey,
+      overlayOpacity: banner.overlayOpacity,
+      titlePt: ptContent.title,
+      subtitlePt: ptContent.subtitle,
+      titleEn: enContent.title,
+      subtitleEn: enContent.subtitle,
+      isActive: banner.isActive
     });
-    setAdditionalFiles([]);
-    setSelectedImagePreview('');
+    
+    if (banner.imageUrl) {
+      setCurrentImageUrl(getFullImageUrl(banner.imageUrl));
+    }
+    
     setSelectedImageFile(null);
-    setCurrentImageUrl('');
-    setShouldUpdateImage(false);
     setIsDialogOpen(true);
   };
 
@@ -335,19 +317,11 @@ export default function AdminPageBannersPage() {
     }
     
     if (editing) {
-      // Primeiro atualiza os dados do banner via PUT
-      await updateMutation.mutateAsync({ id: editing.id, data: formData });
-      
-      // Se o usuário trocou a imagem, faz o PATCH
-      if (shouldUpdateImage && selectedImageFile && editing.attachments && editing.attachments.length > 0) {
-        await updateImageMutation.mutateAsync({
-          bannerId: editing.id,
-          attachmentId: editing.attachments[0].id,
-          file: selectedImageFile
-        });
-      }
-      
-      handleClose();
+      await updateMutation.mutateAsync({ 
+        id: editing.id, 
+        data: formData,
+        imageFile: selectedImageFile || undefined
+      });
     } else {
       if (!selectedImageFile) {
         toast.error('Por favor, selecione uma imagem para o banner');
@@ -370,68 +344,43 @@ export default function AdminPageBannersPage() {
         return;
       }
       
-      // Limpar preview anterior se existir
-      if (selectedImagePreview && selectedImagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(selectedImagePreview);
-      }
       if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
         URL.revokeObjectURL(currentImageUrl);
       }
       
       const previewUrl = URL.createObjectURL(file);
-      setSelectedImagePreview(previewUrl);
+      setCurrentImageUrl(previewUrl);
       setSelectedImageFile(file);
-      setCurrentImageUrl(''); // Limpa a imagem atual
-      setShouldUpdateImage(true);
     }
   };
 
   const handleRemoveImage = () => {
-    // Limpar previews
-    if (selectedImagePreview && selectedImagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(selectedImagePreview);
-    }
     if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(currentImageUrl);
     }
-    
-    setSelectedImagePreview('');
-    setSelectedImageFile(null);
     setCurrentImageUrl('');
-    setShouldUpdateImage(true);
+    setSelectedImageFile(null);
     
-    // Resetar o input file
     const fileInput = document.getElementById('image-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
     }
   };
 
-  const handleAdditionalFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setAdditionalFiles(prev => [...prev, ...files]);
-    }
-  };
-
-  const removeAdditionalFile = (index: number) => {
-    setAdditionalFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const isSaving = createMutation.isPending || updateMutation.isPending || updateImageMutation.isPending;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
   const totalFiltered = grouped.reduce((sum, g) => sum + g.items.length, 0);
 
   // Determinar qual imagem mostrar no preview
-  const displayImage = selectedImagePreview || currentImageUrl;
+  const displayImage = currentImageUrl;
 
   return (
     <AdminLayout title="Banners de Página" subtitle="Gerir banners das páginas">
       <main className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold">Banners de Página</h1>
-              <p className="text-muted-foreground text-sm">Gerir imagens de cabeçalho, títulos e subtítulos — {banners?.length || 0} banner(s)</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold">Banners de Página</h1>
+            <p className="text-muted-foreground text-sm">Gerir imagens de cabeçalho, títulos e subtítulos — {banners?.length || 0} banner(s)</p>
+          </div>
           <Button onClick={() => { handleClose(); setIsDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Banner
@@ -480,69 +429,59 @@ export default function AdminPageBannersPage() {
                 {!isCollapsed && (
                   <CardContent className="pt-0 pb-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {group.items.map((b: PageBanner) => (
-                        <div key={b.id} className="group relative rounded-lg border overflow-hidden bg-background hover:shadow-md transition-shadow">
-                          <div className="relative aspect-[16/9] bg-muted overflow-hidden">
-                            {imageUrls[b.id] ? (
-                              <>
+                      {group.items.map((banner: Banner) => {
+                        const ptContent = getBannerContent(banner, 1);
+                        const imageUrl = banner.imageUrl ? getFullImageUrl(banner.imageUrl) : null;
+                        
+                        return (
+                          <div key={banner.id} className="group relative rounded-lg border overflow-hidden bg-background hover:shadow-md transition-shadow">
+                            <div className="relative aspect-[16/9] bg-muted overflow-hidden">
+                              {imageUrl ? (
                                 <img 
-                                  src={imageUrls[b.id]} 
-                                  alt={b.titlePt || b.pageKey} 
+                                  src={imageUrl} 
+                                  alt={ptContent.title || banner.pageKey} 
                                   className="w-full h-full object-cover"
-                                  onError={() => {
-                                    console.error('Failed to load image for banner:', b.id);
-                                    setImageUrls(prev => ({ ...prev, [b.id]: '' }));
+                                  onError={(e) => {
+                                    console.error('Failed to load image for banner:', banner.id);
+                                    e.currentTarget.src = '/placeholder-image.jpg';
                                   }}
                                 />
-                                
-                              </>
-                            ) : (
-                              <div className="flex items-center justify-center h-full">
-                                <Image className="h-10 w-10 text-muted-foreground/30" />
-                              </div>
-                            )}
-                            <div className="absolute top-2 right-2">
-                              {b.status === 'Active' ? (
-                                <span className="inline-flex items-center gap-1 bg-emerald-500/90 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-                                  <Eye className="h-3 w-3" />
-                                  Activo
-                                </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 bg-gray-500/90 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-                                  <EyeOff className="h-3 w-3" />
-                                  Inactivo
-                                </span>
+                                <div className="flex items-center justify-center h-full">
+                                  <Image className="h-10 w-10 text-muted-foreground/30" />
+                                </div>
                               )}
-                            </div>
-                            {b.bannerCode && (
-                              <div className="absolute bottom-2 left-2">
-                                <span className="inline-flex items-center gap-1 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-                                  {b.bannerCode}
-                                </span>
+                              <div className="absolute top-2 right-2">
+                                {banner.isActive ? (
+                                  <span className="inline-flex items-center gap-1 bg-emerald-500/90 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
+                                    <Eye className="h-3 w-3" />
+                                    Activo
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 bg-gray-500/90 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
+                                    <EyeOff className="h-3 w-3" />
+                                    Inactivo
+                                  </span>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          <div className="p-3 flex items-center justify-between">
-                            <div className="min-w-0">
-                              <p className="font-mono text-sm font-medium truncate">{b.pageKey}</p>
-                              <p className="text-xs text-muted-foreground truncate">{b.titlePt || 'Sem título'}</p>
-                              {b.attachments && b.attachments.length > 1 && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  📎 {b.attachments.length - 1} anexo(s)
-                                </p>
-                              )}
                             </div>
-                            <div className="flex gap-1 shrink-0">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(b)}>
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteItem(b)}>
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </Button>
+                            <div className="p-3 flex items-center justify-between">
+                              <div className="min-w-0">
+                                <p className="font-mono text-sm font-medium truncate">{banner.pageKey}</p>
+                                <p className="text-xs text-muted-foreground truncate">{ptContent.title || 'Sem título'}</p>
+                              </div>
+                              <div className="flex gap-1 shrink-0">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(banner)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteItem(banner)}>
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 )}
@@ -552,6 +491,7 @@ export default function AdminPageBannersPage() {
         )}
       </main>
 
+      {/* Modal de criação/edição */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -568,38 +508,70 @@ export default function AdminPageBannersPage() {
                   placeholder="Ex: about, production, faq" 
                   required 
                 />
+                <p className="text-xs text-muted-foreground">
+                  Identificador único da página (ex: about, anpg, history)
+                </p>
               </div>
+
+              <div className="space-y-2">
+                <Label>Opacidade da Sobreposição</Label>
+                <Input 
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="1"
+                  value={formData.overlayOpacity} 
+                  onChange={e => setFormData({...formData, overlayOpacity: parseFloat(e.target.value)})} 
+                  placeholder="0 = sem sobreposição, 1 = totalmente escuro"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Valor entre 0 e 1. Recomendado: 0.4 a 0.6
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Título PT</Label>
+                  <Label>Título (Português)</Label>
                   <Input 
                     value={formData.titlePt} 
                     onChange={e => setFormData({...formData, titlePt: e.target.value})} 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Título EN</Label>
+                  <Label>Título (English)</Label>
                   <Input 
                     value={formData.titleEn} 
                     onChange={e => setFormData({...formData, titleEn: e.target.value})} 
                   />
                 </div>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Subtítulo PT</Label>
+                  <Label>Subtítulo (Português)</Label>
                   <Input 
                     value={formData.subtitlePt} 
                     onChange={e => setFormData({...formData, subtitlePt: e.target.value})} 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Subtítulo EN</Label>
+                  <Label>Subtítulo (English)</Label>
                   <Input 
                     value={formData.subtitleEn} 
                     onChange={e => setFormData({...formData, subtitleEn: e.target.value})} 
                   />
                 </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="isActive">Activo</Label>
               </div>
               
               {/* Imagem do Banner */}
@@ -621,12 +593,12 @@ export default function AdminPageBannersPage() {
                     >
                       <X className="h-4 w-4" />
                     </Button>
-                    {editing && !selectedImagePreview && currentImageUrl && (
+                    {editing && !selectedImageFile && currentImageUrl && !currentImageUrl.startsWith('blob:') && (
                       <p className="text-xs text-muted-foreground mt-2 text-center">
                         Imagem actual - clique no X para trocar
                       </p>
                     )}
-                    {selectedImagePreview && (
+                    {selectedImageFile && (
                       <p className="text-xs text-green-600 mt-2 text-center">
                         Nova imagem selecionada - será atualizada ao salvar
                       </p>
@@ -638,7 +610,7 @@ export default function AdminPageBannersPage() {
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">
-                          <span className="font-semibold">Clique para fazer upload</span> da imagem principal
+                          <span className="font-semibold">Clique para fazer upload</span> da imagem
                         </p>
                         <p className="text-xs text-muted-foreground">PNG, JPG, GIF até 5MB</p>
                       </div>
@@ -654,47 +626,13 @@ export default function AdminPageBannersPage() {
                   </div>
                 )}
               </div>
-
-              {/* Anexos adicionais - apenas para criação */}
-              {!editing && (
-                <div className="space-y-2">
-                  <Label>Anexos Adicionais (opcional)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      multiple
-                      onChange={handleAdditionalFilesChange}
-                      className="flex-1"
-                      accept="image/*,application/pdf"
-                    />
-                  </div>
-                  {additionalFiles.length > 0 && (
-                    <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                      {additionalFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm bg-muted p-2 rounded">
-                          <span className="truncate">{file.name}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeAdditionalFile(index)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" disabled={isSaving || isUploadingImage}>
+                {(isSaving || isUploadingImage) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editing ? 'Guardar' : 'Criar'}
               </Button>
             </DialogFooter>
@@ -702,6 +640,7 @@ export default function AdminPageBannersPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal de confirmação de eliminação */}
       <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

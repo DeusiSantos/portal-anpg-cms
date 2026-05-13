@@ -4,7 +4,6 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { BoardOrgChart } from "@/components/about/BoardOrgChart";
 import { InstitutionalContent } from "@/components/about/InstitutionalContent";
-import { useContentBlocks } from "@/hooks/useCMSData";
 import offshoreImage from "@/assets/angola-flag.jpg";
 
 function SectionDivider({ label, icon: Icon }: { label?: string; icon?: typeof Building2 }) {
@@ -27,11 +26,6 @@ function SectionDivider({ label, icon: Icon }: { label?: string; icon?: typeof B
 
 export default function AnpgPage() {
   const { t } = useTranslation();
-  const { data: blocks } = useContentBlocks("anpg");
-
-  const getSection = (key: string) => blocks?.find(b => b.section_key === key)?.content;
-
-  const intro = getSection("intro");
 
   return (
     <PageLayout
@@ -39,7 +33,6 @@ export default function AnpgPage() {
       titleKey="pages.anpg.title"
       subtitleKey="pages.anpg.subtitle"
       descriptionKey="pages.anpg.description"
-      
       icon={<Building2 className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.aboutUs", href: "/about" },
@@ -52,19 +45,19 @@ export default function AnpgPage() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-center">
             <div className="lg:col-span-3 space-y-6">
               <p className="text-lg text-muted-foreground leading-relaxed">
-                {intro?.intro || t("pages.anpg.content.intro")}
+                {t("pages.anpg.content.intro")}
               </p>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                {intro?.role || t("pages.anpg.content.role")}
+                {t("pages.anpg.content.role")}
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                {intro?.vision || t("pages.anpg.content.vision")}
+                {t("pages.anpg.content.vision")}
               </p>
             </div>
             <div className="lg:col-span-2">
               <div className="relative rounded-2xl overflow-hidden shadow-card aspect-[4/3]">
                 <img
-                  src={intro?.image || offshoreImage}
+                  src={offshoreImage}
                   alt="Plataforma Petrolífera Offshore em Angola"
                   className="w-full h-full object-cover"
                 />
@@ -95,7 +88,7 @@ export default function AnpgPage() {
       {/* Institutional Content */}
       <SectionTransition delay={0.3}>
         <section className="pt-12">
-          <InstitutionalContent cmsBlocks={blocks} />
+          <InstitutionalContent />
         </section>
       </SectionTransition>
     </PageLayout>
