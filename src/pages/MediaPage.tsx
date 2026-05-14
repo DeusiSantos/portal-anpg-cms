@@ -1,5 +1,5 @@
-// MediaPage.tsx (versão completa com todas as abas)
-import { useState, useMemo } from "react";
+// MediaPage.tsx (versão completa com modal de vídeos - CORRIGIDA)
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
   Newspaper, 
@@ -10,7 +10,6 @@ import {
   Scissors, 
   CalendarDays,
   Filter,
-  ChevronRight,
   Search,
   X,
   ArrowUpDown,
@@ -47,12 +46,18 @@ import {
   PaginationPrevious,
   PaginationEllipsis
 } from "@/components/ui/pagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useApiNews, FormattedNewsItem } from "@/hooks/useApiNews";
 import { useApiEvents, useEventCategories, FormattedEvent } from "@/hooks/useApiEvents";
 import { useApiPublications, FormattedPublication } from "@/hooks/useApiPublications";
-import { useApiVideos, FormattedVideo } from "@/hooks/useApiVideos";
 import { useApiPress, FormattedPress } from "@/hooks/useApiPress";
+import { FormattedVideo, useApiVideos } from "@/hooks/useApiVideos";
 
 // Funções auxiliares
 const getCategoryLabel = (category: string): string => {
@@ -129,7 +134,8 @@ const filterEventsByDate = (events: FormattedEvent[], filter: string): Formatted
 };
 
 export default function MediaPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === "en";
   
   // Estados para News
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -155,6 +161,8 @@ export default function MediaPage() {
   const [vidCurrentPage, setVidCurrentPage] = useState(1);
   const [vidSearchQuery, setVidSearchQuery] = useState("");
   const [vidSortOrder, setVidSortOrder] = useState<"newest" | "oldest">("newest");
+  const [selectedVideo, setSelectedVideo] = useState<FormattedVideo | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   // Estados para Press
   const [pressCurrentPage, setPressCurrentPage] = useState(1);
@@ -166,8 +174,46 @@ export default function MediaPage() {
   const { data: events, isLoading: isLoadingEvents, isError: isErrorEvents } = useApiEvents(1, 100, 1);
   const { data: eventCategories, isLoading: isLoadingCategories } = useEventCategories();
   const { data: publications, isLoading: isLoadingPubs } = useApiPublications(2);
-  const { data: videos, isLoading: isLoadingVids } = useApiVideos(2);
+  const { data: videos, isLoading: isLoadingVids } = useApiVideos(isEn);
   const { data: pressItems, isLoading: isLoadingPress } = useApiPress(2);
+
+  // Debug para verificar os vídeos
+  useEffect(() => {
+    console.log('Videos carregados:', videos);
+    console.log('Quantidade de vídeos:', videos?.length);
+  }, [videos]);
+
+  // Função para converter URL do YouTube para embed
+  const getEmbedUrl = (url: string): string => {
+    if (!url) return '';
+    
+    if (url.includes('/embed/')) return url;
+    
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+      /youtube\.com\/embed\/([^&\n?#]+)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}?autoplay=1`;
+      }
+    }
+    
+    return url;
+  };
+
+  // Handlers do modal de vídeo
+  const handleVideoClick = (video: FormattedVideo) => {
+    setSelectedVideo(video);
+    setIsVideoModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsVideoModalOpen(false);
+    setSelectedVideo(null);
+  };
 
   // Mapear notícias
   const newsSource: FormattedNewsItem[] = useMemo(() => {
@@ -406,7 +452,7 @@ export default function MediaPage() {
           </TabsList>
         </SectionTransition>
 
-        {/* News Tab - mantido igual */}
+        {/* News Tab */}
         <TabsContent value="news">
           <SectionTransition delay={0.1}>
             <div className="bg-secondary/30 border border-border rounded-xl p-4 mb-8">
@@ -476,7 +522,7 @@ export default function MediaPage() {
           </SectionTransition>
         </TabsContent>
 
-        {/* Videos Tab */}
+        {/* Videos Tab com Modal */}
         <TabsContent value="videos">
           <SectionTransition delay={0.1}>
             <div className="bg-secondary/30 border border-border rounded-xl p-4 mb-8">
@@ -494,9 +540,51 @@ export default function MediaPage() {
                 {(vidSearchQuery || vidSortOrder !== "newest") && (<Button variant="ghost" size="sm" onClick={clearVidFilters}><X className="w-4 h-4 mr-1" />Limpar filtros</Button>)}
               </div>
             </div>
-            {paginatedVideos.length === 0 ? (<div className="text-center py-12 text-muted-foreground">Nenhum vídeo encontrado</div>) : (
+            {paginatedVideos.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Nenhum vídeo encontrado
+              </div>
+            ) : (
               <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {paginatedVideos.map((video) => (<StaggerItem key={video.id}><a href={video.embedUrl} target="_blank" rel="noopener noreferrer" className="group block h-full"><div className="bg-secondary/50 border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-lg h-full flex flex-col"><div className="aspect-video overflow-hidden relative"><img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.currentTarget.src = '/placeholder-video.jpg'; }} /><div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><div className="bg-white/20 backdrop-blur rounded-full p-3"><Youtube className="w-8 h-8 text-white" /></div></div></div><div className="p-5 flex flex-col flex-1"><h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">{video.title}</h3><p className="text-muted-foreground text-sm mb-3 line-clamp-2">{video.description}</p><div className="flex items-center justify-between mt-auto pt-3 border-t border-border"><span className="text-xs text-muted-foreground flex items-center gap-1"><Film className="w-3 h-3" />{video.durationSeconds > 0 ? `${Math.floor(video.durationSeconds / 60)}:${String(video.durationSeconds % 60).padStart(2, '0')}` : 'Vídeo'}</span><span className="text-xs text-muted-foreground">{video.formattedDate}</span></div></div></div></a></StaggerItem>))}
+                {paginatedVideos.map((video) => (
+                  <StaggerItem key={video.id}>
+                    <div 
+                      onClick={() => handleVideoClick(video)}
+                      className="group cursor-pointer bg-secondary/50 border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-lg h-full flex flex-col"
+                    >
+                      <div className="aspect-video overflow-hidden relative bg-black/5">
+                        <img 
+                          src={video.thumbnail} 
+                          alt={video.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          onError={(e) => { e.currentTarget.src = '/placeholder-video.jpg'; }} 
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="bg-primary/90 backdrop-blur rounded-full p-4 transform scale-90 group-hover:scale-100 transition-transform">
+                            <Youtube className="w-8 h-8 text-white" />
+                          </div>
+                        </div>
+                        {video.durationSeconds > 0 && (
+                          <Badge className="absolute bottom-3 right-3 bg-black/70 text-white border-none flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {Math.floor(video.durationSeconds / 60)}:{String(video.durationSeconds % 60).padStart(2, '0')}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
+                        <h3 className="font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">{video.title}</h3>
+                        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{video.description}</p>
+                        <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Film className="w-3 h-3" />
+                            {video.providerType === 1 ? 'YouTube' : 'Vídeo'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{video.formattedDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </StaggerItem>
+                ))}
               </StaggerContainer>
             )}
             {totalVidPages > 1 && (<div className="mt-8"><Pagination><PaginationContent><PaginationItem><PaginationPrevious onClick={() => setVidCurrentPage(p => Math.max(1, p - 1))} className={cn(vidCurrentPage === 1 && "pointer-events-none opacity-50")} /></PaginationItem>{getPageNumbers(totalVidPages, vidCurrentPage).map((page, index) => (<PaginationItem key={index}>{page === 'ellipsis' ? <PaginationEllipsis /> : <PaginationLink onClick={() => setVidCurrentPage(page as number)} isActive={vidCurrentPage === page}>{page}</PaginationLink>}</PaginationItem>))}<PaginationItem><PaginationNext onClick={() => setVidCurrentPage(p => Math.min(totalVidPages, p + 1))} className={cn(vidCurrentPage === totalVidPages && "pointer-events-none opacity-50")} /></PaginationItem></PaginationContent></Pagination></div>)}
@@ -530,7 +618,7 @@ export default function MediaPage() {
           </SectionTransition>
         </TabsContent>
 
-        {/* Events Tab - mantido igual */}
+        {/* Events Tab */}
         <TabsContent value="events">
           <SectionTransition delay={0.1}>
             <div className="bg-secondary/30 border border-border rounded-xl p-4 mb-8">
@@ -564,6 +652,51 @@ export default function MediaPage() {
           </SectionTransition>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Vídeo */}
+      <Dialog open={isVideoModalOpen} onOpenChange={handleCloseModal}>
+        <DialogContent className="max-w-4xl w-[90vw] p-0 overflow-hidden rounded-2xl bg-background">
+          {selectedVideo && (
+            <div className="relative">
+              <DialogTitle className="sr-only">{selectedVideo.title}</DialogTitle>
+              <DialogDescription className="sr-only">
+                {selectedVideo.description}
+              </DialogDescription>
+              
+              {/* Player do vídeo */}
+              <div className="aspect-video w-full bg-black">
+                <iframe
+                  src={getEmbedUrl(selectedVideo.embedUrl)}
+                  title={selectedVideo.title}
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+              
+              {/* Informações do vídeo */}
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-foreground mb-2">
+                  {selectedVideo.title}
+                </h3>
+                <p className="text-muted-foreground text-sm mb-3">
+                  {selectedVideo.description}
+                </p>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span>{selectedVideo.formattedDate}</span>
+                  {selectedVideo.durationSeconds > 0 && (
+                    <span>
+                      Duração: {Math.floor(selectedVideo.durationSeconds / 60)}:
+                      {String(selectedVideo.durationSeconds % 60).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 }

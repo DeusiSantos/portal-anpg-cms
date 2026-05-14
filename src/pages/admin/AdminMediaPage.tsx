@@ -511,6 +511,7 @@ export default function AdminMediaPage() {
   const pubMutation = useMutation({
     mutationFn: async (data: PublicationFormData) => {
       const formData = new FormData();
+      formData.append('Id', data.id || '');
       formData.append('Slug', data.slug || generateSlug(data.titlePt));
       formData.append('Year', String(data.year));
       formData.append('PublishedAt', new Date(data.publishedAt).toISOString());
@@ -533,7 +534,7 @@ export default function AdminMediaPage() {
       }
       
       if (editingId) {
-        return api.patch(`/publications/${editingId}/from-form`, formData, {
+        return api.patch(`/publications/from-form`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
@@ -556,9 +557,10 @@ export default function AdminMediaPage() {
   const vidMutation = useMutation({
     mutationFn: async (data: VideoFormData) => {
       const formData = new FormData();
+      formData.append('Id', data.id || '');
       formData.append('Slug', data.slug || generateSlug(data.titlePt));
       formData.append('ProviderType', String(data.providerType));
-      formData.append('ExternalId', data.externalId || '');
+      formData.append('ExternalId', null);
       formData.append('EmbedUrl', data.embedUrl || '');
       formData.append('DurationSeconds', String(data.durationSeconds || 0));
       formData.append('PublishedAt', new Date(data.publishedAt).toISOString());
@@ -577,7 +579,7 @@ export default function AdminMediaPage() {
       }
       
       if (editingId) {
-        return api.patch(`/videos/${editingId}/from-form`, formData, {
+        return api.patch(`/videos/from-form`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
@@ -620,8 +622,12 @@ export default function AdminMediaPage() {
         formData.append('ThumbnailAttachment', data.thumbnailAttachment);
       }
       
+      if (data.id) {
+        formData.append('Id', data.id);
+      }
+
       if (editingId) {
-        return api.patch(`/press-clippings/${editingId}/from-form`, formData, {
+        return api.patch(`/press-clippings/from-form`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {

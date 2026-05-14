@@ -1,6 +1,5 @@
-// hooks/useApiVideos.ts
+// hooks/useApiVideos.ts - VERSÃO CORRIGIDA (sem useTranslation)
 import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import api, { getFullImageUrl } from "@/service/api";
 
 export interface VideoContent {
@@ -14,7 +13,7 @@ export interface ApiVideo {
   id: string;
   slug: string;
   providerType: number;
-  externalId: string;
+  externalId: string | null;
   embedUrl: string;
   thumbnailUrl: string | null;
   thumbnailPath: string | null;
@@ -25,6 +24,7 @@ export interface ApiVideo {
   contents: VideoContent[];
   isActive: boolean;
   createdAt: string;
+  isDeleted?: boolean;
 }
 
 export interface FormattedVideo {
@@ -64,45 +64,69 @@ const getLocalizedContent = (contents: VideoContent[], isEn: boolean) => {
   };
 };
 
-export const useApiVideos = (status: number = 2) => {
-  const { i18n } = useTranslation();
-  const isEn = i18n.language === "en";
-
+// Hook que recebe o idioma como parâmetro
+export const useApiVideos = (isEn: boolean = false) => {
   return useQuery<FormattedVideo[]>({
-    queryKey: ['api-videos', status, isEn],
+    queryKey: ['api-videos', isEn],
     queryFn: async () => {
-      const response = await api.get('/videos', {
-        params: { page: 1, pageSize: 100, Status: status, IsActive: true }
-      });
-      const items = response.data.items || [];
-      
-      return items.map((item: ApiVideo) => {
-        const { title, description, body } = getLocalizedContent(item.contents, isEn);
-        return {
-          id: item.id,
-          slug: item.slug || item.id,
-          title,
-          description,
-          body,
-          embedUrl: item.embedUrl || '',
-          thumbnail: item.thumbnailUrl ? getFullImageUrl(item.thumbnailUrl) : '/placeholder-video.jpg',
-          durationSeconds: item.durationSeconds || 0,
-          publishedAt: item.publishedAt,
-          formattedDate: formatDate(item.publishedAt),
-          providerType: item.providerType || 1,
-          status: item.status,
-          isActive: item.isActive,
-        };
-      });
+      try {
+        console.log('Buscando vídeos da API...');
+        
+        const response = await api.get('/videos', {
+          params: { page: 1, pageSize: 100 }
+        });
+        
+        console.log('API Videos Response:', response.data);
+        
+        const items = response.data?.items || [];
+        
+        if (items.length === 0) {
+          console.warn('Nenhum vídeo retornado da API');
+          return [];
+        }
+        
+        // Filtrar apenas vídeos ativos e não deletados
+        const activeVideos = items.filter((item: ApiVideo) => 
+          item.isActive === true && 
+          item.isDeleted === false
+        );
+        
+        console.log('Vídeos ativos encontrados:', activeVideos.length);
+        
+        if (activeVideos.length === 0) {
+          console.warn('Nenhum vídeo ativo encontrado');
+          return [];
+        }
+        
+        return activeVideos.map((item: ApiVideo) => {
+          const { title, description, body } = getLocalizedContent(item.contents, isEn);
+          return {
+            id: item.id,
+            slug: item.slug || item.id,
+            title: title || 'Sem título',
+            description: description || 'Sem descrição',
+            body: body || '',
+            embedUrl: item.embedUrl || '',
+            thumbnail: item.thumbnailUrl ? getFullImageUrl(item.thumbnailUrl) : '/placeholder-video.jpg',
+            durationSeconds: item.durationSeconds || 0,
+            publishedAt: item.publishedAt || new Date().toISOString(),
+            formattedDate: formatDate(item.publishedAt),
+            providerType: item.providerType || 1,
+            status: item.status,
+            isActive: item.isActive,
+          };
+        });
+      } catch (error) {
+        console.error('Erro ao buscar vídeos:', error);
+        return [];
+      }
     },
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useApiVideoById = (id: string | undefined) => {
-  const { i18n } = useTranslation();
-  const isEn = i18n.language === "en";
-
+// Hook para buscar vídeo por ID
+export const useApiVideoById = (id: string | undefined, isEn: boolean = false) => {
   return useQuery({
     queryKey: ['api-video', id, isEn],
     queryFn: async () => {
@@ -113,9 +137,9 @@ export const useApiVideoById = (id: string | undefined) => {
       return {
         id: item.id,
         slug: item.slug || item.id,
-        title,
-        description,
-        body,
+        title: title || 'Sem título',
+        description: description || 'Sem descrição',
+        body: body || '',
         embedUrl: item.embedUrl || '',
         thumbnail: item.thumbnailUrl ? getFullImageUrl(item.thumbnailUrl) : '/placeholder-video.jpg',
         durationSeconds: item.durationSeconds || 0,

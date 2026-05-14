@@ -469,6 +469,7 @@ export default function AdminEventsEditorPage() {
         return response.data;
       } else {
         // Atualizar evento existente
+        formDataToSend.append('Id', data.id || '');
         formDataToSend.append('Slug', data.slug || generateSlug(data.titlePt));
         formDataToSend.append('StartAt', data.startAt);
         formDataToSend.append('EndAt', data.endAt || '');
@@ -495,7 +496,7 @@ export default function AdminEventsEditorPage() {
           formDataToSend.append('FeaturedImageAttachment', data.featuredImageFile);
         }
 
-        const response = await api.patch(`/events/${id}/from-form`, formDataToSend, {
+        const response = await api.patch(`/events/from-form`, formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' },
           timeout: 30000,
         });
