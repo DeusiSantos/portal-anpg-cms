@@ -1,0 +1,33 @@
+{
+  "title": "Sobre a ANPG",
+  "subtitle": "Institucional",
+  "description": "Conheça a Agência Nacional de Petróleo, Gás e Biocombustíveis de Angola e a nossa missão de regular o sector energético.",
+  "content": {
+    "mission": "Gerir o Sistema Petrolífero Nacional promovendo e regulando a execução das actividades petrolíferas, primando pela criação de valor para as partes interessadas, aplicação das melhores práticas e por uma actuação transparente.",
+    "vision": "Ser reconhecida como uma Agência Nacional Reguladora de Excelência.",
+    "intro": "A Agência Nacional de Petróleo, Gás e Biocombustíveis, abreviadamente ANPG, foi criada pelo Decreto Presidencial nº 49/19, de 6 de Fevereiro. A ANPG é uma Pessoa Colectiva de Direito Público dotada de personalidade jurídica, autonomia administrativa, financeira e patrimonial.",
+    "role": "A ANPG é a Concessionária Nacional e o Órgão Regulador das actividades petrolíferas. Nessa qualidade, a ANPG é responsável pela negociação dos contratos petrolíferos de concessões, promoção do acesso e de novas oportunidades de investimento, bem como a administração e fiscalização de áreas de concessão para exploração e produção de petróleo, gás natural e seus derivados, em todo o território nacional.",
+    "pcaMessage": "A Agência Nacional de Petróleo, Gás e Biocombustíveis, abreviadamente ANPG, criada pelo Decreto Presidencial nº 49/19, de 6 de Fevereiro, é a Concessionária Nacional, responsável pela gestão e optimização das operações de E&P, tendo como objectivo garantir a sustentabilidade do sector e uma governação e fiscalização mais efectivas.",
+    "pcaName": "Paulino Jerónimo",
+    "pcaTitle": "Presidente do Conselho de Administração"
+  },
+  "strategicObjectives": {
+    "title": "Objectivos Estratégicos",
+    "items": [
+      { "key": "reserves", "label": "Maximizar reservas provadas e recuperação de hidrocarbonetos" },
+      { "key": "growth", "label": "Assegurar o crescimento sustentável do sector" },
+      { "key": "localContent", "label": "Aumentar os níveis de Conteúdo Local" },
+      { "key": "governance", "label": "Garantir boa governação, transparência e prestação de contas" },
+      { "key": "data", "label": "Melhorar a Gestão de Dados do Sector Petrolífero Nacional" },
+      { "key": "safety", "label": "Alcançar níveis de excelência na área de QSMS" }
+    ]
+  },
+  "values": {
+    "integrity": { "title": "Integridade", "description": "Actuamos com honestidade, ética e responsabilidade em todas as nossas acções." },
+    "transparency": { "title": "Transparência", "description": "Compromisso com a clareza e abertura em todas as operações." },
+    "excellence": { "title": "Excelência", "description": "Padrões internacionais de qualidade e eficiência." },
+    "sustainability": { "title": "Sustentabilidade", "description": "Desenvolvimento responsável dos recursos energéticos." },
+    "innovation": { "title": "Inovação", "description": "Adopção de tecnologias avançadas no sector." },
+    "collaboration": { "title": "Colaboração", "description": "Trabalho em equipa e parcerias estratégicas para alcançar objectivos comuns." }
+  }
+}

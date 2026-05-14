@@ -1,38 +1,35 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { MapPin, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useContentBlock } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 import angolaCoast from "@/assets/angola-coast.jpg";
 
 export function InvestmentSection() {
-  const { t } = useTranslation();
+  const { data: homeData } = usePageData("home");
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
-  // CMS content block with fallback
-  const { data: cmsBlock } = useContentBlock("home", "investment");
-  const cms = cmsBlock?.content;
-
-  const image = cms?.image || angolaCoast;
+  const image = angolaCoast;
 
   const defaultHighlights = [
-    t("investment.highlights.blocks"),
-    t("investment.highlights.fiscal"),
-    t("investment.highlights.infrastructure"),
-    t("investment.highlights.support"),
-    t("investment.highlights.reserves"),
+    "Acesso a 47 blocos petrolíferos onshore e offshore",
+    "Regime fiscal competitivo e estável",
+    "Infraestrutura de classe mundial",
+    "Apoio regulatório dedicado aos investidores",
+    "Reservas comprovadas superiores a 8 mil milhões de barris",
   ];
-  const highlights = cms?.highlights?.length ? cms.highlights : defaultHighlights;
 
-  const defaultBlocks = [
-    { name: "Bloco 15/06", status: t("investment.blockStatus.production"), operator: "Eni" },
-    { name: "Bloco 31", status: t("investment.blockStatus.production"), operator: "BP" },
-    { name: "Bloco 17", status: t("investment.blockStatus.production"), operator: "TotalEnergies" },
-    { name: "Bloco 32", status: t("investment.blockStatus.development"), operator: "TotalEnergies" },
+  const highlights: string[] = homeData?.investment?.highlights?.length
+    ? homeData.investment.highlights
+    : defaultHighlights;
+
+  const blocks = [
+    { name: "Bloco 15/06", status: "Produção", operator: "Eni" },
+    { name: "Bloco 31", status: "Produção", operator: "BP" },
+    { name: "Bloco 17", status: "Produção", operator: "TotalEnergies" },
+    { name: "Bloco 32", status: "Desenvolvimento", operator: "TotalEnergies" },
   ];
-  const blocks = cms?.blocks?.length ? cms.blocks : defaultBlocks;
 
   return (
     <section ref={ref} className="section-padding bg-background overflow-hidden">
@@ -45,14 +42,14 @@ export function InvestmentSection() {
             transition={{ duration: 0.8 }}
           >
             <span className="text-sm font-semibold text-primary uppercase tracking-widest mb-4 block">
-              {cms?.label || t("investment.label")}
+              {homeData?.investment?.label || "Oportunidades de Investimento"}
             </span>
             <h2 className="section-title mb-6">
-              {cms?.title || t("investment.title")}<br />
-              <span className="text-primary">{cms?.titleHighlight || t("investment.titleHighlight")}</span>
+              {homeData?.investment?.title || "Invista hoje no futuro"}<br />
+              <span className="text-primary">{homeData?.investment?.titleHighlight || "energético de Angola."}</span>
             </h2>
             <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-              {cms?.description || t("investment.description")}
+              {homeData?.investment?.description || ""}
             </p>
 
             {/* Highlights */}
@@ -75,11 +72,11 @@ export function InvestmentSection() {
 
             <div className="flex flex-wrap gap-4">
               <Button variant="hero" size="lg" className="group">
-                {cms?.ctaGuide || t("investment.ctaGuide")}
+                {homeData?.investment?.ctaGuide || "Guia do Investidor"}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button variant="heroOutlineLight" size="lg">
-                {cms?.ctaBlocks || t("investment.ctaBlocks")}
+                {homeData?.investment?.ctaBlocks || "Ver Blocos Disponíveis"}
               </Button>
             </div>
           </motion.div>
@@ -96,7 +93,7 @@ export function InvestmentSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-foreground/20 to-transparent" />
               <div className="absolute top-6 left-6 flex items-center gap-2 text-primary-foreground">
                 <MapPin className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">{cms?.location || t("investment.location")}</span>
+                <span className="text-sm font-medium">{homeData?.investment?.location || "Luanda, Angola"}</span>
               </div>
             </div>
 
@@ -107,7 +104,7 @@ export function InvestmentSection() {
               transition={{ duration: 0.6, delay: 0.5 }}
               className="absolute -bottom-8 -left-8 md:left-auto md:-right-8 bg-background rounded-sm p-6 shadow-hero border border-border max-w-xs"
             >
-              <h4 className="font-semibold text-foreground mb-4">{cms?.featuredBlocksTitle || t("investment.featuredBlocks")}</h4>
+              <h4 className="font-semibold text-foreground mb-4">{homeData?.investment?.featuredBlocks || "Blocos em Destaque"}</h4>
               <div className="space-y-3">
                 {blocks.map((block: any) => (
                   <div key={block.name} className="flex items-center justify-between text-sm">
@@ -117,7 +114,7 @@ export function InvestmentSection() {
                 ))}
               </div>
               <a href="/ep-data/maps" className="mt-4 text-primary text-sm font-medium flex items-center gap-1 hover:underline">
-                {cms?.viewAllBlocksLabel || t("investment.viewAllBlocks")}
+                {homeData?.investment?.viewAllBlocks || "Ver todos os blocos"}
                 <ArrowRight className="w-3 h-3" />
               </a>
             </motion.div>

@@ -3,8 +3,8 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Play, BarChart3, Shield, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useContentBlock } from "@/hooks/useCMSData";
 import { useHeroSlides, HeroSlideData } from "@/hooks/useHeroSlides";
+import { usePageData } from "@/hooks/pages/usePageData";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import Fade from "embla-carousel-fade";
@@ -52,24 +52,16 @@ const iconMap: Record<string, React.ReactNode> = {
 export function HeroSection() {
   const { t, i18n } = useTranslation();
   const isEn = i18n.language === "en";
+  const { data: homeData } = usePageData("home");
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
 
-  const { data: cmsBlock } = useContentBlock("home", "hero");
-  const cmsContent = cmsBlock?.content;
-
-  // Buscar slides da API
   const { data: cmsSlides, isLoading: slidesLoading } = useHeroSlides();
-  
-  // Usar slides do CMS ou fallback para defaults
-  const slides = cmsSlides?.length
-    ? cmsSlides.slice(0, 6)
-    : defaultSlides;
-
-  const quickAccessItems = cmsContent?.quickAccess?.length ? cmsContent.quickAccess : defaultQuickAccess;
+  const slides = cmsSlides?.length ? cmsSlides.slice(0, 6) : defaultSlides;
+  const quickAccessItems = homeData?.hero?.quickAccess?.length ? homeData.hero.quickAccess : defaultQuickAccess;
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
     Fade(),
@@ -94,7 +86,6 @@ export function HeroSection() {
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
   const scrollTo = useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
 
-  // Parallax transforms
   const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
@@ -108,9 +99,9 @@ export function HeroSection() {
         <div className="flex h-full">
           {slides.map((slide: HeroSlideData | { image: string }, idx: number) => {
             const imageUrl = 'image' in slide ? slide.image : slide.image;
-            const title = 'title_pt' in slide && !isEn ? slide.title_pt : 
+            const title = 'title_pt' in slide && !isEn ? slide.title_pt :
                          'title_en' in slide ? (slide as HeroSlideData).title_en : '';
-            
+
             return (
               <div key={idx} className="flex-[0_0_100%] min-w-0 h-full relative">
                 <img
@@ -128,7 +119,6 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Rest of the component remains the same... */}
       <div className="absolute inset-0 z-[1] hero-overlay" />
 
       {/* Floating Orbs */}
@@ -168,7 +158,7 @@ export function HeroSection() {
           >
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse-slow" />
             <span className="text-sm text-primary-foreground font-medium">
-              {cmsContent?.subtitle || t("hero.subtitle")}
+              {homeData?.hero?.subtitle || t("hero.subtitle")}
             </span>
           </motion.div>
 
@@ -179,8 +169,8 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="hero-title text-primary-foreground mb-6"
           >
-            {cmsContent?.title || t("hero.title")}<br />
-            <span className="text-primary">{cmsContent?.titleHighlight || t("hero.titleHighlight")}</span>
+            {homeData?.hero?.title || t("hero.title")}<br />
+            <span className="text-primary">{homeData?.hero?.titleHighlight || t("hero.titleHighlight")}</span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -190,7 +180,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="hero-subtitle text-primary-foreground/80 max-w-2xl mb-10"
           >
-            {cmsContent?.description || t("hero.description")}
+            {homeData?.hero?.description || t("hero.description")}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -201,12 +191,12 @@ export function HeroSection() {
             className="flex flex-wrap gap-4"
           >
             <Button variant="hero" size="xl" className="group">
-              {cmsContent?.ctaPrimary || t("hero.ctaPrimary")}
+              {homeData?.hero?.ctaPrimary || t("hero.ctaPrimary")}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button variant="heroOutline" size="xl" className="group">
               <Play className="w-5 h-5" />
-              {cmsContent?.ctaSecondary || t("hero.ctaSecondary")}
+              {homeData?.hero?.ctaSecondary || t("hero.ctaSecondary")}
             </Button>
           </motion.div>
         </div>
@@ -280,7 +270,7 @@ export function HeroSection() {
       >
         <div className="flex flex-col items-center gap-2">
           <span className="text-xs text-primary-foreground/60 uppercase tracking-widest">
-            {t("hero.scrollHint")}
+            {homeData?.hero?.scrollHint || t("hero.scrollHint")}
           </span>
           <motion.div
             animate={{ y: [0, 8, 0] }}

@@ -1,0 +1,16 @@
+{
+  "loadingTitle": "A carregar...",
+  "subtitle": "Eventos",
+  "notFoundTitle": "Evento não encontrado",
+  "notFoundHeading": "O evento que procura não foi encontrado",
+  "notFoundMessage": "Verifique o endereço ou navegue pelos nossos eventos.",
+  "backButton": "Voltar aos Eventos",
+  "shareLabel": "Partilhar:",
+  "registerButton": "Registar-se",
+  "mapButton": "Ver no mapa",
+  "relatedTitle": "Eventos Relacionados",
+  "viewAllButton": "Ver Todos os Eventos",
+  "statusUpcoming": "Em breve",
+  "statusOngoing": "A decorrer",
+  "statusFinished": "Finalizado"
+}

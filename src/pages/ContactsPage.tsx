@@ -1,35 +1,43 @@
-import { Phone, Mail, MapPin, Clock } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Phone, Mail, MapPin, Clock, Loader2 } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { ContactMap } from "@/components/contact/ContactMap";
-import { useSiteSettings } from "@/contexts/SiteSettingsContext";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 export default function ContactsPage() {
-  const { t } = useTranslation();
-  const { settings } = useSiteSettings();
+  const { data: pageData, isLoading } = usePageData("contacts");
 
-  const contact = settings.contact;
+  const address = pageData?.address || "";
+  const phone = pageData?.phone || "";
+  const email = pageData?.email || "";
+  const hours = pageData?.hours || pageData?.info?.hours?.content || "";
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <PageLayout
       pageKey="contacts"
-      titleKey="pages.contacts.title"
-      subtitleKey="pages.contacts.subtitle"
-      descriptionKey="pages.contacts.description"
-      
+      title={pageData?.title || "Contactos"}
+      subtitle={pageData?.subtitle || "Fale Connosco"}
+      description={pageData?.description || ""}
       icon={<Phone className="w-8 h-8 text-primary" />}
-      breadcrumbs={[{ labelKey: "nav.submenu.contacts" }]}
+      breadcrumbs={[{ label: pageData?.title || "Contactos" }]}
     >
       <div className="grid lg:grid-cols-2 gap-12">
         {/* Contact Information */}
         <div className="space-y-8">
           <div>
             <h2 className="text-2xl font-bold text-foreground mb-2">
-              {t("pages.contacts.infoTitle")}
+              {pageData?.infoTitle || "Informações de Contacto"}
             </h2>
             <p className="text-muted-foreground">
-              {t("pages.contacts.infoDescription")}
+              {pageData?.infoDescription || ""}
             </p>
           </div>
 
@@ -41,10 +49,10 @@ export default function ContactsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">
-                  {t("pages.contacts.info.address.title")}
+                  {pageData?.info?.address?.title || "Localização"}
                 </h3>
                 <p className="text-muted-foreground whitespace-pre-line">
-                  {contact.address}
+                  {address}
                 </p>
               </div>
             </div>
@@ -56,9 +64,9 @@ export default function ContactsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">
-                  {t("pages.contacts.info.phone.title")}
+                  {pageData?.info?.phone?.title || "Telefone"}
                 </h3>
-                <p className="text-muted-foreground">{contact.phone}</p>
+                <p className="text-muted-foreground">{phone}</p>
               </div>
             </div>
 
@@ -69,9 +77,9 @@ export default function ContactsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">
-                  {t("pages.contacts.info.email.title")}
+                  {pageData?.info?.email?.title || "Email"}
                 </h3>
-                <p className="text-muted-foreground">{contact.email}</p>
+                <p className="text-muted-foreground">{email}</p>
               </div>
             </div>
 
@@ -82,17 +90,17 @@ export default function ContactsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">
-                  {t("pages.contacts.info.hours.title")}
+                  {pageData?.info?.hours?.title || "Horário"}
                 </h3>
                 <p className="text-muted-foreground">
-                  {contact.hours || t("pages.contacts.info.hours.content")}
+                  {hours}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Google Maps */}
-          <ContactMap address={contact.address} />
+          <ContactMap address={address} />
         </div>
 
         {/* Contact Form */}

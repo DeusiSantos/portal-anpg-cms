@@ -1,0 +1,78 @@
+{
+  "title": "Dados & Analytics",
+  "subtitle": "Serviços & Competências",
+  "description": "Publicação de estatísticas e relatórios sobre o sector energético.",
+  "intro": "A ANPG é responsável pela recolha, análise e publicação de dados e estatísticas sobre o sector energético angolano. Disponibilizamos informação actualizada e transparente para apoiar a tomada de decisões de investidores, operadores e entidades governamentais.",
+  "metrics": [
+    {
+      "value": "1.1M",
+      "label": "Barris/Dia",
+      "description": "Produção actual de petróleo"
+    },
+    {
+      "value": "47",
+      "label": "Blocos Activos",
+      "description": "Em exploração e produção"
+    },
+    {
+      "value": "15+",
+      "label": "Operadores",
+      "description": "Empresas internacionais"
+    },
+    {
+      "value": "8B+",
+      "label": "Barris",
+      "description": "Reservas provadas"
+    }
+  ],
+  "resourcesTitle": "Recursos de Dados",
+  "resources": [
+    {
+      "title": "Mapa de Concessões",
+      "description": "Mapa interactivo de todos os blocos petrolíferos com informações sobre operadores e participações.",
+      "href": "/ep-data/maps"
+    },
+    {
+      "title": "Plataforma IONA",
+      "description": "Sistema integrado de gestão de dados de exploração e produção.",
+      "href": "/ep-data/iona"
+    },
+    {
+      "title": "Pacotes de Dados",
+      "description": "Dados técnicos disponíveis para licenciamento por operadores e investidores.",
+      "href": "/ep-data/packages"
+    },
+    {
+      "title": "Estatísticas de Produção",
+      "description": "Dados actualizados sobre a produção petrolífera angolana.",
+      "href": "/production"
+    }
+  ],
+  "publicationsTitle": "Publicações Recentes",
+  "viewAll": "Ver Todas",
+  "publications": [
+    {
+      "title": "Relatório Anual 2024",
+      "type": "Relatório",
+      "date": "Janeiro 2025"
+    },
+    {
+      "title": "Estatísticas de Produção Q4 2024",
+      "type": "Estatísticas",
+      "date": "Janeiro 2025"
+    },
+    {
+      "title": "Boletim Mensal Dezembro 2024",
+      "type": "Boletim",
+      "date": "Dezembro 2024"
+    },
+    {
+      "title": "Análise do Sector Petrolífero",
+      "type": "Análise",
+      "date": "Novembro 2024"
+    }
+  ],
+  "dashboardTitle": "Dashboard Interactivo",
+  "dashboardDescription": "Explore dados de produção e estatísticas em tempo real.",
+  "dashboardCta": "Aceder ao Dashboard"
+}

@@ -1,0 +1,44 @@
+{
+  "title": "Pacotes de Dados",
+  "subtitle": "Licenciamento",
+  "description": "Dados técnicos disponíveis para licenciamento por operadores e investidores.",
+  "introTitle": "Pacotes de Dados Técnicos",
+  "introDescription": "A ANPG disponibiliza pacotes de dados técnicos sobre as bacias sedimentares angolanas, blocos petrolíferos e resultados de campanhas sísmicas. Estes pacotes são disponibilizados a investidores e operadores interessados em participar no sector.",
+  "packagesTitle": "Pacotes Disponíveis",
+  "packages": [
+    {
+      "icon": "Archive",
+      "title": "Pacote Básico",
+      "description": "Dados sísmicos 2D e informação geológica básica de uma bacia sedimentar.",
+      "price": "Mediante consulta"
+    },
+    {
+      "icon": "Database",
+      "title": "Pacote Standard",
+      "description": "Dados sísmicos 2D e 3D, dados de poços e estudos geológicos de um bloco.",
+      "price": "Mediante consulta"
+    },
+    {
+      "icon": "Package",
+      "title": "Pacote Completo",
+      "description": "Dados completos incluindo sísmicos, poços, estudos de reservatório e avaliação de recursos.",
+      "price": "Mediante consulta"
+    },
+    {
+      "icon": "Archive",
+      "title": "Pacote Personalizado",
+      "description": "Selecção personalizada de dados conforme as necessidades específicas do investidor.",
+      "price": "Mediante consulta"
+    }
+  ],
+  "processTitle": "Como Adquirir",
+  "processSteps": [
+    "Submeta um pedido formal à ANPG indicando os dados pretendidos e o propósito.",
+    "A ANPG avaliará o pedido e informará sobre disponibilidade e condições de acesso.",
+    "Após aprovação, será emitida uma proposta comercial com os termos de licenciamento.",
+    "Assinatura do acordo de licenciamento de dados e pagamento das taxas aplicáveis.",
+    "Entrega dos dados nos formatos acordados."
+  ],
+  "processButtonText": "Solicitar Pacote de Dados",
+  "processButtonLink": "/contacts"
+}

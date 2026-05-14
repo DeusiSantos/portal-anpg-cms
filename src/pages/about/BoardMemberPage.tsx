@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
+import { usePageData } from "@/hooks/pages/usePageData";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Crown, Quote, User, Briefcase, Building, Mail, Phone, MapPin } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -80,7 +81,17 @@ const getGroupName = (group: CouncilGroup | undefined, lang: number): string => 
   return content?.name || '';
 };
 
-function BiographySection({ member, isEn }: { member: CouncilMember; isEn: boolean }) {
+interface BoardLabels {
+  biographyTitle?: string;
+  noBiography?: string;
+  messageTitle?: string;
+  contactTitle?: string;
+  pelouroTitle?: string;
+  titleLabel?: string;
+  portfolioLabel?: string;
+}
+
+function BiographySection({ member, isEn, labels }: { member: CouncilMember; isEn: boolean; labels?: BoardLabels }) {
   const content = getMemberContent(member, isEn ? 2 : 1);
   const biography = content?.biography || '';
 
@@ -93,7 +104,7 @@ function BiographySection({ member, isEn }: { member: CouncilMember; isEn: boole
               <User className="w-5 h-5 text-primary" />
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">
-              {isEn ? "Biography" : "Biografia"}
+              {labels?.biographyTitle || "Biografia"}
             </h2>
           </div>
           <div className="px-6 pb-6">
@@ -103,7 +114,7 @@ function BiographySection({ member, isEn }: { member: CouncilMember; isEn: boole
               </p>
             ) : (
               <p className="text-muted-foreground italic">
-                {isEn ? "No biography available." : "Nenhuma biografia disponível."}
+                {labels?.noBiography || "Nenhuma biografia disponível."}
               </p>
             )}
           </div>
@@ -113,7 +124,7 @@ function BiographySection({ member, isEn }: { member: CouncilMember; isEn: boole
   );
 }
 
-function MessageSection({ member, isEn }: { member: CouncilMember; isEn: boolean }) {
+function MessageSection({ member, isEn, labels }: { member: CouncilMember; isEn: boolean; labels?: BoardLabels }) {
   const content = getMemberContent(member, isEn ? 2 : 1);
   const message = content?.institutionalMessage || '';
 
@@ -128,7 +139,7 @@ function MessageSection({ member, isEn }: { member: CouncilMember; isEn: boolean
               <Quote className="w-5 h-5 text-primary" />
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">
-              {isEn ? "Message" : "Mensagem"}
+              {labels?.messageTitle || "Mensagem"}
             </h2>
           </div>
           <div className="px-6 pb-6">
@@ -145,7 +156,7 @@ function MessageSection({ member, isEn }: { member: CouncilMember; isEn: boolean
   );
 }
 
-function ContactSection({ member, isEn }: { member: CouncilMember; isEn: boolean }) {
+function ContactSection({ member, isEn, labels }: { member: CouncilMember; isEn: boolean; labels?: BoardLabels }) {
   const { email, phone, officeLocation } = member;
   
   if (!email && !phone && !officeLocation) return null;
@@ -159,7 +170,7 @@ function ContactSection({ member, isEn }: { member: CouncilMember; isEn: boolean
               <Briefcase className="w-5 h-5 text-primary" />
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">
-              {isEn ? "Contact Information" : "Informações de Contacto"}
+              {labels?.contactTitle || "Informações de Contacto"}
             </h2>
           </div>
           <div className="px-6 pb-6 space-y-3">
@@ -190,7 +201,7 @@ function ContactSection({ member, isEn }: { member: CouncilMember; isEn: boolean
   );
 }
 
-function PelouroSection({ member, isEn }: { member: CouncilMember; isEn: boolean }) {
+function PelouroSection({ member, isEn, labels }: { member: CouncilMember; isEn: boolean; labels?: BoardLabels }) {
   const content = getMemberContent(member, isEn ? 2 : 1);
   const pelouro = content?.pelouro || '';
   const title = content?.title || '';
@@ -206,14 +217,14 @@ function PelouroSection({ member, isEn }: { member: CouncilMember; isEn: boolean
               <Building className="w-5 h-5 text-primary" />
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">
-              {isEn ? "Position & Portfolio" : "Cargo & Pelouro"}
+              {labels?.pelouroTitle || "Cargo & Pelouro"}
             </h2>
           </div>
           <div className="px-6 pb-6 space-y-3">
             {title && (
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                  {isEn ? "Title" : "Título"}
+                  {labels?.titleLabel || "Título"}
                 </span>
                 <p className="text-foreground font-medium mt-1">{title}</p>
               </div>
@@ -221,7 +232,7 @@ function PelouroSection({ member, isEn }: { member: CouncilMember; isEn: boolean
             {pelouro && (
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                  {isEn ? "Portfolio" : "Pelouro"}
+                  {labels?.portfolioLabel || "Pelouro"}
                 </span>
                 <p className="text-muted-foreground mt-1">{pelouro}</p>
               </div>
@@ -238,6 +249,17 @@ export default function BoardMemberPage() {
   const navigate = useNavigate();
   const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
+  const { data: pageData } = usePageData("boardMember");
+
+  const labels: BoardLabels = {
+    biographyTitle: pageData?.biographyTitle,
+    noBiography: pageData?.noBiography,
+    messageTitle: pageData?.messageTitle,
+    contactTitle: pageData?.contactTitle,
+    pelouroTitle: pageData?.pelouroTitle,
+    titleLabel: pageData?.titleLabel,
+    portfolioLabel: pageData?.portfolioLabel,
+  };
 
   // Buscar membro pelo ID
   const { data: member, isLoading, error } = useQuery({
@@ -272,9 +294,9 @@ export default function BoardMemberPage() {
 
   if (isLoading) {
     return (
-      <PageLayout 
-        title="..." 
-        pageKey="board-member" 
+      <PageLayout
+        title={pageData?.loadingTitle || "..."}
+        pageKey="board-member"
         breadcrumbs={[
           { labelKey: "nav.aboutUs", href: "/about" },
           { labelKey: "nav.submenu.anpg", href: "/about/anpg" },
@@ -302,23 +324,21 @@ export default function BoardMemberPage() {
   if (error || !member) {
     return (
       <PageLayout
-        title={isEn ? "Member Not Found" : "Membro Não Encontrado"}
+        title={pageData?.notFoundTitle || "Membro Não Encontrado"}
         pageKey="board-member"
         breadcrumbs={[
           { labelKey: "nav.aboutUs", href: "/about" },
           { labelKey: "nav.submenu.anpg", href: "/about/anpg" },
-          { label: isEn ? "Board Member" : "Membro" },
+          { label: pageData?.notFoundTitle || "Membro" },
         ]}
       >
         <div className="text-center py-16">
           <p className="text-muted-foreground mb-6">
-            {isEn 
-              ? "The requested board member was not found." 
-              : "O membro do conselho solicitado não foi encontrado."}
+            {pageData?.notFoundMessage || "O membro do conselho solicitado não foi encontrado."}
           </p>
           <Button onClick={() => navigate("/about/anpg")} variant="default">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {isEn ? "Back to ANPG" : "Voltar à ANPG"}
+            {pageData?.backToAnpg || "Voltar à ANPG"}
           </Button>
         </div>
       </PageLayout>
@@ -344,7 +364,7 @@ export default function BoardMemberPage() {
           className="mb-8 -ml-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          {isEn ? "Back to Board" : "Voltar ao Conselho"}
+          {pageData?.backToBoard || "Voltar ao Conselho"}
         </Button>
       </SectionTransition>
 
@@ -397,15 +417,15 @@ export default function BoardMemberPage() {
 
       {/* Content Grid */}
       <div className="grid gap-6 md:grid-cols-2 mb-10">
-        <BiographySection member={member} isEn={isEn} />
+        <BiographySection member={member} isEn={isEn} labels={labels} />
         <div className="space-y-6">
-          <MessageSection member={member} isEn={isEn} />
-          <ContactSection member={member} isEn={isEn} />
+          <MessageSection member={member} isEn={isEn} labels={labels} />
+          <ContactSection member={member} isEn={isEn} labels={labels} />
         </div>
       </div>
 
       {/* Pelouro Section - Full Width */}
-      <PelouroSection member={member} isEn={isEn} />
+      <PelouroSection member={member} isEn={isEn} labels={labels} />
     </PageLayout>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import api from "@/service/api";
 import { useBlockProduction } from "@/hooks/useBlockProduction";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 // Tipos da API
 interface Basin {
@@ -139,6 +140,7 @@ function InfoCard({ icon: Icon, label, value }: { icon: React.ElementType; label
 export default function BlockDetailsPage() {
   const { blockId } = useParams<{ blockId: string }>();
   const { t } = useTranslation();
+  const { data: pageData } = usePageData("blockDetails");
   const { data: block, isLoading } = usePetroleumBlockById(blockId);
   const { data: production } = useBlockProduction(blockId);
 
@@ -146,13 +148,13 @@ export default function BlockDetailsPage() {
 
   if (isLoading) {
     return (
-      <PageLayout 
-        titleKey="pages.blockDetails.title" 
-        subtitleKey="pages.blockDetails.subtitle" 
-        descriptionKey="pages.blockDetails.description" 
-        icon={<MapPin className="w-8 h-8 text-primary" />} 
+      <PageLayout
+        title={pageData?.title}
+        subtitle={pageData?.subtitle}
+        description={pageData?.description}
+        icon={<MapPin className="w-8 h-8 text-primary" />}
         breadcrumbs={[
-          { labelKey: "nav.epData", href: "/ep-data" }, 
+          { labelKey: "nav.epData", href: "/ep-data" },
           { labelKey: "nav.submenu.epMaps", href: "/ep-data/maps" }
         ]}
       >
@@ -165,18 +167,18 @@ export default function BlockDetailsPage() {
 
   if (!block) {
     return (
-      <PageLayout 
-        titleKey="pages.blockDetails.notFound" 
-        subtitleKey="pages.blockDetails.subtitle" 
-        descriptionKey="pages.blockDetails.notFoundDesc" 
-        icon={<MapPin className="w-8 h-8 text-primary" />} 
+      <PageLayout
+        title={pageData?.notFound}
+        subtitle={pageData?.subtitle}
+        description={pageData?.notFoundDesc}
+        icon={<MapPin className="w-8 h-8 text-primary" />}
         breadcrumbs={[
-          { labelKey: "nav.epData", href: "/ep-data" }, 
+          { labelKey: "nav.epData", href: "/ep-data" },
           { labelKey: "nav.submenu.epMaps", href: "/ep-data/maps" }
         ]}
       >
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-6">O bloco solicitado não foi encontrado.</p>
+          <p className="text-muted-foreground mb-6">{pageData?.notFoundDesc || "O bloco solicitado não foi encontrado."}</p>
           <Link to="/ep-data/maps">
             <Button variant="default">
               <ArrowLeft className="w-4 h-4 mr-2" />

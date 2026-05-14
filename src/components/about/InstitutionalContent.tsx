@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import {
   Handshake,
   HandHeart,
@@ -8,22 +7,28 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-interface PrincipleItem {
-  titleKey: string;
-  descKey: string;
-}
-
-const defaultPrinciples: PrincipleItem[] = [
-  { titleKey: "pages.anpg.institutional.principles.angola.title", descKey: "pages.anpg.institutional.principles.angola.desc" },
-  { titleKey: "pages.anpg.institutional.principles.global.title", descKey: "pages.anpg.institutional.principles.global.desc" },
-  { titleKey: "pages.anpg.institutional.principles.future.title", descKey: "pages.anpg.institutional.principles.future.desc" },
-  { titleKey: "pages.anpg.institutional.principles.mobilize.title", descKey: "pages.anpg.institutional.principles.mobilize.desc" },
-  { titleKey: "pages.anpg.institutional.principles.excellence.title", descKey: "pages.anpg.institutional.principles.excellence.desc" },
-  { titleKey: "pages.anpg.institutional.principles.responsibility.title", descKey: "pages.anpg.institutional.principles.responsibility.desc" },
-];
-
-interface InstitutionalContentProps {
-  cmsBlocks?: any[]; // Mantido para compatibilidade
+export interface InstitutionalData {
+  purpose?: {
+    title: string;
+    desc: string;
+  };
+  principles?: {
+    title: string;
+    subtitle: string;
+    items: { title: string; desc: string }[];
+  };
+  objectives?: {
+    title: string;
+    items: string[];
+  };
+  socialResp?: {
+    title: string;
+    desc: string;
+  };
+  environment?: {
+    title: string;
+    desc: string;
+  };
 }
 
 function SectionIcon({ icon: Icon, delay = 0 }: { icon: typeof Handshake; delay?: number }) {
@@ -54,148 +59,124 @@ function SectionTitle({ children, delay = 0 }: { children: React.ReactNode; dela
   );
 }
 
-function PurposeSection() {
-  const { t } = useTranslation();
+export function InstitutionalContent({ institutional }: { institutional?: InstitutionalData }) {
+  const purpose = institutional?.purpose;
+  const principles = institutional?.principles;
+  const objectives = institutional?.objectives;
+  const socialResp = institutional?.socialResp;
+  const environment = institutional?.environment;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
-      className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-primary/3 p-8 md:p-10 shadow-card"
-    >
-      <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <SectionIcon icon={Handshake} />
-      <SectionTitle>{t("pages.anpg.institutional.purpose.title")}</SectionTitle>
-      <p className="text-muted-foreground leading-relaxed text-base">
-        {t("pages.anpg.institutional.purpose.desc")}
-      </p>
-    </motion.div>
-  );
-}
-
-function PrinciplesSection() {
-  const { t } = useTranslation();
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 md:p-10 shadow-card"
-    >
-      <SectionIcon icon={HandHeart} delay={0.1} />
-      <SectionTitle delay={0.1}>{t("pages.anpg.institutional.principles.title")}</SectionTitle>
-      <p className="text-muted-foreground leading-relaxed mb-6">
-        {t("pages.anpg.institutional.principles.subtitle")}
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {defaultPrinciples.map((p, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.15 + i * 0.07 }}
-            className="space-y-1.5"
-          >
-            <h4 className="text-sm font-bold text-primary">{t(p.titleKey)}</h4>
-            <p className="text-sm text-muted-foreground leading-relaxed">{t(p.descKey)}</p>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-function ObjectivesSection() {
-  const { t } = useTranslation();
-  const objectives = t("pages.anpg.institutional.objectives.items", { returnObjects: true }) as string[];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
-    >
-      <SectionIcon icon={Target} delay={0.1} />
-      <SectionTitle delay={0.1}>{t("pages.anpg.institutional.objectives.title")}</SectionTitle>
-      <ol className="space-y-4">
-        {objectives.map((item, i) => (
-          <motion.li
-            key={i}
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3, delay: 0.2 + i * 0.08 }}
-            className="flex gap-3 text-sm text-muted-foreground leading-relaxed"
-          >
-            <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center mt-0.5">
-              {i + 1}
-            </span>
-            <span>{item}</span>
-          </motion.li>
-        ))}
-      </ol>
-    </motion.div>
-  );
-}
-
-function SocialResponsibilitySection() {
-  const { t } = useTranslation();
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
-    >
-      <SectionIcon icon={Users} delay={0.2} />
-      <SectionTitle delay={0.2}>{t("pages.anpg.institutional.socialResp.title")}</SectionTitle>
-      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-        {t("pages.anpg.institutional.socialResp.desc")}
-      </p>
-    </motion.div>
-  );
-}
-
-function EnvironmentSection() {
-  const { t } = useTranslation();
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
-    >
-      <SectionIcon icon={ShieldCheck} delay={0.3} />
-      <SectionTitle delay={0.3}>{t("pages.anpg.institutional.environment.title")}</SectionTitle>
-      <p className="text-sm text-muted-foreground leading-relaxed">
-        {t("pages.anpg.institutional.environment.desc")}
-      </p>
-    </motion.div>
-  );
-}
-
-export function InstitutionalContent({ cmsBlocks }: InstitutionalContentProps) {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PurposeSection />
-        <PrinciplesSection />
+        {/* Purpose */}
+        {purpose && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-primary/3 p-8 md:p-10 shadow-card"
+          >
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <SectionIcon icon={Handshake} />
+            <SectionTitle>{purpose.title}</SectionTitle>
+            <p className="text-muted-foreground leading-relaxed text-base">{purpose.desc}</p>
+          </motion.div>
+        )}
+
+        {/* Principles */}
+        {principles && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 md:p-10 shadow-card"
+          >
+            <SectionIcon icon={HandHeart} delay={0.1} />
+            <SectionTitle delay={0.1}>{principles.title}</SectionTitle>
+            <p className="text-muted-foreground leading-relaxed mb-6">{principles.subtitle}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {principles.items.map((p, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: 0.15 + i * 0.07 }}
+                  className="space-y-1.5"
+                >
+                  <h4 className="text-sm font-bold text-primary">{p.title}</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <ObjectivesSection />
-        <SocialResponsibilitySection />
-        <EnvironmentSection />
+        {/* Objectives */}
+        {objectives && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
+          >
+            <SectionIcon icon={Target} delay={0.1} />
+            <SectionTitle delay={0.1}>{objectives.title}</SectionTitle>
+            <ol className="space-y-4">
+              {objectives.items.map((item, i) => (
+                <motion.li
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: 0.2 + i * 0.08 }}
+                  className="flex gap-3 text-sm text-muted-foreground leading-relaxed"
+                >
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span>{item}</span>
+                </motion.li>
+              ))}
+            </ol>
+          </motion.div>
+        )}
+
+        {/* Social Responsibility */}
+        {socialResp && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
+          >
+            <SectionIcon icon={Users} delay={0.2} />
+            <SectionTitle delay={0.2}>{socialResp.title}</SectionTitle>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{socialResp.desc}</p>
+          </motion.div>
+        )}
+
+        {/* Environment */}
+        {environment && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 shadow-card h-full"
+          >
+            <SectionIcon icon={ShieldCheck} delay={0.3} />
+            <SectionTitle delay={0.3}>{environment.title}</SectionTitle>
+            <p className="text-sm text-muted-foreground leading-relaxed">{environment.desc}</p>
+          </motion.div>
+        )}
       </div>
     </div>
   );

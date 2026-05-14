@@ -1,0 +1,28 @@
+{
+  "title": "Regulação",
+  "subtitle": "Serviços",
+  "description": "Quadro regulatório do sector petrolífero angolano. Licenciamento, fiscalização e licitações.",
+  "intro": "A ANPG é responsável pelo desenvolvimento e aplicação do quadro regulatório do sector energético angolano. A nossa missão é garantir que todas as actividades petrolíferas sejam conduzidas de acordo com as melhores práticas internacionais, promovendo a transparência, a eficiência e a sustentabilidade do sector.",
+  "areasTitle": "Áreas de Actuação",
+  "regulatoryAreas": [
+    { "icon": "FileCheck", "title": "Licenciamento", "description": "Emissão e gestão de licenças para actividades de pesquisa, produção e comercialização de petróleo e gás.", "href": "/regulation/licensing" },
+    { "icon": "Shield", "title": "Fiscalização", "description": "Supervisão e controlo das operações petrolíferas para garantir conformidade com a legislação vigente.", "href": "/regulation/oversight" },
+    { "icon": "Globe2", "title": "Licitações", "description": "Gestão dos processos de licitação para concessão de blocos de exploração e produção.", "href": "/regulation/tenders" }
+  ],
+  "legalFrameworkTitle": "Quadro Legal",
+  "legalFrameworkSubtitle": "Principais instrumentos legais que regem o sector petrolífero angolano",
+  "legalFramework": [
+    { "title": "Lei das Actividades Petrolíferas", "reference": "Lei nº 10/04", "description": "Quadro legal base para as actividades de pesquisa, desenvolvimento, produção e comercialização de petróleo." },
+    { "title": "Decreto Presidencial ANPG", "reference": "Decreto nº 49/19", "description": "Criação e estatutos da Agência Nacional de Petróleo, Gás e Biocombustíveis." },
+    { "title": "Regulamento de Conteúdo Local", "reference": "Decreto nº 271/20", "description": "Legislação sobre o conteúdo local no sector petrolífero de Angola." },
+    { "title": "Regulamento de Segurança", "reference": "Decreto nº 38/09", "description": "Normas de segurança para operações petrolíferas." }
+  ],
+  "principlesTitle": "Princípios Regulatórios",
+  "principles": [
+    "Transparência e previsibilidade nas decisões regulatórias",
+    "Equidade no tratamento de todos os operadores",
+    "Eficiência na gestão dos recursos naturais",
+    "Protecção ambiental e segurança operacional",
+    "Promoção do desenvolvimento económico e social"
+  ]
+}

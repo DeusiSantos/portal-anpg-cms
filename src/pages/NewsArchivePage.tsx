@@ -17,12 +17,10 @@ import {
   SlidersHorizontal,
   Archive
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PageHero } from "@/components/layout/PageHero";
 import { PageBreadcrumb } from "@/components/layout/PageBreadcrumb";
-import { usePageBanner } from "@/hooks/useCMSData";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,7 +46,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useNewsArticles } from "@/hooks/useCMSData";
+import { useApiNews } from "@/hooks/useApiNews";
+import { usePageData } from "@/hooks/pages/usePageData";
 import { newsItems as fallbackNews, getCategoryLabel, getCategoryColor } from "@/data/newsData";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -117,8 +116,7 @@ const isWithinDateRange = (dateStr: string, range: string): boolean => {
 };
 
 export default function NewsArchivePage() {
-  const { t } = useTranslation();
-  const { data: cmsBanner } = usePageBanner("news-archive");
+  const { data: pageData } = usePageData("newsArchive");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -128,8 +126,8 @@ export default function NewsArchivePage() {
   const [viewMode, setViewMode] = useState<"list" | "compact">("compact");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  const { data: cmsNews } = useNewsArticles();
-  const newsItems = cmsNews?.length ? cmsNews : fallbackNews;
+  const { data: apiNews } = useApiNews();
+  const newsItems = apiNews?.length ? apiNews : fallbackNews;
 
   const filteredNews = useMemo(() => {
     let results = [...newsItems];
@@ -242,9 +240,8 @@ export default function NewsArchivePage() {
       <Header />
       
       <PageHero
-        title={cmsBanner?.title || "Arquivo de Notícias"}
-        subtitle={cmsBanner?.subtitle || "Pesquise e explore o arquivo completo de notícias e comunicados da ANPG"}
-        backgroundImage={cmsBanner?.image_url || undefined}
+        title={pageData?.title || "Arquivo de Notícias"}
+        subtitle={pageData?.subtitle || "Pesquise e explore o arquivo completo de notícias e comunicados da ANPG"}
         icon={<Archive className="w-8 h-8" />}
       />
 
@@ -264,7 +261,7 @@ export default function NewsArchivePage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Pesquisar no arquivo..."
+                    placeholder={pageData?.searchPlaceholder || "Pesquisar no arquivo..."}
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -349,7 +346,7 @@ export default function NewsArchivePage() {
                     className="gap-2"
                   >
                     <SlidersHorizontal className="w-4 h-4" />
-                    Filtros
+                    {pageData?.filterLabel || "Filtros"}
                     {activeFilterCount > 0 && (
                       <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
                         {activeFilterCount}
@@ -365,7 +362,7 @@ export default function NewsArchivePage() {
                   <div className="pt-4 mt-4 border-t">
                     <div className="flex items-center gap-2 mb-3">
                       <Tag className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Filtrar por etiquetas:</span>
+                      <span className="text-sm font-medium">{pageData?.tagFilterLabel || "Filtrar por etiquetas:"}</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {allTags.map((tag) => (
@@ -392,15 +389,15 @@ export default function NewsArchivePage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="w-4 h-4" />
                 <span>
-                  <strong className="text-foreground">{filteredNews.length}</strong> 
-                  {filteredNews.length === 1 ? " artigo encontrado" : " artigos encontrados"}
+                  <strong className="text-foreground">{filteredNews.length}</strong>
+                  {filteredNews.length === 1 ? ` ${pageData?.articleFound || "artigo encontrado"}` : ` ${pageData?.articlesFound || "artigos encontrados"}`}
                 </span>
               </div>
               
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
                   <X className="w-3 h-3" />
-                  Limpar filtros
+                  {pageData?.clearFilters || "Limpar filtros"}
                 </Button>
               )}
             </div>
@@ -410,12 +407,12 @@ export default function NewsArchivePage() {
           {filteredNews.length === 0 ? (
             <div className="text-center py-16">
               <FileText className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum resultado encontrado</h3>
+              <h3 className="text-xl font-semibold mb-2">{pageData?.noResults || "Nenhum resultado encontrado"}</h3>
               <p className="text-muted-foreground mb-4">
-                Tente ajustar os filtros ou termos de pesquisa
+                {pageData?.noResultsDesc || "Tente ajustar os filtros ou termos de pesquisa"}
               </p>
               <Button variant="outline" onClick={clearFilters}>
-                Limpar filtros
+                {pageData?.clearFilters || "Limpar filtros"}
               </Button>
             </div>
           ) : (
@@ -546,7 +543,10 @@ export default function NewsArchivePage() {
               </Pagination>
               
               <p className="text-center text-sm text-muted-foreground mt-3">
-                Página {currentPage} de {totalPages} • {filteredNews.length} artigos
+                {(pageData?.pageInfo || "Página {page} de {total} • {count} artigos")
+                  .replace("{page}", String(currentPage))
+                  .replace("{total}", String(totalPages))
+                  .replace("{count}", String(filteredNews.length))}
               </p>
             </div>
           )}
@@ -555,7 +555,7 @@ export default function NewsArchivePage() {
           <div className="mt-12 text-center">
             <Link to="/media">
               <Button variant="outline" className="gap-2">
-                Voltar à página de Media
+                {pageData?.backToMedia || "Voltar à página de Media"}
               </Button>
             </Link>
           </div>

@@ -1,21 +1,17 @@
 import { Layers, Download, BarChart3 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { useContentBlocks } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 import { seismic2dSurveys, seismic3dSurveys, seismic4dSurveys } from "@/data/seismic";
 
 const pdfDownloads = [
-  { label: "Sísmica 2D Proprietária", labelEn: "Proprietary 2D Seismic", href: "/documents/seismic/sismica-2d-proprietaria.pdf" },
-  { label: "Sísmica 2D Multicliente", labelEn: "Multiclient 2D Seismic", href: "/documents/seismic/sismica-2d-multicliente.pdf" },
-  { label: "Sísmica 3D/4D Proprietária", labelEn: "Proprietary 3D/4D Seismic", href: "/documents/seismic/sismica-3d-4d-proprietaria.pdf" },
+  { label: "Sísmica 2D Proprietária", href: "/documents/seismic/sismica-2d-proprietaria.pdf" },
+  { label: "Sísmica 2D Multicliente", href: "/documents/seismic/sismica-2d-multicliente.pdf" },
+  { label: "Sísmica 3D/4D Proprietária", href: "/documents/seismic/sismica-3d-4d-proprietaria.pdf" },
 ];
 
 export default function SeismicCampaignsPage() {
-  const { t, i18n } = useTranslation();
-  const isEn = i18n.language === "en";
-  const { data: cmsBlocks } = useContentBlocks("exploration-seismic-campaigns");
-  const getSection = (key: string) => cmsBlocks?.find(b => b.section_key === key)?.content;
+  const { data: pageData } = usePageData("exploration");
 
   const stats = useMemo(() => {
     const all2d = seismic2dSurveys;
@@ -33,7 +29,6 @@ export default function SeismicCampaignsPage() {
     return { count2d: all2d.length, count3d: all3d.length, count4d: all4d.length, total: allSurveys.length, basins: basins.length, operators: operators.length, total2dKm, total3dKm2, total4dKm2, yearMin, yearMax };
   }, []);
 
-  // Recent surveys (last 5 years)
   const recentSurveys = useMemo(() => {
     const all = [...seismic2dSurveys, ...seismic3dSurveys, ...seismic4dSurveys];
     return all.filter(s => s.year >= 2019).sort((a, b) => b.year - a.year);
@@ -42,51 +37,35 @@ export default function SeismicCampaignsPage() {
   return (
     <PageLayout
       pageKey="exploration-seismic-campaigns"
-      titleKey="pages.exploration.seismicCampaigns"
-      subtitleKey="pages.exploration.seismicCampaignsSubtitle"
-      
+      title={pageData?.seismicCampaigns}
+      subtitle={pageData?.seismicCampaignsSubtitle}
       icon={<Layers className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.exploration", href: "/exploration" },
-        { labelKey: "pages.exploration.seismicCampaigns" },
+        { label: pageData?.seismicCampaigns || "Campanhas Sísmicas" },
       ]}
     >
       <div className="space-y-12">
-        {/* CMS content */}
-        {["intro", "details", "technology"].map((key) => {
-          const section = getSection(key);
-          if (!section) return null;
-          return (
-            <section key={key}>
-              <h2 className="text-2xl font-bold text-foreground mb-4">{(section as any).title}</h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">{(section as any).body}</p>
-            </section>
-          );
-        })}
-        {!cmsBlocks?.length && (
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            {t("pages.exploration.seismicCampaignsContent")}
-          </p>
-        )}
+        <p className="text-muted-foreground text-lg leading-relaxed">
+          {pageData?.seismicCampaignsContent || "A ANPG coordena e supervisiona as campanhas de aquisição de dados sísmicos em Angola, garantindo a qualidade e a integridade dos dados recolhidos."}
+        </p>
 
         {/* Stats */}
         <section>
           <div className="flex items-center gap-2 mb-6">
             <BarChart3 className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">
-              {isEn ? "Campaign Statistics" : "Estatísticas de Campanhas"}
-            </h2>
+            <h2 className="text-2xl font-bold text-foreground">Estatísticas de Campanhas</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { value: stats.total, label: isEn ? "Total Surveys" : "Total de Levantamentos" },
-              { value: stats.count2d, label: isEn ? "2D Surveys" : "Levantamentos 2D" },
-              { value: stats.count3d, label: isEn ? "3D Surveys" : "Levantamentos 3D" },
-              { value: stats.count4d, label: isEn ? "4D Surveys" : "Levantamentos 4D" },
-              { value: `${stats.total2dKm.toLocaleString()} km`, label: isEn ? "2D Coverage" : "Cobertura 2D" },
-              { value: `${stats.total3dKm2.toLocaleString()} km²`, label: isEn ? "3D Coverage" : "Cobertura 3D" },
-              { value: `${stats.total4dKm2.toLocaleString()} km²`, label: isEn ? "4D Coverage" : "Cobertura 4D" },
-              { value: `${stats.yearMin}–${stats.yearMax}`, label: isEn ? "Time Span" : "Período" },
+              { value: stats.total, label: "Total de Levantamentos" },
+              { value: stats.count2d, label: "Levantamentos 2D" },
+              { value: stats.count3d, label: "Levantamentos 3D" },
+              { value: stats.count4d, label: "Levantamentos 4D" },
+              { value: `${stats.total2dKm.toLocaleString()} km`, label: "Cobertura 2D" },
+              { value: `${stats.total3dKm2.toLocaleString()} km²`, label: "Cobertura 3D" },
+              { value: `${stats.total4dKm2.toLocaleString()} km²`, label: "Cobertura 4D" },
+              { value: `${stats.yearMin}–${stats.yearMax}`, label: "Período" },
             ].map((item, i) => (
               <div key={i} className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
                 <p className="text-2xl font-bold text-primary">{item.value}</p>
@@ -98,19 +77,17 @@ export default function SeismicCampaignsPage() {
 
         {/* Recent Surveys */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            {isEn ? "Recent Campaigns (2019–2025)" : "Campanhas Recentes (2019–2025)"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Campanhas Recentes (2019–2025)</h2>
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full text-sm">
               <thead className="bg-secondary/70">
                 <tr>
-                  <th className="text-left p-3 font-semibold text-foreground">{isEn ? "Survey" : "Levantamento"}</th>
-                  <th className="text-left p-3 font-semibold text-foreground">{isEn ? "Year" : "Ano"}</th>
-                  <th className="text-left p-3 font-semibold text-foreground">{isEn ? "Type" : "Tipo"}</th>
-                  <th className="text-left p-3 font-semibold text-foreground">{isEn ? "Basin" : "Bacia"}</th>
-                  <th className="text-left p-3 font-semibold text-foreground">{isEn ? "Operator" : "Operador"}</th>
-                  <th className="text-right p-3 font-semibold text-foreground">{isEn ? "Coverage" : "Cobertura"}</th>
+                  <th className="text-left p-3 font-semibold text-foreground">Levantamento</th>
+                  <th className="text-left p-3 font-semibold text-foreground">Ano</th>
+                  <th className="text-left p-3 font-semibold text-foreground">Tipo</th>
+                  <th className="text-left p-3 font-semibold text-foreground">Bacia</th>
+                  <th className="text-left p-3 font-semibold text-foreground">Operador</th>
+                  <th className="text-right p-3 font-semibold text-foreground">Cobertura</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,9 +116,7 @@ export default function SeismicCampaignsPage() {
         <section>
           <div className="flex items-center gap-2 mb-4">
             <Download className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl font-bold text-foreground">
-              {isEn ? "Download Maps" : "Descarregar Mapas"}
-            </h2>
+            <h2 className="text-2xl font-bold text-foreground">Descarregar Mapas</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {pdfDownloads.map((pdf) => (
@@ -153,9 +128,7 @@ export default function SeismicCampaignsPage() {
                 className="flex items-center gap-3 p-4 rounded-xl border border-border bg-secondary/30 hover:bg-secondary/60 transition-colors"
               >
                 <Download className="w-5 h-5 text-primary shrink-0" />
-                <span className="text-foreground font-medium text-sm">
-                  {isEn ? pdf.labelEn : pdf.label}
-                </span>
+                <span className="text-foreground font-medium text-sm">{pdf.label}</span>
               </a>
             ))}
           </div>

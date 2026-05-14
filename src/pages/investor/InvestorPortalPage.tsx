@@ -14,10 +14,12 @@ import { OpportunitiesDashboard } from "@/components/investor/OpportunitiesDashb
 import { DocumentCenter } from "@/components/investor/DocumentCenter";
 import { MeetingScheduler } from "@/components/investor/MeetingScheduler";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 export default function InvestorPortalPage() {
   const { t } = useTranslation();
   const { user, roles, loading, signOut } = useAuth();
+  const { data: pageData } = usePageData("investorPortal");
 
   // Gate: redirect to login if not authenticated or not an investor/admin
   const roleNames = roles.map((r) => r.role as string);
@@ -80,10 +82,9 @@ export default function InvestorPortalPage() {
   return (
     <PageLayout
       pageKey="investor-portal"
-      titleKey="pages.investorPortal.title"
-      subtitleKey="pages.investorPortal.subtitle"
-      descriptionKey="pages.investorPortal.description"
-      
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<Briefcase className="w-6 h-6" />}
       breadcrumbs={breadcrumbs}
     >

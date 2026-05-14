@@ -4,7 +4,8 @@ import { Footer } from "./Footer";
 import { PageHero } from "./PageHero";
 import { PageBreadcrumb, BreadcrumbItem } from "./PageBreadcrumb";
 import { SectionTransition } from "./SectionTransition";
-import { usePageBanner } from "@/hooks/useCMSData";
+import { useTranslation } from "react-i18next";
+import { useBanners } from "@/hooks/useBanners";
 
 interface PageLayoutProps {
   titleKey?: string;
@@ -36,13 +37,14 @@ export function PageLayout({
   children,
   pageKey,
 }: PageLayoutProps) {
-  // Fetch CMS banner override if pageKey is provided
-  const { data: cmsBanner } = usePageBanner(pageKey);
+  const { i18n } = useTranslation();
+  const isEn = i18n.language === 'en';
+  const { data: banners } = useBanners(pageKey || '');
+  const banner = banners?.[0];
 
-  // CMS values override static props (fallback to static)
-  const resolvedTitle = cmsBanner?.title || title;
-  const resolvedSubtitle = cmsBanner?.subtitle || subtitle;
-  const resolvedImage = cmsBanner?.image_url || backgroundImage;
+  const resolvedTitle = (isEn ? banner?.titleEn : banner?.titlePt) || title;
+  const resolvedSubtitle = (isEn ? banner?.subtitleEn : banner?.subtitlePt) || subtitle;
+  const resolvedImage = banner?.imageUrl || backgroundImage;
 
   return (
     <div className="min-h-screen flex flex-col">

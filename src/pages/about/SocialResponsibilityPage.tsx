@@ -1,9 +1,9 @@
-import { 
-  Heart, 
-  GraduationCap, 
-  Leaf, 
-  Users, 
-  Shield, 
+import {
+  Heart,
+  GraduationCap,
+  Leaf,
+  Users,
+  Shield,
   Target,
   BookOpen,
   Briefcase,
@@ -11,13 +11,13 @@ import {
   Palette,
   Scale,
   Building2,
-  Handshake
+  Handshake,
+  Loader2
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { StaggerContainer, StaggerItem } from "@/components/layout/StaggerContainer";
-import { useContentBlocks } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 import chevronLogo from "@/assets/partners/chevron.png";
 import totalLogo from "@/assets/partners/totalenergies.png";
 import essoLogo from "@/assets/partners/esso.png";
@@ -36,16 +36,12 @@ const iconMap: Record<string, React.ElementType> = {
   environment: Leaf,
 };
 
-const defaultAreas = [
-  { key: "education", icon: "education", title: "Promoção da Educação", description: "Construção, reabilitação e apetrechamento de escolas do I e II Ciclos que já beneficiaram mais de 6 milhões de alunos em todo o país." },
-  { key: "training", icon: "training", title: "Formação Profissional", description: "Apoio à construção de centros de formação técnico-profissionais e programas de capacitação aos docentes, contribuindo para o combate ao analfabetismo." },
-  { key: "health", icon: "health", title: "Saúde", description: "Construção, reabilitação e apetrechamento de hospitais e centros de saúde, além de apoio a programas de capacitação e formação de médicos." },
-  { key: "economic", icon: "economic", title: "Desenvolvimento Económico", description: "Empoderamento do género feminino, orientação sócio-profissional de jovens e colaboração com comunidades locais na criação de valor compartilhado." },
-  { key: "social", icon: "social", title: "Acção Social", description: "Apoio a orfanatos, igrejas e outras camadas da sociedade com carências, promovendo a inclusão social através da identificação das reais necessidades." },
-  { key: "sports", icon: "sports", title: "Desporto", description: "Apoio a clubes locais e massificação do desporto escolar, promovendo a saúde e integração social através de actividades desportivas." },
-  { key: "culture", icon: "culture", title: "Cultura", description: "Valorização e preservação do património cultural angolano, apoiando iniciativas artísticas e eventos culturais nas comunidades." },
-  { key: "environment", icon: "environment", title: "Ambiente", description: "Projectos de reflorestação, protecção de ecossistemas e conservação de espécies terrestres e marinhas em risco de extinção." },
-];
+const statIconMap: Record<string, React.ElementType> = {
+  education: GraduationCap,
+  economic: Building2,
+  training: BookOpen,
+  health: Shield,
+};
 
 const partnerLogos: Record<string, string> = {
   "Chevron": chevronLogo,
@@ -56,78 +52,39 @@ const partnerLogos: Record<string, string> = {
   "Sonangol P&P": sonangolLogo,
 };
 
-const defaultPartners = [
-  { name: "Chevron", blocks: "Bloco 0" },
-  { name: "TotalEnergies", blocks: "Blocos 17 e 32" },
-  { name: "Esso", blocks: "Bloco 15" },
-  { name: "Eni", blocks: "Bloco 15/06" },
-  { name: "BP", blocks: "Blocos 18 e 31" },
-  { name: "Sonangol P&P", blocks: "Vários blocos" },
-];
-
-const defaultSdgGoals = [
-  { number: 1, name: "Erradicação da Pobreza" },
-  { number: 3, name: "Saúde e Bem-Estar" },
-  { number: 4, name: "Educação de Qualidade" },
-  { number: 5, name: "Igualdade de Género" },
-  { number: 8, name: "Trabalho Digno e Crescimento Económico" },
-  { number: 13, name: "Acção Climática" },
-  { number: 14, name: "Vida na Água" },
-  { number: 15, name: "Vida Terrestre" },
-];
-
-const defaultImpactStats = [
-  { value: "6M+", label: "Alunos Beneficiados", icon: "education" },
-  { value: "18", label: "Províncias Abrangidas", icon: "economic" },
-  { value: "50+", label: "Escolas Construídas", icon: "training" },
-  { value: "20+", label: "Centros de Saúde", icon: "health" },
-];
-
-const statIconMap: Record<string, React.ElementType> = {
-  education: GraduationCap,
-  economic: Building2,
-  training: BookOpen,
-  health: Shield,
-};
-
 export default function SocialResponsibilityPage() {
-  const { t } = useTranslation();
-  const { data: cmsBlocks } = useContentBlocks("social-responsibility");
-  const getSection = (key: string) => cmsBlocks?.find(b => b.section_key === key)?.content;
+  const { data: pageData, isLoading } = usePageData("socialResponsibility");
 
-  const statsData = getSection("stats");
-  const impactStats = statsData?.items?.length ? statsData.items : defaultImpactStats;
+  const impactStats: Array<{ value: string; label: string; icon: string }> = pageData?.impactStats || [];
+  const areas: Array<{ key: string; icon: string; title: string; description: string }> = pageData?.areas || [];
+  const partners: Array<{ name: string; blocks: string }> = pageData?.partners || [];
+  const sdgGoals: Array<{ number: number; name: string }> = pageData?.sdgGoals || [];
 
-  const areasData = getSection("areas");
-  const areas = areasData?.items?.length ? areasData.items : defaultAreas;
-
-  const partnersData = getSection("partners");
-  const partners = partnersData?.items?.length ? partnersData.items : defaultPartners;
-
-  const sdgData = getSection("sdg");
-  const sdgGoals = sdgData?.items?.length ? sdgData.items : defaultSdgGoals;
-
-  const introData = getSection("intro");
-  const objectivesData = getSection("objectives");
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <PageLayout
       pageKey="social-responsibility"
-      titleKey="pages.socialResponsibility.title"
-      subtitleKey="pages.socialResponsibility.subtitle"
-      descriptionKey="pages.socialResponsibility.description"
-      
+      title={pageData?.title || "Responsabilidade Social"}
+      subtitle={pageData?.subtitle || "Compromisso com Angola"}
+      description={pageData?.description || ""}
       icon={<Heart className="w-8 h-8 text-primary" />}
       breadcrumbs={[
-        { labelKey: "nav.aboutUs", href: "/about" },
-        { labelKey: "nav.submenu.socialResponsibility" },
+        { label: "Sobre Nós", href: "/about" },
+        { label: pageData?.title || "Responsabilidade Social" },
       ]}
     >
       {/* Impact Stats */}
       <SectionTransition>
         <section className="mb-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {impactStats.map((stat: any, index: number) => {
+            {impactStats.map((stat, index) => {
               const Icon = statIconMap[stat.icon] || GraduationCap;
               return (
                 <div
@@ -158,15 +115,15 @@ export default function SocialResponsibilityPage() {
               <Heart className="w-6 h-6 text-primary" />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              {introData?.title || "Introdução"}
+              {pageData?.introTitle || "Introdução"}
             </h2>
           </div>
           <div className="max-w-4xl space-y-4">
             <p className="text-lg text-muted-foreground leading-relaxed">
-              {introData?.p1 || "A responsabilidade social do sector petrolífero é um pilar fundamental para o desenvolvimento sócio-económico do país. A Agência Nacional de Petróleo, Gás e Biocombustíveis desenvolve, em conjunto com os parceiros, actividades para apoiar e impulsionar iniciativas sociais que estejam alinhadas às directrizes do Executivo, visando criar oportunidades de crescimento sustentável e integrado das comunidades."}
+              {pageData?.introP1 || ""}
             </p>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              {introData?.p2 || "A estratégia consiste em implementar projectos que ajudem a melhorar a qualidade de vida das populações, com foco no crescimento sócio-económico e na integração na sociedade, promovendo a inclusão social através de apoio e identificação das suas reais necessidades."}
+              {pageData?.introP2 || ""}
             </p>
           </div>
         </section>
@@ -181,13 +138,10 @@ export default function SocialResponsibilityPage() {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Target className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground">{objectivesData?.objectivesTitle || "Objectivos"}</h3>
+                <h3 className="text-xl font-bold text-foreground">{pageData?.objectivesTitle || "Objectivos"}</h3>
               </div>
               <ul className="space-y-4">
-                {(objectivesData?.objectivesList || [
-                  "Congregar os parceiros do sector petrolífero na execução de estratégias e acções para a implementação de projectos de Responsabilidade Social.",
-                  "Garantir o desenvolvimento sustentável das comunidades através da implementação de projectos sociais mensuráveis e auto-sustentáveis.",
-                ]).map((item: string, i: number) => (
+                {(pageData?.objectivesList || []).map((item: string, i: number) => (
                   <li key={i} className="flex items-start gap-3">
                     <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                     <span className="text-muted-foreground">{item}</span>
@@ -201,13 +155,13 @@ export default function SocialResponsibilityPage() {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Heart className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground">{objectivesData?.missionTitle || "Nossa Missão"}</h3>
+                <h3 className="text-xl font-bold text-foreground">{pageData?.missionTitle || "Nossa Missão"}</h3>
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                {objectivesData?.missionP1 || "O Conselho de Administração da ANPG define e implementa a Estratégia de Responsabilidade Social, de forma a potencializar as acções sociais em conjunto com os seus parceiros, tendo por objectivo a promoção, o fortalecimento e a defesa dos direitos sociais."}
+                {pageData?.missionP1 || ""}
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                {objectivesData?.missionP2 || "É levar o maior recurso do País a todas as comunidades, para que todos os angolanos usufruam dos benefícios através da construção de infra-estruturas, doação de bens e apoio de projectos com programas de desenvolvimento económico."}
+                {pageData?.missionP2 || ""}
               </p>
             </div>
           </div>
@@ -222,12 +176,12 @@ export default function SocialResponsibilityPage() {
               <Users className="w-6 h-6 text-primary" />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              {areasData?.title || "Áreas de Actuação"}
+              {pageData?.areasTitle || "Áreas de Actuação"}
             </h2>
           </div>
 
           <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {areas.map((area: any) => {
+            {areas.map((area) => {
               const Icon = iconMap[area.icon || area.key] || Users;
               return (
                 <StaggerItem key={area.key}>
@@ -254,20 +208,20 @@ export default function SocialResponsibilityPage() {
                 <Scale className="w-6 h-6 text-primary" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                {sdgData?.legalTitle || "Enquadramento Legal"}
+                {pageData?.legalTitle || "Enquadramento Legal"}
               </h2>
             </div>
-            
+
             <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-4xl">
-              {sdgData?.legalText || "A Lei n.º 10/04, de 12 de Novembro, Lei das Actividades Petrolíferas, alterada pela Lei 5/19 de 18 de Abril, nos seus Artigos 83º e 84º, estabelece que uma parcela do bónus entregue ao Estado em decorrência dos Contratos Petrolíferos celebrados deve ser aplicada em projectos sociais."}
+              {pageData?.legalText || ""}
             </p>
 
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-4">
-                {sdgData?.sdgTitle || "Objectivos de Desenvolvimento Sustentável (ODS) Alinhados"}
+                {pageData?.sdgTitle || "Objectivos de Desenvolvimento Sustentável (ODS) Alinhados"}
               </h3>
               <div className="flex flex-wrap gap-3">
-                {sdgGoals.map((goal: any) => (
+                {sdgGoals.map((goal) => (
                   <div
                     key={goal.number}
                     className="bg-background/80 backdrop-blur-sm border border-border rounded-lg px-4 py-2 flex items-center gap-2"
@@ -292,17 +246,17 @@ export default function SocialResponsibilityPage() {
               <Handshake className="w-6 h-6 text-primary" />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              {partnersData?.title || "Parceiros do Sector"}
+              {pageData?.partnersTitle || "Parceiros do Sector"}
             </h2>
           </div>
 
           <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-3xl">
-            {partnersData?.description || "A ANPG trabalha em conjunto com os principais operadores do sector petrolífero angolano para implementar projectos de responsabilidade social em todo o país."}
+            {pageData?.partnersDescription || ""}
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {partners.map((partner: any) => {
-              const logo = partnerLogos[partner.name] || partner.logo;
+            {partners.map((partner) => {
+              const logo = partnerLogos[partner.name];
               return (
                 <div
                   key={partner.name}

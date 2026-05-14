@@ -1,33 +1,29 @@
 import { Database, Layers, Image, Map } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { usePageData } from "@/hooks/pages/usePageData";
+
+const iconMap: Record<string, React.ElementType> = { Database, Layers, Image, Map };
 
 export default function EpDataPage() {
-  const { t } = useTranslation();
+  const { data: pageData } = usePageData("epData");
 
-  const dataItems = [
-    { icon: Layers, titleKey: "nav.submenu.platformIona", descriptionKey: "nav.submenu.platformIonaDesc", href: "/ep-data/iona" },
-    { icon: Image, titleKey: "nav.submenu.oasisImageBank", descriptionKey: "nav.submenu.oasisImageBankDesc", href: "/ep-data/oasis" },
-    { icon: Database, titleKey: "nav.submenu.dataPackages", descriptionKey: "nav.submenu.dataPackagesDesc", href: "/ep-data/packages" },
-    { icon: Map, titleKey: "nav.submenu.epMaps", descriptionKey: "nav.submenu.epMapsDesc", href: "/ep-data/maps" },
-  ];
+  const items: Array<{ icon: string; title: string; description: string; href: string }> = pageData?.items || [];
 
   return (
     <PageLayout
       pageKey="ep-data"
-      titleKey="pages.epData.title"
-      subtitleKey="pages.epData.subtitle"
-      descriptionKey="pages.epData.description"
-      
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<Database className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.epData" },
       ]}
     >
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {dataItems.map((item) => {
-          const Icon = item.icon;
+        {items.map((item) => {
+          const Icon = iconMap[item.icon] || Database;
           return (
             <Link
               key={item.href}
@@ -38,10 +34,10 @@ export default function EpDataPage() {
                 <Icon className="w-6 h-6 text-primary" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                {t(item.titleKey)}
+                {item.title}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {t(item.descriptionKey)}
+                {item.description}
               </p>
             </Link>
           );

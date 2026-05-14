@@ -1,0 +1,46 @@
+{
+  "title": "Fiscalização",
+  "subtitle": "Serviços & Competências",
+  "description": "Supervisão e controlo das operações petrolíferas em todo o território nacional.",
+  "intro": "A ANPG exerce funções de supervisão e controlo sobre todas as operações petrolíferas em território nacional. O nosso objectivo é garantir que as actividades sejam conduzidas de acordo com as melhores práticas da indústria, os termos contratuais e a legislação vigente.",
+  "stats": [
+    { "value": "450+", "label": "Inspecções Anuais" },
+    { "value": "47", "label": "Blocos Monitorizados" },
+    { "value": "100%", "label": "Cobertura Nacional" },
+    { "value": "24/7", "label": "Monitorização Contínua" }
+  ],
+  "areasTitle": "Áreas de Fiscalização",
+  "areas": [
+    {
+      "title": "Monitorização de Operações",
+      "description": "Acompanhamento contínuo das actividades de exploração e produção em todos os blocos petrolíferos."
+    },
+    {
+      "title": "Auditorias Técnicas",
+      "description": "Realização de auditorias regulares para verificar o cumprimento dos planos de desenvolvimento aprovados."
+    },
+    {
+      "title": "Segurança Operacional",
+      "description": "Fiscalização das normas de segurança e saúde ocupacional nas instalações petrolíferas."
+    },
+    {
+      "title": "Conformidade Ambiental",
+      "description": "Verificação do cumprimento das normas ambientais e dos planos de gestão de impacto."
+    }
+  ],
+  "complianceTitle": "Áreas de Conformidade",
+  "complianceIntro": "A ANPG verifica o cumprimento das obrigações em diversas áreas fundamentais:",
+  "complianceAreas": [
+    "Planos de Desenvolvimento de Campo",
+    "Programas de Trabalho e Orçamentos",
+    "Relatórios de Produção",
+    "Gestão de Reservatórios",
+    "Segurança de Instalações",
+    "Protecção Ambiental",
+    "Conteúdo Local",
+    "Obrigações Contratuais"
+  ],
+  "reportingTitle": "Reporte de Incidentes",
+  "reportingDescription": "Todos os operadores são obrigados a reportar incidentes de segurança, derrames ou anomalias operacionais à ANPG. O reporte deve ser feito de forma imediata para incidentes críticos e dentro de 24 horas para outras ocorrências.",
+  "emergencyLine": "Linha de Emergência: +244 222 XXX XXX"
+}

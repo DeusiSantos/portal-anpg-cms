@@ -1,23 +1,19 @@
 import { Archive } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { useContentBlocks } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 export default function Tender2023Page() {
-  const { t } = useTranslation();
-  const { data: blocks } = useContentBlocks("tender-2023");
+  const { data: pageData } = usePageData("tender2023");
 
-  const intro = blocks?.find((b) => b.section_key === "intro")?.content;
-  const results = blocks?.find((b) => b.section_key === "results")?.content;
-  const timeline = blocks?.find((b) => b.section_key === "timeline")?.content;
+  const results: Array<{ value: string; title: string; description: string }> = pageData?.results || [];
+  const timeline: Array<{ phase: string; date: string; description: string }> = pageData?.timeline || [];
 
   return (
     <PageLayout
       pageKey="tender-2023"
-      titleKey="pages.tender2023.title"
-      subtitleKey="pages.tender2023.subtitle"
-      descriptionKey="pages.tender2023.description"
-      
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<Archive className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.opportunities", href: "/opportunities" },
@@ -25,23 +21,21 @@ export default function Tender2023Page() {
       ]}
     >
       <div className="space-y-16">
-        {intro && (
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-foreground mb-4">{intro.title}</h2>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-3">{intro.description}</p>
-            {intro.status && (
-              <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-accent text-accent-foreground">
-                {intro.status}
-              </span>
-            )}
-          </div>
-        )}
+        <div className="max-w-3xl">
+          <h2 className="text-3xl font-bold text-foreground mb-4">{pageData?.introTitle || ""}</h2>
+          <p className="text-lg text-muted-foreground leading-relaxed mb-3">{pageData?.introDescription || ""}</p>
+          {pageData?.introStatus && (
+            <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-accent text-accent-foreground">
+              {pageData.introStatus}
+            </span>
+          )}
+        </div>
 
-        {results?.items && (
+        {results.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-8">{results.title}</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-8">{pageData?.resultsTitle || "Resultados do Concurso"}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {results.items.map((item: any, i: number) => (
+              {results.map((item, i) => (
                 <div key={i} className="text-center p-6 rounded-2xl bg-secondary/50 border border-border">
                   <div className="text-3xl font-bold text-primary mb-1">{item.value}</div>
                   <div className="font-semibold text-foreground text-sm">{item.title}</div>
@@ -52,11 +46,11 @@ export default function Tender2023Page() {
           </div>
         )}
 
-        {timeline?.items && (
+        {timeline.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-8">{timeline.title}</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-8">{pageData?.timelineTitle || "Cronograma do Concurso"}</h2>
             <div className="space-y-4">
-              {timeline.items.map((item: any, i: number) => (
+              {timeline.map((item, i) => (
                 <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-secondary/30 border border-border">
                   <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                     {i + 1}

@@ -1,0 +1,30 @@
+{
+  "title": "Contacte",
+  "subtitle": "Fale Connosco",
+  "description": "Entre em contacto com as nossas equipas para obter informações e esclarecimentos.",
+  "infoTitle": "Informações de Contacto",
+  "infoDescription": "Estamos disponíveis para responder às suas questões e fornecer as informações que necessita.",
+  "mapTitle": "Localização da ANPG",
+  "mapPlaceholder": "Mapa de localização em breve",
+  "openInMaps": "Abrir no Google Maps",
+  "headquarters": "Sede ANPG",
+  "address": "Rua Kwamme Nkrumah, Nº 6-8, Ingombota, Luanda, Angola",
+  "phone": "+244 226 428 000",
+  "email": "geral@anpg.co.ao",
+  "hours": "Segunda a Sexta: 08H00 - 17H00",
+  "info": {
+    "address": {
+      "title": "Localização"
+    },
+    "phone": {
+      "title": "telefone"
+    },
+    "email": {
+      "title": "Email"
+    },
+    "hours": {
+      "title": "Horário",
+      "content": "Segunda a Sexta: 08H00 - 17H00"
+    }
+  }
+}

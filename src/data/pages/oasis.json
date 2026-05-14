@@ -1,0 +1,35 @@
+{
+  "title": "OASIS – Banco de Imagens",
+  "subtitle": "Dados Sísmicos",
+  "description": "Repositório de imagens sísmicas e geológicas do território angolano.",
+  "introTitle": "Banco de Imagens OASIS",
+  "introDescription": "O OASIS (Online Angola Seismic Information System) é a plataforma digital da ANPG para disponibilização de informação sísmica, geológica e técnica do sector petrolífero angolano. Permite o acesso a imagens e dados do subsolo angolano.",
+  "categoriesTitle": "Categorias de Dados",
+  "categories": [
+    {
+      "icon": "Anchor",
+      "title": "Dados Sísmicos",
+      "description": "Linhas sísmicas 2D e volumes sísmicos 3D das bacias sedimentares angolanas."
+    },
+    {
+      "icon": "Building2",
+      "title": "Dados de Poços",
+      "description": "Registos de poços, amostras de testemunhos e análises petrofísicas."
+    },
+    {
+      "icon": "Image",
+      "title": "Imagens Geológicas",
+      "description": "Imagens de afloramentos, amostras e secções geológicas das bacias angolanas."
+    },
+    {
+      "icon": "Users",
+      "title": "Relatórios Técnicos",
+      "description": "Relatórios de estudos geológicos, avaliações de recursos e estudos de bacias."
+    }
+  ],
+  "accessTitle": "Como Aceder",
+  "accessDescription": "O acesso ao OASIS é disponibilizado a operadores, investidores e entidades académicas mediante solicitação formal à ANPG. Podem ser aplicadas taxas de acesso conforme a regulamentação em vigor.",
+  "accessEmail": "oasis@anpg.co.ao",
+  "accessButtonText": "Solicitar Acesso",
+  "accessButtonLink": "/contacts"
+}

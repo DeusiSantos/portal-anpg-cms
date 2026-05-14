@@ -1,0 +1,30 @@
+{
+  "title": "Canal de Denúncias",
+  "subtitle": "Transparência e Integridade",
+  "description": "Canal confidencial para comunicação de irregularidades no sector petrolífero.",
+  "features": [
+    {
+      "key": "confidentiality",
+      "title": "Confidencialidade",
+      "desc": "Garantia de protecção da identidade do denunciante"
+    },
+    {
+      "key": "security",
+      "title": "Segurança",
+      "desc": "Canal seguro e encriptado para submissão de denúncias"
+    },
+    {
+      "key": "followUp",
+      "title": "Acompanhamento",
+      "desc": "Seguimento e resposta a todas as denúncias recebidas"
+    }
+  ],
+  "p1": "O Canal de Denúncias da ANPG é um mecanismo confidencial e seguro, disponível para colaboradores, parceiros e cidadãos, destinado à comunicação de irregularidades, condutas antiéticas ou situações que possam comprometer a integridade institucional.",
+  "p2": "A ANPG garante a protecção dos denunciantes contra qualquer forma de retaliação, assegurando o tratamento adequado e tempestivo de todas as comunicações recebidas, em conformidade com a legislação aplicável.",
+  "p3": "Para submeter uma denúncia, utilize os canais disponíveis abaixo ou contacte directamente a equipa de compliance da ANPG.",
+  "howToTitle": "Como Submeter uma Denúncia",
+  "email": "compliance@anpg.co.ao",
+  "phone": "+244 226 428 000",
+  "phonelabel": "Telefone",
+  "disclaimer": "Todas as denúncias são tratadas com total confidencialidade."
+}

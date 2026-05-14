@@ -1,24 +1,22 @@
 import { Database, Package, Archive } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { useContentBlocks } from "@/hooks/useCMSData";
-import { getIcon } from "@/lib/iconMap";
+import { usePageData } from "@/hooks/pages/usePageData";
+
+const iconMap: Record<string, React.ElementType> = { Database, Package, Archive };
 
 export default function DataPackagesPage() {
-  const { t } = useTranslation();
-  const { data: blocks } = useContentBlocks("data-packages");
+  const { data: pageData } = usePageData("dataPackages");
 
-  const intro = blocks?.find((b) => b.section_key === "intro")?.content;
-  const packages = blocks?.find((b) => b.section_key === "packages")?.content;
-  const process = blocks?.find((b) => b.section_key === "process")?.content;
+  const packages: Array<{ icon: string; title: string; description: string; price?: string }> = pageData?.packages || [];
+  const processSteps: string[] = pageData?.processSteps || [];
 
   return (
     <PageLayout
       pageKey="data-packages"
-      titleKey="pages.dataPackages.title"
-      subtitleKey="pages.dataPackages.subtitle"
-      descriptionKey="pages.dataPackages.description"
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<Database className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.epData", href: "/ep-data" },
@@ -26,19 +24,17 @@ export default function DataPackagesPage() {
       ]}
     >
       <div className="space-y-16">
-        {intro && (
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-bold text-foreground mb-4">{intro.title}</h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">{intro.description}</p>
-          </div>
-        )}
+        <div className="max-w-3xl">
+          <h2 className="text-3xl font-bold text-foreground mb-4">{pageData?.introTitle || ""}</h2>
+          <p className="text-lg text-muted-foreground leading-relaxed">{pageData?.introDescription || ""}</p>
+        </div>
 
-        {packages?.items && (
+        {packages.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-8">{packages.title}</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-8">{pageData?.packagesTitle || "Pacotes Disponíveis"}</h2>
             <div className="grid md:grid-cols-2 gap-6">
-              {packages.items.map((item: any, i: number) => {
-                const Icon = getIcon(item.icon) || Package;
+              {packages.map((item, i) => {
+                const Icon = iconMap[item.icon] || Package;
                 return (
                   <div key={i} className="p-6 rounded-2xl bg-secondary/50 border border-border">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
@@ -56,11 +52,11 @@ export default function DataPackagesPage() {
           </div>
         )}
 
-        {process && (
+        {processSteps.length > 0 && (
           <div className="p-8 rounded-2xl bg-primary/5 border border-primary/20">
-            <h2 className="text-2xl font-bold text-foreground mb-6">{process.title}</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-6">{pageData?.processTitle || "Como Adquirir"}</h2>
             <ol className="space-y-4 mb-6">
-              {process.steps?.map((step: string, i: number) => (
+              {processSteps.map((step, i) => (
                 <li key={i} className="flex items-start gap-4">
                   <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                     {i + 1}
@@ -69,9 +65,9 @@ export default function DataPackagesPage() {
                 </li>
               ))}
             </ol>
-            {process.buttonText && (
-              <Link to={process.buttonLink || "/contacts"} className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
-                {process.buttonText}
+            {pageData?.processButtonText && (
+              <Link to={pageData?.processButtonLink || "/contacts"} className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                {pageData.processButtonText}
               </Link>
             )}
           </div>

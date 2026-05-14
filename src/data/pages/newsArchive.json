@@ -1,0 +1,14 @@
+{
+  "title": "Arquivo de Notícias",
+  "subtitle": "Pesquise e explore o arquivo completo de notícias e comunicados da ANPG",
+  "searchPlaceholder": "Pesquisar no arquivo...",
+  "filterLabel": "Filtros",
+  "clearFilters": "Limpar filtros",
+  "noResults": "Nenhum resultado encontrado",
+  "noResultsDesc": "Tente ajustar os filtros ou termos de pesquisa",
+  "backToMedia": "Voltar à página de Media",
+  "articlesFound": "artigos encontrados",
+  "articleFound": "artigo encontrado",
+  "tagFilterLabel": "Filtrar por etiquetas:",
+  "pageInfo": "Página {page} de {total} • {count} artigos"
+}

@@ -1,0 +1,79 @@
+{
+  "title": "Eventos",
+  "subtitle": "Conferências e Eventos",
+  "description": "Conferências, missões empresariais e eventos do sector petrolífero organizados pela ANPG.",
+  "search": "Pesquisar eventos...",
+  "dateFilters": {
+    "all": "Todos os períodos",
+    "week": "Última semana",
+    "month": "Último mês",
+    "quarter": "Último trimestre",
+    "year": "Último ano"
+  },
+  "sort": {
+    "newest": "Mais recentes primeiro",
+    "oldest": "Mais antigos primeiro"
+  },
+  "status": {
+    "all": "Todos os eventos",
+    "upcoming": "Próximos eventos",
+    "past": "Eventos passados"
+  },
+  "clear": "Limpar",
+  "noResults": "Sem eventos disponíveis no momento.",
+  "viewDetails": "Ver detalhes",
+  "upcoming": "Próximo",
+  "eventsFound": "{{count}} evento(s) encontrado(s)",
+  "events": [
+    {
+      "id": "aog-2025",
+      "slug": "angola-oil-gas-2025",
+      "title": "Angola Oil & Gas 2025",
+      "description": "A principal conferência do sector petrolífero angolano, reunindo líderes governamentais, operadores internacionais e especialistas do sector para debater as oportunidades de investimento e o futuro da indústria energética em Angola.",
+      "location": "Luanda, Angola",
+      "startAt": "2025-10-14T09:00:00Z",
+      "endAt": "2025-10-16T18:00:00Z",
+      "image": ""
+    },
+    {
+      "id": "anpg-data-conference-2025",
+      "slug": "conferencia-dados-ep-2025",
+      "title": "3ª Conferência de Gestão de Dados de E&P",
+      "description": "Conferência dedicada à gestão de dados de exploração e produção no sector petrolífero angolano, organizada pela ANPG com foco em tecnologias digitais, inteligência artificial e boas práticas de gestão de dados.",
+      "location": "Luanda, Angola",
+      "startAt": "2025-06-05T09:00:00Z",
+      "endAt": "2025-06-06T17:00:00Z",
+      "image": ""
+    },
+    {
+      "id": "local-content-forum-2025",
+      "slug": "forum-conteudo-local-2025",
+      "title": "Fórum de Conteúdo Local 2025",
+      "description": "Fórum anual sobre conteúdo local no sector petrolífero angolano, promovendo o diálogo entre operadores internacionais, empresas angolanas e entidades reguladoras para maximizar a participação nacional na cadeia de valor do sector.",
+      "location": "Luanda, Angola",
+      "startAt": "2025-03-20T09:00:00Z",
+      "endAt": "2025-03-21T17:00:00Z",
+      "image": ""
+    },
+    {
+      "id": "aog-2023",
+      "slug": "angola-oil-gas-2023",
+      "title": "Angola Oil & Gas 2023",
+      "description": "A edição de 2023 da conferência Angola Oil & Gas reuniu mais de 2.000 participantes de 30 países, apresentando os resultados do Concurso Público Internacional 2023 e debatendo as perspectivas do sector para os próximos anos.",
+      "location": "Luanda, Angola",
+      "startAt": "2023-10-05T09:00:00Z",
+      "endAt": "2023-10-06T18:00:00Z",
+      "image": ""
+    },
+    {
+      "id": "anpg-investor-day-2024",
+      "slug": "investor-day-2024",
+      "title": "ANPG Investor Day 2024",
+      "description": "Sessão de apresentação para investidores internacionais sobre as oportunidades de investimento no sector petrolífero angolano, incluindo os blocos disponíveis na Oferta Permanente e as perspectivas da Licitação 2025.",
+      "location": "Londres, Reino Unido",
+      "startAt": "2024-11-18T10:00:00Z",
+      "endAt": "2024-11-18T17:00:00Z",
+      "image": ""
+    }
+  ]
+}

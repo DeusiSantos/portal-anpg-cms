@@ -1,0 +1,171 @@
+{
+  "hero": {
+    "subtitle": "Agência Nacional de Petróleo, Gás e Biocombustíveis",
+    "title": "Energia",
+    "titleHighlight": "para mais.",
+    "description": "Regulamos, fiscalizamos e promovemos o desenvolvimento do sector do petróleo, gás e biocombustíveis em Angola com transparência e ambição.",
+    "ctaPrimary": "Oportunidades de Investimento",
+    "ctaSecondary": "Explorar Dados",
+    "scrollHint": "Descobrir mais",
+    "quickAccess": [
+      {
+        "iconKey": "TrendingUp",
+        "title": "Investimento",
+        "description": "Organização de processos para atribuição de direitos de exploração.",
+        "href": "/investor-portal"
+      },
+      {
+        "iconKey": "Shield",
+        "title": "Regulação",
+        "description": "Desenvolvimento e aplicação do quadro regulatório do sector energético.",
+        "href": "/regulation"
+      },
+      {
+        "iconKey": "BarChart3",
+        "title": "Dados",
+        "description": "Publicação de estatísticas e relatórios sobre o sector energético.",
+        "href": "/ep-data"
+      },
+      {
+        "iconKey": "",
+        "title": "Area de investimento",
+        "description": "Area reservada para os investidores local",
+        "href": ""
+      }
+    ]
+  },
+  "stats": {
+    "label": "Impacto & Resultados",
+    "title": "Upstream em números",
+    "subtitle": "Cada projecto que lançamos, cada investimento que atraímos e cada parceria que construímos criam oportunidades de desenvolvimento para o país, para as comunidades e para cada um.",
+    "exploreData": "Explorar todos os dados",
+    "items": [
+      {
+        "value": 1.1,
+        "suffix": "M",
+        "label": "Barris/Dia",
+        "description": "Produção petrolífera"
+      },
+      {
+        "value": 47,
+        "suffix": "",
+        "label": "Blocos Activos",
+        "description": "Em exploração e produção"
+      },
+      {
+        "value": 12,
+        "suffix": "B+",
+        "label": "USD Investidos",
+        "description": "Nos últimos 5 anos"
+      },
+      {
+        "value": 35,
+        "suffix": "+",
+        "label": "Operadores",
+        "description": "Empresas internacionais"
+      }
+    ]
+  },
+  "about": {
+    "label": "Sobre a AGÊNCIA",
+    "title": "Regulando o Presente,",
+    "titleHighlight": "Construindo o Futuro",
+    "description": "A Agência Nacional de Petróleo, Gás e Biocombustíveis é a entidade reguladora do sector petrolífero angolano, responsável pela gestão e supervisão das actividades de exploração, produção e comercialização de hidrocarbonetos.",
+    "yearsExperience": "Anos de experiência no sector petrolífero angolano",
+    "cta": "Conhecer a ANPG",
+    "values": [
+      {
+        "iconKey": "Shield",
+        "title": "Transparência",
+        "description": "Compromisso com a clareza e abertura em todas as operações."
+      },
+      {
+        "iconKey": "Target",
+        "title": "Excelência",
+        "description": "Padrões internacionais de qualidade e eficiência."
+      },
+      {
+        "iconKey": "Globe",
+        "title": "Sustentabilidade",
+        "description": "Desenvolvimento responsável dos recursos energéticos."
+      },
+      {
+        "iconKey": "Lightbulb",
+        "title": "Inovação",
+        "description": "Adopção de tecnologias avançadas no sector."
+      }
+    ]
+  },
+  "services": {
+    "label": "Serviços & Competências",
+    "title": "Áreas de Actuação",
+    "subtitle": "Agimos para potenciar ao máximo as energias de Angola. Estamos certos do impacto positivo que o desenvolvimento do sector tem na nossa economia, na nossa reputação internacional e no desenvolvimento do nosso país.",
+    "items": [
+      {
+        "iconKey": "FileCheck",
+        "title": "Licenciamento",
+        "description": "Gestão de concessões e licenças para exploração e produção de hidrocarbonetos.",
+        "href": "/regulation/licensing"
+      },
+      {
+        "iconKey": "Shield",
+        "title": "Fiscalização",
+        "description": "Supervisão e controlo das operações petrolíferas em todo o território nacional.",
+        "href": "/regulation/oversight"
+      },
+      {
+        "iconKey": "Scale",
+        "title": "Regulação",
+        "description": "Desenvolvimento e aplicação do quadro regulatório do sector energético.",
+        "href": "/regulation"
+      },
+      {
+        "iconKey": "Globe2",
+        "title": "Licitações",
+        "description": "Organização de processos para atribuição de direitos de exploração.",
+        "href": "/regulation/tenders"
+      },
+      {
+        "iconKey": "BarChart3",
+        "title": "Dados & Analytics",
+        "description": "Publicação de estatísticas e relatórios sobre o sector energético.",
+        "href": "/data"
+      },
+      {
+        "iconKey": "Leaf",
+        "title": "Sustentabilidade",
+        "description": "Promoção de práticas ambientalmente responsáveis no sector.",
+        "href": "/sustainability"
+      }
+    ]
+  },
+  "investment": {
+    "label": "Oportunidades de Investimento",
+    "title": "Invista hoje no futuro",
+    "titleHighlight": "energético de Angola.",
+    "description": "Angola oferece um ambiente favorável ao investimento no sector petrolífero, com um quadro regulatório transparente, incentivos fiscais atractivos e acesso a recursos de classe mundial.",
+    "ctaGuide": "Guia do Investidor",
+    "ctaBlocks": "Ver Blocos Disponíveis",
+    "featuredBlocks": "Blocos em Destaque",
+    "viewAllBlocks": "Ver todos os blocos",
+    "location": "Luanda, Angola",
+    "highlights": [
+      "Acesso a 47 blocos petrolíferos onshore e offshore",
+      "Regime fiscal competitivo e estável",
+      "Infraestrutura de classe mundial",
+      "Apoio regulatório dedicado aos investidores",
+      "Reservas comprovadas superiores a 8 mil milhões de barris"
+    ]
+  },
+  "news": {
+    "label": "Notícias & Insights",
+    "title": "Últimas Actualizações",
+    "viewAll": "Ver Todas as Notícias"
+  },
+  "cta": {
+    "title": "Pronto para Investir no Futuro Energético de Angola?",
+    "description": "Entre em contacto com a nossa equipa de relações com investidores para saber mais sobre as oportunidades disponíveis.",
+    "contactInvestments": "Contactar Investimentos",
+    "scheduleMeeting": "Agendar Reunião"
+  }
+}

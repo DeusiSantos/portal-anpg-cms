@@ -1,0 +1,279 @@
+{
+  "pt": {
+    "title": "ANPG",
+    "titleHighlight": "",
+    "subtitle": "Agência Nacional de Petróleo, Gás e Biocombustíveis",
+    "description": "Conheça a estrutura, missão e papel da ANPG no sector petrolífero angolano.",
+    "breadcrumbLabel": "ANPG",
+    "breadcrumbAbout": "Sobre nós",
+    "content": {
+      "intro": "A ANPG é a Concessionária Nacional, responsável por regular, fiscalizar e promover o desenvolvimento do sector do petróleo, gás e biocombustíveis no segmento upstream em Angola.",
+      "role": "Desde 2019, devolvemos dinamismo ao sector: reforçámos a previsibilidade regulatória, criámos um ambiente de maior confiança para operadores e investidores nacionais e internacionais, impulsionámos novas concessões, novas perfurações e novas descobertas e mantivemos o foco onde ele tem de estar: no valor que o sector gera para Angola.\n\nE assim, reforçámos a posição de Angola no mapa energético internacional.",
+      "vision": "Hoje, acompanhamos e guiamos o futuro deste sector em rápida transformação e evolução. Com a integração energética a nível global, é urgente acompanhar e liderar esta tendência, alargando a nossa actuação do petróleo ao gás e aos biocombustíveis. Pelo desenvolvimento do país e pela sustentabilidade do planeta. Mostrando que temos sempre energia para mais."
+    },
+    "board": {
+      "title": "Conselho de Administração",
+      "members": [
+        {
+          "id": "paulino-jeronimo",
+          "slug": "paulino-jeronimo",
+          "name": "Paulino Jerónimo",
+          "role": "Presidente do Conselho de Administração",
+          "pelouro": "",
+          "isPCA": true,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "artur-custodio",
+          "slug": "artur-custodio",
+          "name": "Artur Custódio",
+          "role": "Administrador",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "ana-miala",
+          "slug": "ana-miala",
+          "name": "Ana Miala",
+          "role": "Administradora",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "nicola-mvuayi",
+          "slug": "nicola-mvuayi",
+          "name": "Nicola Isabel Lemos de Mvuayi",
+          "role": "Administradora",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "alcides-andrade",
+          "slug": "alcides-andrade",
+          "name": "Alcides Andrade",
+          "role": "Administrador",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        }
+      ],
+      "supervision": {
+        "title": "Órgãos de Fiscalização e Controlo",
+        "items": [
+          { "name": "Conselho Fiscal" },
+          { "name": "Conselho Técnico" }
+        ]
+      }
+    },
+    "institutional": {
+      "purpose": {
+        "title": "Energia para mais futuro.",
+        "desc": "Elevar Angola a referência global, captando investimento e criando mais oportunidades no sector do petróleo, gás e biocombustíveis. Alavancando o desenvolvimento da indústria e da economia e promovendo um futuro melhor e mais sustentável para todos os angolanos."
+      },
+      "principles": {
+        "title": "Princípios",
+        "subtitle": "Os nossos princípios orientam, de forma clara e consistente, a nossa actuação diária.",
+        "items": [
+          {
+            "title": "Fazemos por Angola",
+            "desc": "Cada projecto que lançamos, cada investimento que atraímos e cada parceria que construímos cria oportunidades de desenvolvimento para o país, as comunidades e cada um."
+          },
+          {
+            "title": "Agimos globalmente",
+            "desc": "A nossa ambição não tem fronteiras. Competimos globalmente, atraímos os melhores investidores internacionais e posicionamos Angola como referência global no sector."
+          },
+          {
+            "title": "Estamos prontos para o futuro",
+            "desc": "Desenvolvemos uma capacidade de resposta ágil, flexível, eficiente e em relação de parceria com o mercado, parceiros e comunidades – alinhados com as tendências e necessidades reais."
+          },
+          {
+            "title": "Juntamos e mobilizamos",
+            "desc": "Somos mais que reguladores. Somos impulsionadores. Dinamizamos stakeholders, internos e externos, o sector e a economia."
+          },
+          {
+            "title": "Perseguimos a excelência",
+            "desc": "Formamos, capacitamos e damos oportunidades de crescimento à nossa equipa. Para que cada um dê o seu melhor em tudo o que faz."
+          },
+          {
+            "title": "Gerimos com responsabilidade",
+            "desc": "Faremos uma gestão responsável, e com total transparência, dos recursos e emergências. Trabalhamos para ampliar a participação de Angola por um planeta mais sustentável."
+          }
+        ]
+      },
+      "objectives": {
+        "title": "Energia para mais progresso e sustentabilidade.",
+        "items": [
+          "Assegurar a transferência e consolidação efectiva da função Reguladora e Fiscalizadora na ANPG;",
+          "Desenvolver os recursos descobertos com vista a aumentar as reservas e combater o declínio de produção;",
+          "Implementar acções e programas que contribuam para a excelência operacional;",
+          "Implementar políticas e acções com vista ao desenvolvimento do capital humano;",
+          "Assegurar a descarbonização das operações petrolíferas e impulsionar as acções para o desenvolvimento das energias renováveis com foco nos biocombustíveis."
+        ]
+      },
+      "socialResp": {
+        "title": "Energia para mais desenvolvimento das comunidades.",
+        "desc": "Trabalhamos diariamente para que a energia de Angola tenha um impacto positivo nas comunidades de hoje e de amanhã.\n\nAsseguramos um impacto social positivo através de:\n\n– Formação\n– Emprego\n– Responsabilidade social\n– Desenvolvimento local"
+      },
+      "environment": {
+        "title": "Energia para mais segurança.",
+        "desc": "A ANPG promove um conjunto de iniciativas internas e abordagens de alinhamento com os Operadores, com vista a contribuir para a melhoria dos aspectos de segurança, saúde ocupacional, e protecção ambiental no sector. Estas iniciativas incorporam medidas de mitigação e prevenção de riscos de segurança e derrames, gestão da queima de gás para níveis cujas emissões atmosféricas tenham mínimo impacto ambiental."
+      }
+    }
+  },
+  "en": {
+    "title": "ANPG",
+    "titleHighlight": "",
+    "subtitle": "National Oil, Gas and Biofuels Agency",
+    "description": "Learn about the structure, mission and role of ANPG in Angola's oil sector.",
+    "breadcrumbLabel": "ANPG",
+    "content": {
+      "intro": "ANPG is the National Concessionaire, responsible for regulating, supervising and promoting the development of the oil, gas and biofuels sector in the upstream segment in Angola.",
+      "role": "Since 2019, we have brought dynamism back to the sector: we strengthened regulatory predictability, created an environment of greater confidence for national and international operators and investors, drove new concessions, new drilling and new discoveries, and kept the focus where it needs to be: on the value the sector generates for Angola.\n\nIn doing so, we reinforced Angola's position on the international energy map.",
+      "vision": "Today, we monitor and guide the future of this rapidly transforming and evolving sector. With global energy integration, it is urgent to keep pace with and lead this trend, expanding our scope from oil to gas and biofuels. For the country's development and for the sustainability of the planet. Showing that we always have energy for more."
+    },
+    "board": {
+      "title": "Board of Directors",
+      "members": [
+        {
+          "id": "paulino-jeronimo",
+          "slug": "paulino-jeronimo",
+          "name": "Paulino Jerónimo",
+          "role": "Chairman of the Board of Directors",
+          "pelouro": "",
+          "isPCA": true,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "artur-custodio",
+          "slug": "artur-custodio",
+          "name": "Artur Custódio",
+          "role": "Board Member",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "ana-miala",
+          "slug": "ana-miala",
+          "name": "Ana Miala",
+          "role": "Board Member",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "nicola-mvuayi",
+          "slug": "nicola-mvuayi",
+          "name": "Nicola Isabel Lemos de Mvuayi",
+          "role": "Board Member",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        },
+        {
+          "id": "alcides-andrade",
+          "slug": "alcides-andrade",
+          "name": "Alcides Andrade",
+          "role": "Board Member",
+          "pelouro": "",
+          "isPCA": false,
+          "email": "",
+          "phone": "",
+          "biography": "",
+          "institutionalMessage": ""
+        }
+      ],
+      "supervision": {
+        "title": "Oversight and Control Bodies",
+        "items": [
+          { "name": "Fiscal Council" },
+          { "name": "Technical Council" }
+        ]
+      }
+    },
+    "institutional": {
+      "purpose": {
+        "title": "Energy for more future.",
+        "desc": "Our purpose is to elevate Angola to a global reference, attracting investment and creating more opportunities in the oil, gas and biofuels sector. Leveraging industry and the economy and promoting a better and more sustainable future for all Angolans."
+      },
+      "principles": {
+        "title": "Principles",
+        "subtitle": "Our principles guide our daily actions in a clear and consistent way.",
+        "items": [
+          {
+            "title": "We do it for Angola",
+            "desc": "Every project we launch, every investment we attract and every partnership we build creates development opportunities for the country, communities and each individual."
+          },
+          {
+            "title": "We act globally",
+            "desc": "Our ambition knows no boundaries. We compete globally, attract the best international investors and position Angola as a global reference in the sector."
+          },
+          {
+            "title": "We are ready for the future",
+            "desc": "We develop an agile, flexible, efficient response capacity in partnership with the market, partners and communities – aligned with real trends and needs."
+          },
+          {
+            "title": "We unite and mobilise",
+            "desc": "We are more than regulators. We are drivers. We energise stakeholders, internal and external, the sector and the economy."
+          },
+          {
+            "title": "We pursue excellence",
+            "desc": "We train, empower and provide growth opportunities for our team. So that each person gives their best in everything they do."
+          },
+          {
+            "title": "We manage responsibly",
+            "desc": "We will manage responsibly, with full transparency, resources and emergencies. We work to expand Angola's contribution to a more sustainable planet."
+          }
+        ]
+      },
+      "objectives": {
+        "title": "Energy for more progress and sustainability.",
+        "items": [
+          "Ensure the effective transfer and consolidation of the Regulatory and Supervisory function at ANPG;",
+          "Develop discovered resources to increase reserves and combat production decline;",
+          "Implement actions and programmes that contribute to operational excellence;",
+          "Implement policies and actions aimed at developing human capital;",
+          "Ensure decarbonisation of petroleum operations and drive actions for the development of renewable energies with a focus on biofuels."
+        ]
+      },
+      "socialResp": {
+        "title": "Energy for greater community development.",
+        "desc": "We work daily to ensure Angola's energy has a positive impact on today's and tomorrow's communities.\n\nWe ensure a positive social impact through:\n\n– Training\n– Employment\n– Social responsibility\n– Local development"
+      },
+      "environment": {
+        "title": "Energy for more safety.",
+        "desc": "ANPG promotes a set of internal initiatives and alignment approaches with Operators, aiming to contribute to the improvement of safety, occupational health, and environmental protection aspects in the sector. These initiatives incorporate measures for mitigation and prevention of safety risks and spills, management of gas flaring to levels whose atmospheric emissions have minimal environmental impact."
+      }
+    }
+  }
+}

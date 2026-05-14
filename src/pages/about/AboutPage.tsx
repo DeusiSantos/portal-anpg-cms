@@ -1,12 +1,16 @@
-import { Building2, Target, Eye, Award, Shield, Lightbulb, Users, Leaf } from "lucide-react";
+// src/pages/about/index.tsx
+
+import { Building2, Target, Eye, Award, Shield, Lightbulb, Users, Leaf, Heart, Handshake, TrendingUp, Globe, Zap, Smile } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { StaggerContainer, StaggerItem } from "@/components/layout/StaggerContainer";
-import { useContentBlocks } from "@/hooks/useCMSData";
+import { Loader2 } from "lucide-react";
+import { usePageData } from "@/hooks/pages/usePageData";
 
+// Mapeamento de ícones para cada valor
 const valueIcons: Record<string, React.ElementType> = {
   integrity: Shield,
   transparency: Eye,
@@ -14,34 +18,81 @@ const valueIcons: Record<string, React.ElementType> = {
   sustainability: Leaf,
   innovation: Lightbulb,
   collaboration: Users,
+  // Ícones adicionais caso sejam adicionados novos valores
+  trust: Heart,
+  partnership: Handshake,
+  growth: TrendingUp,
+  global: Globe,
+  energy: Zap,
+  community: Smile,
 };
 
+// Fallback values caso o JSON não tenha todos os valores
+const defaultValues = {
+  integrity: { title: "Integridade", description: "Actuamos com honestidade, ética e responsabilidade em todas as nossas acções." },
+  transparency: { title: "Transparência", description: "Compromisso com a clareza e abertura em todas as operações." },
+  excellence: { title: "Excelência", description: "Padrões internacionais de qualidade e eficiência." },
+  sustainability: { title: "Sustentabilidade", description: "Desenvolvimento responsável dos recursos energéticos." },
+  innovation: { title: "Inovação", description: "Adopção de tecnologias avançadas no sector." },
+  collaboration: { title: "Colaboração", description: "Trabalho em equipa e parcerias estratégicas para alcançar objectivos comuns." },
+};
+
+// Fallback para objectivos estratégicos
 const defaultStrategicObjectives = [
-  "reserves", "growth", "localContent", "governance", "data", "safety"
+  { key: "reserves", label: "Maximizar reservas provadas e recuperação de hidrocarbonetos" },
+  { key: "growth", label: "Assegurar o crescimento sustentável do sector" },
+  { key: "localContent", label: "Aumentar os níveis de Conteúdo Local" },
+  { key: "governance", label: "Garantir boa governação, transparência e prestação de contas" },
+  { key: "data", label: "Melhorar a Gestão de Dados do Sector Petrolífero Nacional" },
+  { key: "safety", label: "Alcançar níveis de excelência na área de QSMS" },
 ];
+
+// Fallback para CTA
+const defaultCta = {
+  title: "Quer saber mais sobre a ANPG?",
+  description: "Explore as nossas páginas institucionais para conhecer melhor a nossa história, equipa e compromissos.",
+  buttonPrimaryText: "Saber Mais",
+  buttonPrimaryLink: "/about/anpg",
+  buttonSecondaryText: "Contactar",
+  buttonSecondaryLink: "/contacts",
+};
 
 export default function AboutPage() {
   const { t } = useTranslation();
-  const { data: cmsBlocks } = useContentBlocks("about");
-  const getSection = (key: string) => cmsBlocks?.find(b => b.section_key === key)?.content;
+  const { data: pageData, isLoading } = usePageData("about");
 
-  const strategySection = getSection("strategy");
-  const ctaSection = getSection("cta");
+  if (isLoading) {
+    return (
+      <PageLayout
+        pageKey="about"
+        breadcrumbs={[{ label: "Sobre nós", href: "/about" }]}
+      >
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </PageLayout>
+    );
+  }
 
-  const strategicObjectives = strategySection?.items?.length
-    ? strategySection.items
+  // Extrair dados do JSON com fallbacks
+  const content = pageData?.content || {};
+  const strategicObjectives = pageData?.strategicObjectives?.items?.length 
+    ? pageData.strategicObjectives.items 
     : defaultStrategicObjectives;
+  const values = { ...defaultValues, ...(pageData?.values || {}) };
+  const cta = { ...defaultCta, ...(pageData?.cta || {}) };
+  const breadcrumbLabel = pageData?.breadcrumbLabel || "Sobre nós";
+  const titleHighlight = pageData?.titleHighlight || "";
 
   return (
     <PageLayout
       pageKey="about"
-      titleKey="pages.about.title"
-      subtitleKey="pages.about.subtitle"
-      descriptionKey="pages.about.description"
-      
+      title={pageData?.title || "Sobre a ANPG"}
+      subtitle={pageData?.subtitle || "Institucional"}
+      description={pageData?.description || ""}
       icon={<Building2 className="w-8 h-8 text-primary" />}
       breadcrumbs={[
-        { labelKey: "nav.aboutUs" },
+        { label: breadcrumbLabel, href: "/about" }
       ]}
     >
       {/* Mission & Vision Section */}
@@ -51,16 +102,17 @@ export default function AboutPage() {
             <SectionTransition>
               <span className="inline-flex items-center gap-2 text-primary font-medium text-sm uppercase tracking-wider mb-4">
                 <span className="w-8 h-px bg-primary" />
-                {t("pages.about.subtitle")}
+                {pageData?.subtitle || "Institucional"}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                {t("about.title")} <span className="text-primary">{t("about.titleHighlight")}</span>
+                {pageData?.title || "Sobre a ANPG"} 
+                {titleHighlight && <span className="text-primary"> {titleHighlight}</span>}
               </h2>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                {t("pages.about.content.intro")}
+                {content.intro}
               </p>
               <p className="text-muted-foreground leading-relaxed mb-8">
-                {t("pages.about.content.role")}
+                {content.role}
               </p>
             </SectionTransition>
             
@@ -72,7 +124,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Missão</h3>
-                    <p className="text-muted-foreground text-sm">{t("pages.about.content.mission")}</p>
+                    <p className="text-muted-foreground text-sm">{content.mission}</p>
                   </div>
                 </div>
                 
@@ -82,7 +134,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Visão</h3>
-                    <p className="text-muted-foreground text-sm">{t("pages.about.content.vision")}</p>
+                    <p className="text-muted-foreground text-sm">{content.vision}</p>
                   </div>
                 </div>
               </div>
@@ -92,22 +144,25 @@ export default function AboutPage() {
           {/* Values Grid */}
           <SectionTransition delay={0.3} direction="left">
             <div className="grid grid-cols-2 gap-4">
-              {Object.entries(valueIcons).map(([key, Icon]) => (
-                <div 
-                  key={key} 
-                  className="p-5 rounded-xl bg-secondary/50 border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
-                    <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+              {Object.entries(values).map(([key, value]: [string, any]) => {
+                const Icon = valueIcons[key] || valueIcons.integrity;
+                return (
+                  <div 
+                    key={key} 
+                    className="p-5 rounded-xl bg-secondary/50 border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 group"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
+                      <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-1 text-sm">
+                      {value.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {value.description}
+                    </p>
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1 text-sm">
-                    {t(`about.values.${key}.title`)}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {t(`about.values.${key}.description`)}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </SectionTransition>
         </div>
@@ -119,31 +174,25 @@ export default function AboutPage() {
           <div className="text-center mb-12">
             <span className="inline-flex items-center gap-2 text-primary font-medium text-sm uppercase tracking-wider mb-4">
               <span className="w-8 h-px bg-primary" />
-              {strategySection?.label || "Estratégia"}
+              {pageData?.strategicObjectives?.label || "Estratégia"}
               <span className="w-8 h-px bg-primary" />
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              {strategySection?.title || t("pages.about.strategicObjectives.title")}
+              {pageData?.strategicObjectives?.title || "Objectivos Estratégicos"}
             </h2>
           </div>
 
           <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {strategicObjectives.map((item: any, index: number) => {
-              const key = typeof item === "string" ? item : item.key;
-              const label = typeof item === "string"
-                ? t(`pages.about.strategicObjectives.items.${key}`)
-                : item.label;
-              return (
-                <StaggerItem key={key}>
-                  <div className="p-6 rounded-2xl bg-gradient-to-br from-secondary/80 to-secondary/40 border border-border hover:border-primary/30 transition-all duration-300 h-full">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-4">
-                      <span className="text-primary font-bold">{index + 1}</span>
-                    </div>
-                    <p className="text-foreground font-medium">{label}</p>
+            {strategicObjectives.map((item: any, index: number) => (
+              <StaggerItem key={item.key || index}>
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-secondary/80 to-secondary/40 border border-border hover:border-primary/30 transition-all duration-300 h-full">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                    <span className="text-primary font-bold">{index + 1}</span>
                   </div>
-                </StaggerItem>
-              );
-            })}
+                  <p className="text-foreground font-medium">{item.label}</p>
+                </div>
+              </StaggerItem>
+            ))}
           </StaggerContainer>
         </section>
       </SectionTransition>
@@ -158,15 +207,15 @@ export default function AboutPage() {
                 Mensagem do PCA
               </span>
               <blockquote className="text-xl md:text-2xl font-light leading-relaxed mb-8 italic">
-                "{t("pages.about.content.pcaMessage")}"
+                "{content.pcaMessage}"
               </blockquote>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
                   <Building2 className="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                  <p className="font-bold text-lg">{t("pages.about.content.pcaName")}</p>
-                  <p className="text-primary-foreground/70 text-sm">{t("pages.about.content.pcaTitle")}</p>
+                  <p className="font-bold text-lg">{content.pcaName}</p>
+                  <p className="text-primary-foreground/70 text-sm">{content.pcaTitle}</p>
                 </div>
               </div>
             </div>
@@ -178,17 +227,21 @@ export default function AboutPage() {
       <SectionTransition delay={0.3}>
         <section className="text-center">
           <h3 className="text-2xl font-bold text-foreground mb-4">
-            {ctaSection?.title || "Quer saber mais sobre a ANPG?"}
+            {cta.title}
           </h3>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {ctaSection?.description || "Explore as nossas páginas institucionais para conhecer melhor a nossa história, equipa e compromissos."}
+            {cta.description}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button variant="hero" size="lg" asChild>
-              <Link to="/about/anpg">{t("common.learnMore")}</Link>
+              <Link to={cta.buttonPrimaryLink}>
+                {cta.buttonPrimaryText}
+              </Link>
             </Button>
             <Button variant="heroOutlineLight" size="lg" asChild>
-              <Link to="/contacts">{t("common.contact")}</Link>
+              <Link to={cta.buttonSecondaryLink}>
+                {cta.buttonSecondaryText}
+              </Link>
             </Button>
           </div>
         </section>

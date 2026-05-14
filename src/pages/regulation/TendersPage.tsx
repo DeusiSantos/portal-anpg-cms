@@ -1,57 +1,44 @@
-import { Globe2, Calendar, FileText, Users, ArrowRight, Clock, MapPin } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Globe2, Calendar, ArrowRight, Clock, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { useContentBlocks } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 export default function TendersPage() {
-  const { t } = useTranslation();
-  const { data: cmsBlocks } = useContentBlocks("tenders");
-  const getSection = (key: string) => cmsBlocks?.find(b => b.section_key === key)?.content;
+  const { data: pageData } = usePageData("tendersPage");
 
-  const introSection = getSection("intro");
-  const activeSection = getSection("active");
-  const phasesSection = getSection("phases");
-  const pastSection = getSection("past");
-
-  const defaultActiveTenders = t("pages.tendersPage.activeTenders", { returnObjects: true }) as Array<{ id: string; title: string; status: string; blocks: number; deadline: string; href: string }>;
-  const defaultPhases = t("pages.tendersPage.phases", { returnObjects: true }) as Array<{ title: string; description: string }>;
-  const defaultPastTenders = t("pages.tendersPage.pastTenders", { returnObjects: true }) as Array<{ year: string; title: string; blocksOffered: number; blocksAwarded: number; investment: string; href: string }>;
-
-  const activeTenders = activeSection?.items?.length ? activeSection.items : defaultActiveTenders;
-  const phases = phasesSection?.items?.length ? phasesSection.items : defaultPhases;
-  const pastTenders = pastSection?.items?.length ? pastSection.items : defaultPastTenders;
+  const activeTenders: Array<{ id: string; title: string; status: string; blocks: number; deadline: string; href: string }> = pageData?.activeTenders || [];
+  const phases: Array<{ title: string; description: string }> = pageData?.phases || [];
+  const pastTenders: Array<{ year: string; title: string; blocksOffered: number; blocksAwarded: number; investment: string; href: string }> = pageData?.pastTenders || [];
 
   return (
     <PageLayout
       pageKey="tenders"
-      title={t("pages.tendersPage.title")}
-      subtitle={t("pages.tendersPage.subtitle")}
-      description={t("pages.tendersPage.description")}
-      
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<Globe2 className="w-8 h-8 text-primary" />}
       breadcrumbs={[
-        { label: t("services.regulation.title"), href: "/regulation" },
-        { label: t("pages.tendersPage.title") },
+        { labelKey: "services.regulation.title", href: "/regulation" },
+        { label: pageData?.title || "Licitações" },
       ]}
     >
       <div className="space-y-16">
         {/* Introduction */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="prose prose-lg max-w-none">
-            <p className="text-muted-foreground leading-relaxed text-lg">{introSection?.text || t("pages.tendersPage.intro")}</p>
+            <p className="text-muted-foreground leading-relaxed text-lg">{pageData?.intro || ""}</p>
           </div>
         </motion.section>
 
         {/* Active Tenders */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
-          <h2 className="text-2xl font-bold text-foreground mb-8">{activeSection?.title || t("pages.tendersPage.activeTitle")}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-8">{pageData?.activeTitle || "Licitações Activas"}</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {Array.isArray(activeTenders) && activeTenders.map((tender, index) => (
+            {activeTenders.map((tender, index) => (
               <motion.div key={tender.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}>
                 <Link to={tender.href}>
                   <Card className="h-full hover:shadow-elevated transition-all duration-300 group cursor-pointer">
@@ -59,17 +46,17 @@ export default function TendersPage() {
                       <div>
                         <CardTitle className="text-xl group-hover:text-primary transition-colors">{tender.title}</CardTitle>
                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{tender.blocks} {t("pages.tendersPage.blocksLabel")}</span>
-                          <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{tender.deadline}</span>
+                          <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{tender.blocks} {pageData?.blocksLabel || "blocos"}</span>
+                          {tender.deadline && <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{tender.deadline}</span>}
                         </div>
                       </div>
-                      <Badge variant={tender.status === "active" ? "default" : "secondary"}>
-                        {tender.status === "active" ? t("pages.tendersPage.statusActive") : t("pages.tendersPage.statusOngoing")}
+                      <Badge variant={tender.status === "active" || tender.status === "Em curso" ? "default" : "secondary"}>
+                        {tender.status}
                       </Badge>
                     </CardHeader>
                     <CardContent>
                       <Button variant="ghost" className="gap-2 p-0 h-auto text-primary">
-                        {t("pages.tendersPage.viewDetails")} <ArrowRight className="w-4 h-4" />
+                        {pageData?.viewDetails || "Ver detalhes"} <ArrowRight className="w-4 h-4" />
                       </Button>
                     </CardContent>
                   </Card>
@@ -81,10 +68,10 @@ export default function TendersPage() {
 
         {/* Tender Phases */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-          <h2 className="text-2xl font-bold text-foreground mb-2">{phasesSection?.title || t("pages.tendersPage.phasesTitle")}</h2>
-          <p className="text-muted-foreground mb-8">{phasesSection?.subtitle || t("pages.tendersPage.phasesSubtitle")}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{pageData?.phasesTitle || "Fases Típicas de uma Licitação"}</h2>
+          <p className="text-muted-foreground mb-8">{pageData?.phasesSubtitle || "Como funciona o processo de concurso"}</p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.isArray(phases) && phases.map((phase, index) => (
+            {phases.map((phase, index) => (
               <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}>
                 <Card className="h-full">
                   <CardContent className="p-6">
@@ -104,9 +91,9 @@ export default function TendersPage() {
 
         {/* Past Tenders */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
-          <h2 className="text-2xl font-bold text-foreground mb-8">{pastSection?.title || t("pages.tendersPage.pastTitle")}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-8">{pageData?.pastTitle || "Licitações Anteriores"}</h2>
           <div className="space-y-4">
-            {Array.isArray(pastTenders) && pastTenders.map((tender, index) => (
+            {pastTenders.map((tender, index) => (
               <motion.div key={tender.year} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}>
                 <Link to={tender.href}>
                   <Card className="hover:shadow-elevated transition-all duration-300 group">
@@ -119,13 +106,13 @@ export default function TendersPage() {
                           <div>
                             <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{tender.title}</h3>
                             <p className="text-muted-foreground text-sm">
-                              {tender.blocksOffered} {t("pages.tendersPage.blocksOffered")} • {tender.blocksAwarded} {t("pages.tendersPage.blocksAwarded")}
+                              {tender.blocksOffered} {pageData?.blocksOffered || "Blocos oferecidos"} • {tender.blocksAwarded} {pageData?.blocksAwarded || "Blocos adjudicados"}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-6">
                           <div className="text-right">
-                            <p className="text-sm text-muted-foreground">{t("pages.tendersPage.investmentCaptured")}</p>
+                            <p className="text-sm text-muted-foreground">{pageData?.investmentCaptured || "Investimento captado"}</p>
                             <p className="text-lg font-semibold text-primary">{tender.investment}</p>
                           </div>
                           <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />

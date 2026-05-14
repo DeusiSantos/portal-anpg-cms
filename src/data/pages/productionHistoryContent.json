@@ -1,0 +1,110 @@
+{
+  "title": "Histórico de Produção",
+  "subtitle": "Evolução desde 1978",
+  "description": "Análise detalhada da evolução da produção petrolífera angolana desde os primeiros poços até à actualidade.",
+  "downloadReport": "Descarregar Relatório",
+  "statsLabels": {
+    "start": "Início",
+    "firstExport": "Primeira exportação",
+    "historicPeak": "Pico Histórico",
+    "peakUnit": "Mil bbl/dia (2008)",
+    "current": "Actual (Jun 2025)",
+    "currentUnit": "Mil bbl/dia",
+    "gas": "Gás (Jun 2025)",
+    "gasUnit": "MMscf/dia"
+  },
+  "longTermTitle": "Evolução Histórica (1978-2025)",
+  "longTermSubtitle": "Produção de petróleo bruto em milhares de barris por dia",
+  "declineNote": "O declínio desde 2008 deve-se à maturação natural dos campos e à falta de novas descobertas significativas. As licitações de 2023 e 2025 visam reverter esta tendência.",
+  "monthlyTitle": "Produção Mensal (2024-2025)",
+  "monthlySubtitle": "Dados mensais detalhados de petróleo e gás associado",
+  "chartLabels": {
+    "production": "Produção",
+    "oil": "Petróleo (kbbl/dia)",
+    "gas": "Gás (MMscf/dia)"
+  },
+  "decadeTitle": "Produção por Década",
+  "decadeSubtitle": "Médias e picos de produção por período",
+  "decadeLabels": {
+    "peak": "Pico",
+    "average": "Média"
+  },
+  "milestonesTitle": "Marcos Históricos",
+  "milestonesSubtitle": "Momentos-chave na história petrolífera de Angola",
+  "milestones": [
+    {
+      "year": "1955",
+      "title": "Início da Exploração",
+      "description": "Primeiras actividades de prospecção petrolífera em Angola pela Petrangol."
+    },
+    {
+      "year": "1966",
+      "title": "Primeira Descoberta Offshore",
+      "description": "Descoberta do campo de petróleo offshore no enclave de Cabinda."
+    },
+    {
+      "year": "1968",
+      "title": "Início da Produção",
+      "description": "Angola inicia a exportação comercial de petróleo bruto."
+    },
+    {
+      "year": "1978",
+      "title": "Criação da Sonangol",
+      "description": "Fundação da Sociedade Nacional de Combustíveis de Angola."
+    },
+    {
+      "year": "2002",
+      "title": "Fim da Guerra Civil",
+      "description": "Paz permite expansão significativa das actividades de exploração."
+    },
+    {
+      "year": "2008",
+      "title": "Pico de Produção",
+      "description": "Angola atinge o pico histórico de 1.875 mil barris por dia."
+    },
+    {
+      "year": "2019",
+      "title": "Criação da ANPG",
+      "description": "Agência Nacional de Petróleo, Gás e Biocombustíveis assume funções de Concessionária Nacional."
+    },
+    {
+      "year": "2024",
+      "title": "Estabilização",
+      "description": "Implementação de estratégias para estabilizar produção acima de 1 milhão bbl/dia."
+    }
+  ],
+  "longTermProduction": [
+    { "year": "1978", "oil": 135 }, { "year": "1980", "oil": 150 }, { "year": "1985", "oil": 230 },
+    { "year": "1990", "oil": 475 }, { "year": "1995", "oil": 646 }, { "year": "1998", "oil": 735 },
+    { "year": "2000", "oil": 746 }, { "year": "2002", "oil": 905 }, { "year": "2005", "oil": 1254 },
+    { "year": "2007", "oil": 1723 }, { "year": "2008", "oil": 1875 }, { "year": "2009", "oil": 1784 },
+    { "year": "2010", "oil": 1758 }, { "year": "2012", "oil": 1720 }, { "year": "2014", "oil": 1653 },
+    { "year": "2015", "oil": 1767 }, { "year": "2016", "oil": 1722 }, { "year": "2017", "oil": 1632 },
+    { "year": "2018", "oil": 1534 }, { "year": "2019", "oil": 1398 }, { "year": "2020", "oil": 1276 },
+    { "year": "2021", "oil": 1124 }, { "year": "2022", "oil": 1162 }, { "year": "2023", "oil": 1098 },
+    { "year": "2024", "oil": 1142 }, { "year": "2025", "oil": 1003 }
+  ],
+  "decadeData": [
+    { "decade": "1970s", "avgProduction": 135, "peakYear": "1979", "peak": 145 },
+    { "decade": "1980s", "avgProduction": 285, "peakYear": "1989", "peak": 455 },
+    { "decade": "1990s", "avgProduction": 598, "peakYear": "1999", "peak": 752 },
+    { "decade": "2000s", "avgProduction": 1456, "peakYear": "2008", "peak": 1875 },
+    { "decade": "2010s", "avgProduction": 1584, "peakYear": "2015", "peak": 1767 },
+    { "decade": "2020s", "avgProduction": 1134, "peakYear": "2022", "peak": 1162 }
+  ],
+  "monthlyData2024": [
+    { "month": "Jan 2024", "oil": 1156, "gas": 68.5 }, { "month": "Fev 2024", "oil": 1143, "gas": 67.8 },
+    { "month": "Mar 2024", "oil": 1168, "gas": 69.2 }, { "month": "Abr 2024", "oil": 1132, "gas": 66.9 },
+    { "month": "Mai 2024", "oil": 1145, "gas": 68.1 }, { "month": "Jun 2024", "oil": 1158, "gas": 69.8 },
+    { "month": "Jul 2024", "oil": 1172, "gas": 70.5 }, { "month": "Ago 2024", "oil": 1165, "gas": 71.2 },
+    { "month": "Set 2024", "oil": 1148, "gas": 70.8 }, { "month": "Out 2024", "oil": 1139, "gas": 71.5 },
+    { "month": "Nov 2024", "oil": 1152, "gas": 71.8 }, { "month": "Dez 2024", "oil": 1142, "gas": 72.1 },
+    { "month": "Jan 2025", "oil": 1025, "gas": 71.4 }, { "month": "Fev 2025", "oil": 1018, "gas": 71.2 },
+    { "month": "Mar 2025", "oil": 1012, "gas": 71.5 }, { "month": "Abr 2025", "oil": 1008, "gas": 71.8 },
+    { "month": "Mai 2025", "oil": 1005, "gas": 71.6 }, { "month": "Jun 2025", "oil": 1003, "gas": 71.9 }
+  ],
+  "ctaTitle": "Aceda aos Dados Completos",
+  "ctaDescription": "Explore o dashboard interactivo com dados detalhados de produção por bloco, operador e período temporal.",
+  "ctaDashboard": "Dashboard de Produção",
+  "ctaData": "Explorar Dados de E&P"
+}

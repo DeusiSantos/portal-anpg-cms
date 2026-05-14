@@ -1,0 +1,27 @@
+{
+  "title": "Conferência de Dados 2021",
+  "subtitle": "Evento",
+  "description": "Highlights e materiais da conferência de gestão de dados de 2021.",
+  "introTitle": "Angola Oil & Gas 2021",
+  "introDate": "23-24 de Setembro de 2021",
+  "introLocation": "Luanda, Angola",
+  "introDescription": "A Conferência Angola Oil & Gas 2021 reuniu os principais actores do sector petrolífero angolano e internacional para debater o futuro da indústria, as oportunidades de investimento e os desafios da transição energética. O evento foi organizado pela ANPG e contou com a participação de representantes governamentais, operadores internacionais e especialistas do sector.",
+  "highlightsTitle": "Destaques da Conferência",
+  "highlights": [
+    { "value": "1.200+", "title": "Participantes", "description": "Delegados nacionais e internacionais" },
+    { "value": "45+", "title": "Palestrantes", "description": "Especialistas e líderes do sector" },
+    { "value": "20+", "title": "Países", "description": "Representados na conferência" },
+    { "value": "15", "title": "Sessões", "description": "Painéis e apresentações técnicas" }
+  ],
+  "topicsTitle": "Temas Abordados",
+  "topics": [
+    "Perspectivas de produção e exploração em Angola",
+    "Atracção de investimento estrangeiro no sector petrolífero",
+    "Transição energética e sustentabilidade",
+    "Tecnologias de exploração offshore em águas profundas",
+    "Conteúdo local e desenvolvimento de capacidades nacionais",
+    "Legislação e enquadramento regulatório do sector",
+    "Cooperação internacional e parcerias estratégicas",
+    "O papel do gás natural na matriz energética de Angola"
+  ]
+}

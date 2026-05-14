@@ -1,0 +1,76 @@
+{
+  "title": "Produção",
+  "subtitle": "Estatísticas",
+  "description": "Dados e estatísticas sobre a produção petrolífera angolana.",
+  "keyIndicators": "Indicadores Chave",
+  "historicalTitle": "Produção Histórica",
+  "historicalSubtitle": "Evolução da produção de petróleo e gás natural (2018-2024)",
+  "oilLabel": "Petróleo (kbbl/dia)",
+  "gasLabel": "Gás (MMscf/dia)",
+  "oilName": "Petróleo",
+  "gasName": "Gás Natural",
+  "monthlyTitle": "Produção Mensal 2024",
+  "monthlySubtitle": "Produção de petróleo por mês (kbbl/dia)",
+  "productionLabel": "Produção",
+  "operatorTitle": "Produção por Operador",
+  "operatorSubtitle": "Quota de mercado por operador",
+  "quotaLabel": "Quota",
+  "basinTitle": "Produção por Bacia Sedimentar",
+  "basinSubtitle": "Distribuição da produção petrolífera por região",
+  "tableTitle": "Dados de Produção por Operador",
+  "tableSubtitle": "Detalhes de produção diária por operador",
+  "tableOperator": "Operador",
+  "tableProduction": "Produção (kbbl/dia)",
+  "tableQuota": "Quota (%)",
+  "tableTrend": "Tendência",
+  "trendStable": "Estável",
+  "defaultStats": {
+    "oilProduction": "Produção de Petróleo",
+    "gasProduction": "Produção de Gás Natural",
+    "activeBlocks": "Blocos Activos",
+    "intlOperators": "Operadores Internacionais"
+  },
+  "keyStats": [
+    { "icon": "fuel", "value": "1.14", "suffix": "M bbl/dia", "label": "Produção de Petróleo", "change": 4.0 },
+    { "icon": "gas", "value": "412", "suffix": "MMscf/dia", "label": "Produção de Gás Natural", "change": 9.0 },
+    { "icon": "blocks", "value": "47", "label": "Blocos Activos" },
+    { "icon": "operators", "value": "15", "label": "Operadores Internacionais" }
+  ],
+  "historicalData": [
+    { "year": "2018", "oil": 1534, "gas": 245 },
+    { "year": "2019", "oil": 1398, "gas": 268 },
+    { "year": "2020", "oil": 1276, "gas": 289 },
+    { "year": "2021", "oil": 1124, "gas": 312 },
+    { "year": "2022", "oil": 1162, "gas": 345 },
+    { "year": "2023", "oil": 1098, "gas": 378 },
+    { "year": "2024", "oil": 1142, "gas": 412 }
+  ],
+  "monthlyData": [
+    { "month": "Jan", "production": 1156 },
+    { "month": "Fev", "production": 1143 },
+    { "month": "Mar", "production": 1168 },
+    { "month": "Abr", "production": 1132 },
+    { "month": "Mai", "production": 1145 },
+    { "month": "Jun", "production": 1158 },
+    { "month": "Jul", "production": 1172 },
+    { "month": "Ago", "production": 1165 },
+    { "month": "Set", "production": 1148 },
+    { "month": "Out", "production": 1139 },
+    { "month": "Nov", "production": 1152 },
+    { "month": "Dez", "production": 1142 }
+  ],
+  "operatorData": [
+    { "name": "TotalEnergies", "value": 28, "barrels": 320 },
+    { "name": "Chevron", "value": 22, "barrels": 251 },
+    { "name": "ExxonMobil", "value": 18, "barrels": 205 },
+    { "name": "Azule Energy", "value": 15, "barrels": 171 },
+    { "name": "ENI", "value": 10, "barrels": 114 },
+    { "name": "Outros", "value": 7, "barrels": 81 }
+  ],
+  "basinData": [
+    { "basin": "Bacia do Congo", "production": 612, "percentage": 54 },
+    { "basin": "Bacia do Kwanza", "production": 298, "percentage": 26 },
+    { "basin": "Bacia do Namibe", "production": 148, "percentage": 13 },
+    { "basin": "Onshore", "production": 84, "percentage": 7 }
+  ]
+}

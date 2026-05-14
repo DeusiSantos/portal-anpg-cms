@@ -1,0 +1,79 @@
+{
+  "title": "Licitações",
+  "subtitle": "Serviços & Competências",
+  "description": "Organização de processos para atribuição de direitos de exploração.",
+  "intro": "A ANPG organiza concursos públicos internacionais para a atribuição de direitos de exploração e produção de hidrocarbonetos. Os processos são conduzidos de forma transparente, competitiva e em conformidade com as melhores práticas internacionais.",
+  "activeTitle": "Oportunidades Activas",
+  "activeTenders": [
+    {
+      "id": "tender-2025",
+      "title": "Licitação 2025",
+      "status": "active",
+      "blocks": 10,
+      "deadline": "30 Junho 2025",
+      "href": "/opportunities/tender-2025"
+    },
+    {
+      "id": "permanent-offer",
+      "title": "Oferta Permanente",
+      "status": "ongoing",
+      "blocks": 15,
+      "deadline": "Contínuo",
+      "href": "/opportunities/permanent-offer"
+    }
+  ],
+  "statusActive": "Em Curso",
+  "statusOngoing": "Permanente",
+  "blocksLabel": "blocos",
+  "viewDetails": "Ver detalhes",
+  "phasesTitle": "Fases da Licitação",
+  "phasesSubtitle": "O processo típico de uma licitação de blocos petrolíferos",
+  "phases": [
+    {
+      "title": "Anúncio e Data Room",
+      "description": "Publicação do edital e disponibilização de dados técnicos aos interessados."
+    },
+    {
+      "title": "Qualificação",
+      "description": "Análise das credenciais técnicas e financeiras dos candidatos."
+    },
+    {
+      "title": "Submissão de Propostas",
+      "description": "Período para apresentação de propostas técnicas e comerciais."
+    },
+    {
+      "title": "Avaliação",
+      "description": "Análise e classificação das propostas recebidas."
+    },
+    {
+      "title": "Negociação",
+      "description": "Negociação dos termos contratuais com os candidatos seleccionados."
+    },
+    {
+      "title": "Adjudicação",
+      "description": "Anúncio dos resultados e assinatura dos contratos."
+    }
+  ],
+  "pastTitle": "Licitações Anteriores",
+  "pastTenders": [
+    {
+      "year": "2023",
+      "title": "Licitação 2023",
+      "blocksOffered": 12,
+      "blocksAwarded": 8,
+      "investment": "USD 2.3B",
+      "href": "/opportunities/tender-2023"
+    },
+    {
+      "year": "2020",
+      "title": "Primeira Ronda de Licenciamento",
+      "blocksOffered": 10,
+      "blocksAwarded": 6,
+      "investment": "USD 1.8B",
+      "href": "#"
+    }
+  ],
+  "blocksOffered": "blocos oferecidos",
+  "blocksAwarded": "atribuídos",
+  "investmentCaptured": "Investimento Captado"
+}

@@ -1,0 +1,1466 @@
+{
+  "nav": {
+    "aboutUs": "Sobre nós",
+    "services": "Responsabilidades",
+    "opportunities": "Oportunidades",
+    "epData": "Dados de E&P",
+    "media": "Media",
+    "exploration": "Exploração",
+    "production": "Produção",
+    "localContent": "Conteúdo Local",
+    "investorPortal": "Portal do Investidor",
+    "investment": "Investimento",
+    "data": "Dados",
+    "submenu": {
+      "pcaMessage": "Mensagem do PCA",
+      "pcaMessageDesc": "Mensagem do Presidente do Conselho de Administração",
+      "anpg": "ANPG",
+      "anpgDesc": "Conheça a Agência Nacional de Petróleo, Gás e Biocombustíveis",
+      "ourHistory": "A Nossa História",
+      "ourHistoryDesc": "Décadas de experiência no sector petrolífero angolano",
+      "socialResponsibility": "Responsabilidade Social",
+      "socialResponsibilityDesc": "Compromisso com o desenvolvimento sustentável de Angola",
+      "contacts": "Contactos",
+      "contactsDesc": "Entre em contacto com as nossas equipas",
+      "faq": "Perguntas Frequentes",
+      "faqDesc": "Respostas às dúvidas mais comuns sobre investimento",
+      "regulation": "Regulação",
+      "regulationDesc": "Quadro regulatório do sector energético angolano",
+      "licensing": "Licenciamento",
+      "licensingDesc": "Gestão de concessões e licenças petrolíferas",
+      "oversight": "Fiscalização",
+      "oversightDesc": "Supervisão e controlo das operações",
+      "tenders": "Licitações",
+      "tendersDesc": "Processos para atribuição de direitos de exploração",
+      "dataAnalytics": "Dados & Analytics",
+      "dataAnalyticsDesc": "Estatísticas e relatórios do sector energético",
+      "sustainability": "Sustentabilidade",
+      "sustainabilityDesc": "Práticas ambientalmente responsáveis",
+      "tender2025": "Licitação 2025",
+      "tender2025Desc": "Oportunidades de investimento na licitação actual",
+      "permanentOffer": "Oferta Permanente",
+      "permanentOfferDesc": "Blocos disponíveis para negociação contínua",
+      "tender2023": "Licitação 2023",
+      "tender2023Desc": "Resultados e informações da licitação anterior",
+      "energyIntegration": "Integração Energética e Biocombustíveis",
+      "energyIntegrationDesc": "Promoção da integração energética e desenvolvimento de biocombustíveis",
+      "gas": "Gás",
+      "gasDesc": "Projectos e oportunidades no sector do gás natural",
+      "platformIona": "Plataforma IONA",
+      "platformIonaDesc": "Sistema integrado de gestão de dados de E&P",
+      "oasisImageBank": "OASIS – Banco de Imagens",
+      "oasisImageBankDesc": "Repositório de imagens sísmicas e geológicas",
+      "dataPackages": "Pacotes de Dados",
+      "dataPackagesDesc": "Dados técnicos disponíveis para licenciamento",
+      "epMaps": "Mapa de Concessões",
+      "epMapsDesc": "Mapa interactivo de blocos e operadores",
+      "conference2021": "Conferência 2021",
+      "conference2021Desc": "Highlights da conferência de dados de 2021",
+      "dataConference2023": "2ª Conferência de Gestão de Dados 2023",
+      "dataConference2023Desc": "A mais recente conferência sobre gestão de dados",
+      "productionOverview": "Visão Geral",
+      "productionOverviewDesc": "Estatísticas actuais e gráficos de produção",
+      "productionHistory": "Histórico de Produção",
+      "productionHistoryDesc": "Evolução da produção petrolífera desde 1978",
+      "localContentOverview": "Conteúdo Local",
+      "localContentOverviewDesc": "Empresas certificadas, registo de fornecedores e documentação",
+      "investorPortalDesc": "Acesso ao portal do investidor com oportunidades e documentos"
+    }
+  },
+  "pages": {
+    "exploration": {
+      "title": "Exploração",
+      "subtitle": "Actividades de Exploração",
+      "seismicCampaigns": "Campanhas Sísmicas",
+      "seismicCampaignsDesc": "Informações sobre campanhas de aquisição sísmica em Angola",
+      "seismicCampaignsSubtitle": "Aquisição de dados sísmicos",
+      "seismicCampaignsContent": "Informações detalhadas sobre as campanhas de aquisição sísmica realizadas nas bacias sedimentares de Angola, incluindo dados históricos e planos futuros.",
+      "processing": "Processamento e Interpretação",
+      "processingDesc": "Processamento e interpretação de dados sísmicos e geológicos",
+      "processingSubtitle": "Análise de dados geofísicos",
+      "processingContent": "O processamento e interpretação de dados sísmicos é fundamental para a identificação de estruturas geológicas com potencial de acumulação de hidrocarbonetos.",
+      "newAreas": "Novas Áreas de Exploração",
+      "newAreasDesc": "Áreas com potencial para novas descobertas de hidrocarbonetos",
+      "newAreasSubtitle": "Fronteiras exploratórias",
+      "newAreasContent": "Angola dispõe de vastas áreas com potencial exploratório ainda por avaliar, representando oportunidades significativas para novas descobertas.",
+      "seismic2d": "Mapa Sísmica 2D",
+      "seismic2dDesc": "Visualização dos levantamentos sísmicos 2D realizados",
+      "seismic2dSubtitle": "Levantamentos sísmicos bidimensionais",
+      "seismic2dContent": "Mapa interactivo com a localização de todos os levantamentos sísmicos 2D realizados nas bacias sedimentares de Angola.",
+      "seismic3d": "Mapa Sísmica 3D",
+      "seismic3dDesc": "Visualização dos levantamentos sísmicos 3D realizados",
+      "seismic3dSubtitle": "Levantamentos sísmicos tridimensionais",
+      "seismic3dContent": "Mapa interactivo com a localização de todos os levantamentos sísmicos 3D, proporcionando imagens detalhadas do subsolo.",
+      "seismic4d": "Mapa Sísmica 4D",
+      "seismic4dDesc": "Visualização dos levantamentos sísmicos 4D (time-lapse)",
+      "seismic4dSubtitle": "Monitorização sísmica temporal",
+      "seismic4dContent": "Mapa interactivo com os levantamentos sísmicos 4D (time-lapse), utilizados para monitorizar a evolução dos reservatórios ao longo do tempo."
+    },
+    "about": {
+      "title": "Sobre a ANPG",
+      "subtitle": "Institucional",
+      "description": "Conheça a Agência Nacional de Petróleo, Gás e Biocombustíveis de Angola e a nossa missão de regular o sector energético.",
+      "content": {
+        "mission": "Gerir o Sistema Petrolífero Nacional promovendo e regulando a execução das actividades petrolíferas, primando pela criação de valor para as partes interessadas, aplicação das melhores práticas e por uma actuação transparente.",
+        "vision": "Ser reconhecida como uma Agência Nacional Reguladora de Excelência.",
+        "intro": "A Agência Nacional de Petróleo, Gás e Biocombustíveis, abreviadamente ANPG, foi criada pelo Decreto Presidencial nº 49/19, de 6 de Fevereiro. A ANPG é uma Pessoa Colectiva de Direito Público dotada de personalidade jurídica, autonomia administrativa, financeira e patrimonial.",
+        "role": "A ANPG é a Concessionária Nacional e o Órgão Regulador das actividades petrolíferas. Nessa qualidade, a ANPG é responsável pela negociação dos contratos petrolíferos de concessões, promoção do acesso e de novas oportunidades de investimento, bem como a administração e fiscalização de áreas de concessão para exploração e produção de petróleo, gás natural e seus derivados, em todo o território nacional.",
+        "pcaMessage": "A Agência Nacional de Petróleo, Gás e Biocombustíveis, abreviadamente ANPG, criada pelo Decreto Presidencial nº 49/19, de 6 de Fevereiro, é a Concessionária Nacional, responsável pela gestão e optimização das operações de E&P, tendo como objectivo garantir a sustentabilidade do sector e uma governação e fiscalização mais efectivas.",
+        "pcaName": "Paulino Jerónimo",
+        "pcaTitle": "Presidente do Conselho de Administração"
+      },
+      "strategicObjectives": {
+        "title": "Objectivos Estratégicos",
+        "items": {
+          "reserves": "Maximizar reservas provadas e recuperação de hidrocarbonetos",
+          "growth": "Assegurar o crescimento sustentável do sector",
+          "localContent": "Aumentar os níveis de Conteúdo Local",
+          "governance": "Garantir boa governação, transparência e prestação de contas",
+          "data": "Melhorar a Gestão de Dados do Sector Petrolífero Nacional",
+          "safety": "Alcançar níveis de excelência na área de QSMS"
+        }
+      }
+    },
+    "pcaMessage": {
+      "title": "Mensagem do PCA",
+      "subtitle": "Mensagem do Presidente",
+      "description": "Mensagem do Presidente do Conselho de Administração da ANPG, Paulino Jerónimo.",
+      "role": "Presidente do Conselho de Administração",
+      "p1": "A criação da ANPG, em 2019, representou um passo decisivo do Estado angolano no processo de reorganização do sector energético. Enquanto Concessionária Nacional, assumimos desde o primeiro momento a responsabilidade de regular, fiscalizar e promover as actividades no domínio do petróleo, do gás natural e dos biocombustíveis, num sector vital para a economia nacional e para o posicionamento de Angola no contexto internacional.",
+      "p2": "Neste curto espaço de tempo, consolidámos a função Concessionária, retomámos os processos de licitação, reforçámos a colaboração com os operadores. Contribuímos para mitigar o declínio natural da produção, dinamizar o investimento e criar condições de maior previsibilidade e confiança no sector. Estes avanços só foram possíveis graças ao compromisso, competência e dedicação das nossas equipas, bem como ao diálogo permanente com todos os stakeholders.",
+      "p3": "Nestes sete anos da nossa actividade como ANPG, o mundo tem conhecido mudanças consideráveis. O sector energético atravessa hoje transformações profundas, marcadas por novas exigências ambientais, diversidade de fontes de energia, pressão regulatória e pelo surgimento de países com novas descobertas e mais oferta, originando uma concorrência cada vez mais intensa na captação de investimento. Este novo contexto exige instituições mais ágeis, mais claras, mais abertas ao diálogo internacional e mais preparadas para pensar o futuro de forma integrada.",
+      "p4": "É neste quadro que iniciamos um novo ciclo estratégico. Um ciclo orientado para o reforço do nosso papel enquanto regulador alinhado com as melhores práticas internacionais. Os pilares deste novo ciclo serão apresentados e desenvolvidos com ambição, responsabilidade e visão de longo prazo.",
+      "p5": "A nova identidade da ANPG assinala simbolicamente esta nova etapa. Uma marca mais fluida, contemporânea e mais representativa da diversidade de energias que hoje regulamos. Uma marca que melhor reflecte a evolução da Concessionária Nacional, assim como a ambição de acompanhar e liderar as matérias sob nossa jurisdição com impacto global.",
+      "p6": "Com esta nova marca e uma nova assinatura, afirmamos que a ANPG e Angola têm energia para mais.",
+      "highlight1": "Mais clareza na regulação.",
+      "highlight2": "Mais confiança e atracção de investimento.",
+      "highlight3": "Mais integração, mais sustentabilidade e mais futuro para o País.",
+      "closing": "É com energia para mais que continuamos comprometidos com a excelência, com a integridade e com a construção de um sector energético forte, competitivo e preparado para os desafios."
+    },
+    "anpg": {
+      "title": "Energia para mais Angola.",
+      "subtitle": "Concessionária Nacional",
+      "description": "Somos a ANPG, a Agência Nacional de Petróleo, Gás e Biocombustíveis.",
+      "content": {
+        "intro": "A ANPG é a concessionária Nacional, responsável por regular, fiscalizar e promover o desenvolvimento do sector do petróleo, gás e biocombustíveis no segmento upstream em Angola.",
+        "role": "Desde 2019, devolvemos dinamismo ao sector: reforçámos a previsibilidade regulatória, criámos um ambiente de maior confiança para operadores e investidores nacionais e internacionais, impulsionámos novas concessões, novas perfurações e novas descobertas e mantivemos o foco onde ele tem de estar: no valor que o sector gera para Angola.\n\nE assim, reforçámos a posição de Angola no mapa energético internacional.",
+        "vision": "Hoje, acompanhamos e guiamos o futuro deste sector em rápida transformação e evolução. Com a integração energética a nível global, é urgente acompanhar e liderar esta tendência, alargando a nossa actuação do petróleo ao gás e aos biocombustíveis. Pelo desenvolvimento do país e pela sustentabilidade do planeta. Mostrando que temos sempre energia para mais."
+      },
+      "board": {
+        "title": "Conselho de Administração",
+        "members": {
+         "pca": {
+            "name": "Paulino Jerónimo",
+            "role": "Presidente do Conselho de Administração"
+          },
+          "admin1": {
+            "name": "Artur Custódio",
+            "role": "Administrador"
+          },
+          "admin2": {
+            "name": "Ana Miala",
+            "role": "Administradora"
+          },
+          "admin3": {
+            "name": "Nicola Isabel Lemos de Mvuayi",
+            "role": "Administradora"
+          },
+          "admin4": {
+            "name": "Alcides Andrade",
+            "role": "Administrador"
+          }
+        }
+      },
+      "supervision": {
+        "title": "Órgãos de Fiscalização e Controlo",
+        "items": {
+          "fiscal": "Conselho Fiscal",
+          "audit": "Auditoria Interna",
+          "external": "Auditoria Externa"
+        }
+      },
+      "institutional": {
+        "purpose": {
+          "title": "Energia para mais futuro.",
+          "desc": "Elevar Angola a referência global, captando investimento e criando mais oportunidades no sector do petróleo, gás e biocombustíveis. Alavancando o desenvolvimento da indústria e da economia e promovendo um futuro melhor e mais sustentável para todos os angolanos."
+        },
+        "principles": {
+          "title": "Princípios",
+          "subtitle": "Os nossos princípios orientam, de forma clara e consistente, a nossa actuação diária.",
+          "angola": {
+            "title": "Fazemos por Angola",
+            "desc": "Cada projecto que lançamos, cada investimento que atraímos e cada parceria que construímos cria oportunidades de desenvolvimento para o país, as comunidades e cada um."
+          },
+          "global": {
+            "title": "Agimos globalmente",
+            "desc": "A nossa ambição não tem fronteiras. Competimos globalmente, atraímos os melhores investidores internacionais e posicionamos Angola como referência global no sector."
+          },
+          "future": {
+            "title": "Estamos prontos para o futuro",
+            "desc": "Desenvolvemos uma capacidade de resposta ágil, flexível, eficiente e em relação de parceria com o mercado, parceiros e comunidades – alinhados com as tendências e necessidades reais."
+          },
+          "mobilize": {
+            "title": "Juntamos e mobilizamos",
+            "desc": "Somos mais que reguladores. Somos impulsionadores. Dinamizamos stakeholders, internos e externos, o sector e a economia."
+          },
+          "excellence": {
+            "title": "Perseguimos a excelência",
+            "desc": "Formamos, capacitamos e damos oportunidades de crescimento à nossa equipa. Para que cada um dê o seu melhor em tudo o que faz."
+          },
+          "responsibility": {
+            "title": "Gerimos com responsabilidade",
+            "desc": "Faremos uma gestão responsável, e com total transparência, dos recursos e emergências. Trabalhamos para ampliar a participação de Angola por um planeta mais sustentável."
+          }
+        },
+        "objectives": {
+          "title": "Energia para mais progresso e sustentabilidade.",
+          "items": [
+            "Assegurar a transferência e consolidação efectiva da função Reguladora e Fiscalizadora na ANPG;",
+            "Desenvolver os recursos descobertos com vista a aumentar as reservas e combater o declínio de produção;",
+            "Implementar acções e programas que contribuam para a excelência operacional;",
+            "Implementar políticas e acções com vista ao desenvolvimento do capital humano;",
+            "Assegurar a descarbonização das operações petrolíferas e impulsionar as acções para o desenvolvimento das energias renováveis com foco nos biocombustíveis."
+          ]
+        },
+        "socialResp": {
+          "title": "Energia para mais desenvolvimento das comunidades.",
+          "desc": "Trabalhamos diariamente para que a energia de Angola tenha um impacto positivo nas comunidades de hoje e de amanhã.\n\nAsseguramos um impacto social positivo através de:\n\n– Formação\n– Emprego\n– Responsabilidade social\n– Desenvolvimento local"
+        },
+        "environment": {
+          "title": "Energia para mais segurança.",
+          "desc": "A ANPG promove um conjunto de iniciativas internas e abordagens de alinhamento com os Operadores, com vista a contribuir para a melhoria dos aspectos de segurança, saúde ocupacional, e protecção ambiental no sector. Estas iniciativas incorporam medidas de mitigação e prevenção de riscos de segurança e derrames, gestão da queima de gás para níveis cujas emissões atmosféricas tenham mínimo impacto ambiental."
+        }
+      }
+    },
+    "history": {
+      "title": "A Nossa História",
+      "subtitle": "Desde 1910",
+      "description": "Mais de um século de história petrolífera, desde a primeira licença de exploração até à criação da ANPG.",
+      "intro": "Mais de um século de história petrolífera, desde a primeira licença de exploração em 1910 até à criação da ANPG em 2019. Uma jornada de descoberta, crescimento e transformação que posicionou Angola como um dos principais produtores de petróleo da África.",
+      "timelineTitle": "Linha do Tempo",
+      "today": "Hoje",
+      "eras": {
+        "pioneering": "Pioneirismo",
+        "growth": "Crescimento",
+        "expansion": "Expansão",
+        "modernization": "Modernização"
+      },
+      "stats": {
+        "years": "Anos de História",
+        "peakProduction": "Barris/Dia (Pico)",
+        "sonangolCreation": "Criação da Sonangol",
+        "anpgCreation": "Criação da ANPG"
+      },
+      "timeline": {
+        "1910": {
+          "title": "Primeira Licença de Exploração",
+          "description": "Primeira licença de exploração de hidrocarbonetos atribuída à empresa Canha & Formigal, no onshore do Kwanza."
+        },
+        "1915": {
+          "title": "Primeiro Poço Perfurado",
+          "description": "Perfuração do primeiro poço de petróleo, Dande-1, na Bacia do Kwanza."
+        },
+        "1955": {
+          "title": "Primeira Descoberta Comercial",
+          "description": "Petrofina realiza a primeira descoberta comercial de petróleo, no vale do Kwanza, com a perfuração do poço Benfica 2."
+        },
+        "1958": {
+          "title": "Início da Refinação",
+          "description": "Início da actividade de refinação de petróleo, com a criação da Refinaria de Luanda, propriedade da Petrangol."
+        },
+        "1966": {
+          "title": "Descoberta no Bloco 0",
+          "description": "Nova fase com atribuição de diversas concessões e criação de blocos. Primeira descoberta no poço Limba, Bloco 0."
+        },
+        "1968": {
+          "title": "Campo de Malongo",
+          "description": "Entrada em funcionamento do campo de Malongo, em Cabinda. Primeiro grande salto na produção petrolífera angolana."
+        },
+        "1973": {
+          "title": "Petróleo: Principal Exportação",
+          "description": "O petróleo torna-se na principal exportação de Angola, superando o café."
+        },
+        "1976": {
+          "title": "Criação da Sonangol",
+          "description": "Criação da Sociedade Nacional de Combustíveis de Angola – Sonangol. A produção rondava os 100 mil barris/dia."
+        },
+        "1978": {
+          "title": "Primeira Lei Petrolífera",
+          "description": "Primeira Lei das Actividades Petrolíferas (Lei 13/78), estabelecendo o quadro regulatório do sector."
+        },
+        "1990": {
+          "title": "500 Mil Barris/Dia",
+          "description": "Angola atinge a produção de 500 mil barris/dia, consolidando-se como produtor relevante na região."
+        },
+        "1999": {
+          "title": "Produção em Águas Profundas",
+          "description": "Entra em funcionamento o primeiro FPSO no offshore angolano (Bloco 14), marcando o início da produção em águas profundas."
+        },
+        "2000": {
+          "title": "1 Milhão de Barris/Dia",
+          "description": "Angola atinge a produção máxima de 1.000.000 de barris/dia, tornando-se um player global."
+        },
+        "2007": {
+          "title": "Adesão à OPEP",
+          "description": "Angola torna-se membro da OPEP – Organização dos Países Exportadores de Petróleo."
+        },
+        "2008": {
+          "title": "Pico Histórico: 2 Milhões",
+          "description": "Angola atinge a produção máxima diária de 2.000.000 de barris. Produção média anual de 1.993.000 barris/dia."
+        },
+        "2009": {
+          "title": "Presidência da OPEP",
+          "description": "Angola assume a presidência da OPEP, tornando-se o maior produtor de crude da África subsariana."
+        },
+        "2011": {
+          "title": "Descobertas no Pré-Sal",
+          "description": "Descobertas significativas no Pré-Sal (Azul – Bloco 23; Cameia – Bloco 21), abrindo novas fronteiras exploratórias."
+        },
+        "2013": {
+          "title": "Exportação de LNG",
+          "description": "Início da produção de gás natural liquefeito (LNG) e expedição do primeiro carregamento para o Brasil."
+        },
+        "2019": {
+          "title": "Criação da ANPG",
+          "description": "Reestruturação do sector petrolífero que resulta na criação da ANPG. Licitação de 10 blocos nas Bacias de Benguela e Namibe."
+        },
+        "2020": {
+          "title": "Regulamentação do Conteúdo Local",
+          "description": "Publicação do Decreto Presidencial n.º 271/20, definindo os Procedimentos de Implementação do Conteúdo Local."
+        },
+        "2021": {
+          "title": "Nova Licitação",
+          "description": "Licitação por Concurso Limitado de 8 blocos nas Bacias Marítimas do Baixo Congo e do Kwanza."
+        }
+      }
+    },
+    "socialResponsibility": {
+      "title": "Responsabilidade Social",
+      "subtitle": "Compromisso com Angola",
+      "description": "O nosso compromisso com o desenvolvimento sustentável e o bem-estar das comunidades angolanas.",
+      "content": {
+        "intro": "A ANPG assume a responsabilidade social como um dos pilares fundamentais da sua actuação, comprometendo-se com o desenvolvimento sustentável de Angola e o bem-estar das comunidades locais.",
+        "areas": {
+          "education": {
+            "title": "Educação",
+            "description": "Programas de formação e capacitação técnica para jovens angolanos no sector petrolífero."
+          },
+          "environment": {
+            "title": "Ambiente",
+            "description": "Promoção de práticas ambientalmente responsáveis e protecção dos ecossistemas."
+          },
+          "community": {
+            "title": "Comunidades",
+            "description": "Apoio ao desenvolvimento das comunidades nas áreas de operação petrolífera."
+          },
+          "health": {
+            "title": "Saúde e Segurança",
+            "description": "Garantia dos mais elevados padrões de saúde e segurança no trabalho."
+          }
+        },
+        "environment": {
+          "title": "Energia para mais segurança.",
+          "description": "A ANPG promove e fiscaliza a aplicação das melhores práticas ambientais e de segurança no sector petrolífero, garantindo a protecção do ambiente e a segurança das operações."
+        }
+      }
+    },
+    "contacts": {
+      "title": "Contactos",
+      "subtitle": "Fale Connosco",
+      "description": "Entre em contacto com as nossas equipas para obter informações e esclarecimentos.",
+      "infoTitle": "Informações de Contacto",
+      "infoDescription": "Estamos disponíveis para responder às suas questões e fornecer as informações que necessita.",
+      "mapPlaceholder": "Mapa de localização em breve",
+      "mapTitle": "Localização da ANPG",
+      "openInMaps": "Abrir no Google Maps",
+      "headquarters": "Sede ANPG",
+      "info": {
+        "address": {
+          "title": "Localização"
+        },
+        "phone": {
+          "title": "Telefone"
+        },
+        "email": {
+          "title": "Email"
+        },
+        "hours": {
+          "title": "Horário",
+          "content": "Segunda a Sexta: 08H00 - 17H00"
+        }
+      }
+    },
+    "opportunities": {
+      "title": "Oportunidades de Investimento",
+      "subtitle": "Investir em Angola",
+      "description": "Descubra as oportunidades de investimento no sector petrolífero angolano."
+    },
+    "tender2025": {
+      "title": "Licitação 2025",
+      "subtitle": "Oportunidades",
+      "description": "Informações sobre a licitação de 2025 para atribuição de blocos petrolíferos."
+    },
+    "permanentOffer": {
+      "title": "Oferta Permanente",
+      "subtitle": "Blocos Disponíveis",
+      "description": "Blocos petrolíferos disponíveis para negociação contínua fora das licitações.",
+      "intro": "A Oferta Permanente é um mecanismo complementar às rondas de licitação, permitindo às empresas petrolíferas nacionais e internacionais negociar directamente com a ANPG a aquisição de direitos de exploração e produção em blocos seleccionados, de forma contínua e sem prazos fixos.",
+      "howItWorksTitle": "Como Funciona",
+      "howItWorks": [
+        { "title": "Consulta de Blocos", "desc": "Empresas interessadas consultam a lista de blocos disponíveis e os respectivos pacotes de dados técnicos." },
+        { "title": "Manifestação de Interesse", "desc": "Submissão formal de manifestação de interesse junto da ANPG, incluindo perfil da empresa e plano preliminar." },
+        { "title": "Negociação Directa", "desc": "A ANPG avalia a proposta e inicia negociações bilaterais sobre termos contratuais e programas de trabalho." },
+        { "title": "Atribuição do Bloco", "desc": "Após acordo, o contrato de concessão é celebrado e submetido para aprovação ministerial." }
+      ],
+      "advantagesTitle": "Vantagens",
+      "advantages": [
+        { "title": "Flexibilidade Temporal", "desc": "Sem prazos fixos — as empresas podem candidatar-se a qualquer momento." },
+        { "title": "Negociação Directa", "desc": "Processo bilateral que permite termos adaptados ao perfil de cada investidor." },
+        { "title": "Acesso Contínuo", "desc": "Blocos disponíveis são actualizados regularmente à medida que novas áreas são libertadas." },
+        { "title": "Dados Técnicos", "desc": "Pacotes de dados sísmicos e geológicos disponíveis para avaliação prévia." }
+      ],
+      "availableBlocksTitle": "Blocos Disponíveis",
+      "availableBlocksIntro": "Os blocos abaixo estão actualmente disponíveis para negociação no regime de Oferta Permanente. Para informações detalhadas e pacotes de dados, contacte a ANPG.",
+      "blocks": [
+        { "name": "Bloco KON-17", "basin": "Bacia do Kwanza Onshore", "area": "4.820 km²", "status": "Disponível", "depth": "Onshore" },
+        { "name": "Bloco KON-19", "basin": "Bacia do Kwanza Onshore", "area": "3.150 km²", "status": "Disponível", "depth": "Onshore" },
+        { "name": "Bloco CON-7", "basin": "Bacia do Congo Onshore", "area": "5.230 km²", "status": "Em Negociação", "depth": "Onshore" },
+        { "name": "Bloco LNG-31", "basin": "Bacia do Baixo Congo", "area": "6.100 km²", "status": "Disponível", "depth": "Ultra-Deepwater" },
+        { "name": "Bloco NAM-5", "basin": "Bacia do Namibe", "area": "7.800 km²", "status": "Disponível", "depth": "Deepwater" },
+        { "name": "Bloco KON-21", "basin": "Bacia do Kwanza Onshore", "area": "2.900 km²", "status": "Disponível", "depth": "Onshore" }
+      ],
+      "blockHeaders": { "name": "Bloco", "basin": "Bacia", "area": "Área", "depth": "Profundidade", "status": "Estado" },
+      "eligibilityTitle": "Elegibilidade",
+      "eligibility": [
+        "Empresas com experiência comprovada em exploração e produção de petróleo e gás",
+        "Capacidade financeira demonstrada para executar o programa de trabalho mínimo",
+        "Cumprimento dos requisitos de conteúdo local estabelecidos pela legislação angolana",
+        "Compromisso com as normas ambientais e de segurança da ANPG"
+      ],
+      "ctaTitle": "Interessado em Negociar?",
+      "ctaDesc": "Entre em contacto com a Direcção de Negociações da ANPG para obter mais informações sobre blocos disponíveis e iniciar o processo de manifestação de interesse.",
+      "ctaButton": "Contactar a ANPG",
+      "ctaEmail": "Enviar Email",
+      "statusAvailable": "Disponível",
+      "statusNegotiating": "Em Negociação"
+    },
+    "tender2023": {
+      "title": "Licitação 2023",
+      "subtitle": "Resultados",
+      "description": "Resultados e informações sobre a licitação de 2023."
+    },
+    "gas": {
+      "title": "Gás",
+      "subtitle": "Projectos e oportunidades no sector do gás natural",
+      "intro": "O sector do gás natural em Angola representa uma oportunidade estratégica de crescimento e diversificação energética. Com reservas significativas e infraestruturas em expansão, Angola posiciona-se como um actor relevante no mercado global de GNL.",
+      "highlights": {
+        "lng": { "title": "Angola LNG", "desc": "Planta de liquefacção com capacidade de 5.2 MTPA" },
+        "production": { "title": "Produção", "desc": "Crescimento sustentado da produção de gás natural" },
+        "export": { "title": "Exportação", "desc": "Angola como exportador estratégico de GNL" },
+        "investment": { "title": "Investimento", "desc": "Novas oportunidades em projectos de gás" }
+      },
+      "opportunitiesTitle": "Oportunidades no Sector do Gás",
+      "p1": "Angola dispõe de reservas comprovadas de gás natural que sustentam projectos de grande envergadura, incluindo a planta de GNL do Soyo e novos desenvolvimentos em curso. O aproveitamento do gás associado e a redução da queima representam prioridades estratégicas.",
+      "p2": "A ANPG promove activamente o investimento em projectos de gás, oferecendo condições atractivas para operadores interessados em desenvolver recursos gasíferos nas bacias sedimentares angolanas."
+    },
+    "whistleblower": {
+      "title": "Canal de Denúncias",
+      "subtitle": "Transparência e Integridade",
+      "features": {
+        "confidentiality": { "title": "Confidencialidade", "desc": "Garantia de protecção da identidade do denunciante" },
+        "security": { "title": "Segurança", "desc": "Canal seguro e encriptado para submissão de denúncias" },
+        "followUp": { "title": "Acompanhamento", "desc": "Seguimento e resposta a todas as denúncias recebidas" }
+      },
+      "p1": "O Canal de Denúncias da ANPG é um mecanismo confidencial e seguro, disponível para colaboradores, parceiros e cidadãos, destinado à comunicação de irregularidades, condutas antiéticas ou situações que possam comprometer a integridade institucional.",
+      "p2": "A ANPG garante a protecção dos denunciantes contra qualquer forma de retaliação, assegurando o tratamento adequado e tempestivo de todas as comunicações recebidas, em conformidade com a legislação aplicável.",
+      "p3": "Para submeter uma denúncia, utilize os canais disponíveis abaixo ou contacte directamente a equipa de compliance da ANPG.",
+      "howToTitle": "Como Submeter uma Denúncia",
+      "email": "compliance@anpg.co.ao",
+      "phone": "+244 226 428 000",
+      "disclaimer": "Todas as denúncias são tratadas com total confidencialidade."
+    },
+    "epData": {
+      "title": "Dados de E&P",
+      "subtitle": "Exploração & Produção",
+      "description": "Acesso a dados técnicos, estatísticas e informações sobre exploração e produção de hidrocarbonetos."
+    },
+    "iona": {
+      "title": "Plataforma IONA",
+      "subtitle": "Gestão de Dados",
+      "description": "Sistema integrado de gestão de dados de exploração e produção de Angola."
+    },
+    "oasis": {
+      "title": "OASIS – Banco de Imagens",
+      "subtitle": "Dados Sísmicos",
+      "description": "Repositório de imagens sísmicas e geológicas do território angolano."
+    },
+    "dataPackages": {
+      "title": "Pacotes de Dados",
+      "subtitle": "Licenciamento",
+      "description": "Dados técnicos disponíveis para licenciamento por operadores e investidores."
+    },
+    "epMaps": {
+      "title": "Mapa de Concessões",
+      "subtitle": "Blocos & Operadores",
+      "description": "Mapa interactivo de todos os blocos petrolíferos de Angola com informações detalhadas sobre operadores e participações.",
+      "basinDistribution": "Distribuição por Bacia",
+      "basinDistributionDesc": "Blocos concessionados por região sedimentar",
+      "blocks": "blocos",
+      "concessionsMap": "Mapa de Concessões",
+      "concessionsMapDesc": "Pesquise e explore todos os blocos por bacia, operador e estado",
+      "mapView": "Vista Mapa",
+      "listView": "Vista Lista",
+      "downloadPdf": "Descarregar Mapa PDF",
+      "topOperators": "Principais Operadores",
+      "topOperatorsDesc": "Empresas com maior presença no sector",
+      "operatedBlocks": "Blocos Operados",
+      "inProduction": "Em Produção",
+      "loadingMap": "A carregar mapa...",
+      "updatedData": "Dados Actualizados",
+      "updatedDataDesc": "Os dados apresentados nesta página são baseados no Mapa de Concessões da ANPG de Maio 2025. Para informações mais detalhadas ou actualizações, consulte o",
+      "officialPortal": "portal oficial da ANPG"
+    },
+    "blockDetails": {
+      "title": "Detalhes do Bloco",
+      "subtitle": "Informação Técnica",
+      "description": "Informações detalhadas sobre o bloco petrolífero.",
+      "notFound": "Bloco Não Encontrado",
+      "notFoundDesc": "O bloco solicitado não foi encontrado na nossa base de dados."
+    },
+    "conference2021": {
+      "title": "Conferência de Dados 2021",
+      "subtitle": "Evento",
+      "description": "Highlights e materiais da conferência de gestão de dados de 2021."
+    },
+    "conference2023": {
+      "title": "2ª Conferência de Gestão de Dados 2023",
+      "subtitle": "Evento",
+      "description": "A mais recente conferência sobre gestão de dados no sector petrolífero."
+    },
+    "media": {
+      "title": "Imprensa",
+      "subtitle": "Comunicação",
+      "description": "Notícias, comunicados de imprensa e recursos mediáticos da ANPG.",
+      "tabs": {
+        "news": "Notícias",
+        "publications": "Publicações",
+        "videos": "Vídeos",
+        "press": "Recortes",
+        "events": "Eventos"
+      },
+      "search": "Pesquisar notícias por palavra-chave...",
+      "dateFilters": {
+        "all": "Todas as datas",
+        "week": "Última semana",
+        "month": "Último mês",
+        "quarter": "Últimos 3 meses",
+        "year": "Último ano"
+      },
+      "sort": {
+        "newest": "Mais recentes",
+        "oldest": "Mais antigas"
+      },
+      "clear": "Limpar",
+      "categories": {
+        "all": "Todas",
+        "press": "Comunicado de Imprensa",
+        "tender": "Licitação",
+        "highlight": "Destaque",
+        "production": "Produção Mensal"
+      },
+      "noResults": "Nenhuma notícia encontrada",
+      "empty": {
+        "publications": "Nenhuma publicação disponível.",
+        "videos": "Nenhum vídeo disponível.",
+        "press": "Nenhum recorte de imprensa disponível.",
+        "events": "Nenhum evento disponível."
+      },
+      "resultsCount": "{{count}} notícia(s) encontrada(s)",
+      "pageInfo": "Página {{current}} de {{total}} • {{count}} notícias",
+      "publicationsTitle": "Boletim \"Primeiro Óleo\"",
+      "publicationsDescription": "Newsletter oficial da ANPG com informações sobre o sector petrolífero angolano.",
+      "viewAllPublications": "Ver Todas as Publicações",
+      "videosTitle": "Canal ANPG",
+      "videosDescription": "Vídeos institucionais, reportagens e cobertura de eventos do sector petrolífero.",
+      "viewMoreVideos": "Ver Mais Vídeos no YouTube",
+      "pressTitle": "Recortes de Imprensa",
+      "pressDescription": "Cobertura mediática sobre a ANPG e o sector petrolífero angolano.",
+      "viewMorePress": "Ver Mais Recortes",
+      "eventsTitle": "Eventos",
+      "eventsDescription": "Conferências, missões empresariais e eventos do sector petrolífero.",
+      "viewAllEvents": "Ver Todos os Eventos"
+    },
+    "events": {
+      "title": "Eventos",
+      "subtitle": "Conferências e Eventos",
+      "description": "Conferências, missões empresariais e eventos do sector petrolífero organizados pela ANPG."
+    },
+    "production": {
+      "title": "Produção",
+      "subtitle": "Estatísticas",
+      "description": "Dados e estatísticas sobre a produção petrolífera angolana.",
+      "keyIndicators": "Indicadores Chave",
+      "historicalTitle": "Produção Histórica",
+      "historicalSubtitle": "Evolução da produção de petróleo e gás natural (2018-2024)",
+      "oilLabel": "Petróleo (kbbl/dia)",
+      "gasLabel": "Gás (MMscf/dia)",
+      "oilName": "Petróleo",
+      "gasName": "Gás Natural",
+      "monthlyTitle": "Produção Mensal 2024",
+      "monthlySubtitle": "Produção de petróleo por mês (kbbl/dia)",
+      "productionLabel": "Produção",
+      "operatorTitle": "Produção por Operador",
+      "operatorSubtitle": "Quota de mercado por operador",
+      "quotaLabel": "Quota",
+      "basinTitle": "Produção por Bacia Sedimentar",
+      "basinSubtitle": "Distribuição da produção petrolífera por região",
+      "tableTitle": "Dados de Produção por Operador",
+      "tableSubtitle": "Detalhes de produção diária por operador",
+      "tableOperator": "Operador",
+      "tableProduction": "Produção (kbbl/dia)",
+      "tableQuota": "Quota (%)",
+      "tableTrend": "Tendência",
+      "trendStable": "Estável",
+      "defaultStats": {
+        "oilProduction": "Produção de Petróleo",
+        "gasProduction": "Produção de Gás Natural",
+        "activeBlocks": "Blocos Activos",
+        "intlOperators": "Operadores Internacionais"
+      }
+    },
+    "productionHistory": {
+      "title": "Histórico de Produção",
+      "subtitle": "Evolução desde 1978",
+      "description": "Análise detalhada da evolução da produção petrolífera angolana desde os primeiros poços até à actualidade."
+    },
+    "localContent": {
+      "title": "Conteúdo Local",
+      "subtitle": "Desenvolvimento Nacional",
+      "description": "Políticas e iniciativas para promover a participação local no sector petrolífero."
+    },
+    "investorPortal": {
+      "title": "Portal do Investidor",
+      "subtitle": "Investimento",
+      "description": "Aceda a oportunidades de investimento, documentação e recursos para investidores no sector petrolífero angolano."
+    },
+    "privacy": {
+      "title": "Política de Privacidade",
+      "subtitle": "Legal",
+      "description": "Informações sobre como a ANPG recolhe, utiliza e protege os seus dados pessoais.",
+      "intro": "A Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG) está empenhada em proteger a privacidade e os dados pessoais de todos os utilizadores do nosso website. Esta política descreve as nossas práticas de recolha, utilização e protecção de informação.",
+      "lastUpdated": "Última actualização",
+      "sections": {
+        "collection": {
+          "title": "Recolha de Dados",
+          "content": "Recolhemos informações que nos fornece directamente, como nome, endereço de email, empresa e cargo, quando preenche formulários no nosso website, nomeadamente para agendamento de reuniões, manifestação de interesse em blocos petrolíferos ou pedidos de informação. Também recolhemos dados de navegação automaticamente, incluindo endereço IP, tipo de navegador e páginas visitadas."
+        },
+        "usage": {
+          "title": "Utilização dos Dados",
+          "content": "Utilizamos os seus dados para responder às suas solicitações, processar pedidos de informação, enviar comunicações relacionadas com oportunidades de investimento e licitações, e melhorar os nossos serviços. Os dados são tratados com base no seu consentimento ou no interesse legítimo da ANPG em cumprir as suas funções institucionais."
+        },
+        "security": {
+          "title": "Segurança",
+          "content": "Implementamos medidas técnicas e organizacionais adequadas para proteger os seus dados contra acessos não autorizados, perda ou destruição. Os nossos sistemas são regularmente auditados e actualizados para garantir a segurança da informação."
+        },
+        "rights": {
+          "title": "Os Seus Direitos",
+          "content": "Tem o direito de aceder, rectificar, apagar ou limitar o tratamento dos seus dados pessoais. Pode também solicitar a portabilidade dos dados ou opor-se ao seu tratamento. Para exercer estes direitos, contacte-nos através do email indicado abaixo."
+        },
+        "cookies": {
+          "title": "Cookies",
+          "content": "O nosso website utiliza cookies essenciais para o funcionamento do site e cookies de análise para compreender como os visitantes interagem com as nossas páginas. Pode gerir as suas preferências de cookies através das definições do seu navegador."
+        },
+        "contact": {
+          "title": "Contacto",
+          "content": "Para questões relacionadas com a protecção de dados ou para exercer os seus direitos, contacte o nosso Encarregado de Protecção de Dados através do email privacidade@anpg.co.ao."
+        }
+      },
+      "dpo": {
+        "title": "Encarregado de Protecção de Dados",
+        "entity": "Entidade",
+        "email": "Email",
+        "address": "Morada"
+      }
+    },
+    "terms": {
+      "title": "Termos de Utilização",
+      "subtitle": "Legal",
+      "description": "Condições gerais de utilização do website da ANPG.",
+      "intro": "Estes Termos de Utilização regulam o acesso e utilização do website da Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG). Ao aceder a este website, aceita ficar vinculado por estes termos.",
+      "lastUpdated": "Última actualização",
+      "sections": {
+        "acceptance": {
+          "title": "Aceitação dos Termos",
+          "content": "Ao aceder e utilizar este website, declara ter lido, compreendido e aceite estes Termos de Utilização. Se não concordar com alguma parte destes termos, não deverá utilizar este website."
+        },
+        "usage": {
+          "title": "Utilização do Website",
+          "content": "Este website destina-se exclusivamente a fins informativos sobre as actividades da ANPG e oportunidades de investimento no sector petrolífero angolano. Compromete-se a utilizar este website de forma lícita, respeitando a legislação aplicável e os direitos de terceiros."
+        },
+        "intellectualProperty": {
+          "title": "Propriedade Intelectual",
+          "content": "Todos os conteúdos deste website, incluindo textos, imagens, logótipos, gráficos e software, são propriedade da ANPG ou dos seus licenciadores e estão protegidos por direitos de autor e outras leis de propriedade intelectual. Não é permitida a reprodução, distribuição ou modificação sem autorização prévia."
+        },
+        "disclaimer": {
+          "title": "Isenção de Responsabilidade",
+          "content": "A ANPG esforça-se por manter as informações deste website actualizadas e precisas, mas não garante a exactidão, integridade ou actualidade dos conteúdos. A utilização das informações disponibilizadas é da inteira responsabilidade do utilizador."
+        },
+        "links": {
+          "title": "Links Externos",
+          "content": "Este website pode conter links para websites externos. A ANPG não é responsável pelo conteúdo, políticas de privacidade ou práticas de websites de terceiros."
+        },
+        "jurisdiction": {
+          "title": "Lei Aplicável e Jurisdição",
+          "content": "Estes Termos de Utilização são regidos pela legislação da República de Angola. Quaisquer litígios serão submetidos à jurisdição exclusiva dos tribunais angolanos."
+        }
+      },
+      "updates": {
+        "title": "Alterações aos Termos",
+        "content": "A ANPG reserva-se o direito de modificar estes Termos de Utilização a qualquer momento. As alterações entram em vigor imediatamente após a sua publicação neste website. Recomendamos que consulte esta página periodicamente."
+      },
+      "questions": "Se tiver dúvidas sobre estes Termos, contacte-nos através de"
+    },
+    "energyIntegration": {
+      "title": "Núcleo de Integração Energética e Biocombustíveis",
+      "subtitle": "Promovendo a transição energética sustentável em Angola",
+      "intro": "O Núcleo de Integração Energética e Biocombustíveis da ANPG tem como missão promover a diversificação da matriz energética angolana, fomentando o desenvolvimento de biocombustíveis e a integração de fontes de energia alternativas no sector petrolífero nacional.",
+      "areasTitle": "Áreas de Actuação",
+      "areas": {
+        "biofuels": {
+          "title": "Biocombustíveis",
+          "desc": "Desenvolvimento e regulação da produção de biocombustíveis a partir de matérias-primas locais, contribuindo para a redução da dependência de combustíveis fósseis."
+        },
+        "transition": {
+          "title": "Transição Energética",
+          "desc": "Apoio a projectos de transição energética que promovam a utilização eficiente dos recursos energéticos e a adopção de tecnologias limpas."
+        },
+        "sustainability": {
+          "title": "Sustentabilidade Ambiental",
+          "desc": "Implementação de práticas sustentáveis no sector energético, assegurando o cumprimento dos compromissos ambientais internacionais."
+        },
+        "partnerships": {
+          "title": "Parcerias Internacionais",
+          "desc": "Estabelecimento de parcerias estratégicas com organizações internacionais para a transferência de tecnologia e conhecimento no domínio das energias renováveis."
+        }
+      },
+      "statsTitle": "Indicadores-Chave",
+      "stats": {
+        "projects": { "value": "12", "label": "Projectos Activos" },
+        "investment": { "value": "$2.4B", "label": "Investimento Previsto" },
+        "jobs": { "value": "5.000+", "label": "Empregos Estimados" },
+        "reduction": { "value": "30%", "label": "Redução de Emissões" }
+      },
+      "timelineTitle": "Marcos do Projecto",
+      "timeline": [
+        { "year": "2020", "title": "Criação do Núcleo", "desc": "Estabelecimento formal do Núcleo de Integração Energética e Biocombustíveis dentro da ANPG." },
+        { "year": "2021", "title": "Primeiro Estudo de Viabilidade", "desc": "Conclusão do estudo de viabilidade para produção de bioetanol a partir de cana-de-açúcar." },
+        { "year": "2022", "title": "Parcerias Internacionais", "desc": "Assinatura de acordos de cooperação com Brasil e União Europeia para transferência de tecnologia." },
+        { "year": "2023", "title": "Planta Piloto de Biodiesel", "desc": "Inauguração da primeira planta piloto de produção de biodiesel no Bengo." },
+        { "year": "2024", "title": "Regulamentação Nacional", "desc": "Aprovação do quadro regulatório para mistura obrigatória de biocombustíveis nos combustíveis fósseis." },
+        { "year": "2025", "title": "Expansão Industrial", "desc": "Início da construção de três unidades industriais de biocombustíveis nas províncias do Kwanza Sul, Malanje e Huíla." }
+      ],
+      "contactTitle": "Contacte o Núcleo",
+      "contactIntro": "Tem interesse em colaborar com o Núcleo de Integração Energética e Biocombustíveis? Preencha o formulário abaixo.",
+      "contactFields": {
+        "name": "Nome Completo",
+        "email": "E-mail",
+        "organization": "Organização",
+        "interest": "Área de Interesse",
+        "message": "Mensagem",
+        "submit": "Enviar Mensagem",
+        "submitting": "A enviar...",
+        "successTitle": "Mensagem Enviada",
+        "successDesc": "Agradecemos o seu contacto. A nossa equipa responderá brevemente."
+      },
+      "interestOptions": {
+        "biofuels": "Biocombustíveis",
+        "transition": "Transição Energética",
+        "sustainability": "Sustentabilidade",
+        "partnerships": "Parcerias",
+        "other": "Outro"
+      }
+    },
+    "licensing": {
+      "title": "Licenciamento",
+      "subtitle": "Serviços & Competências",
+      "description": "Gestão de concessões e licenças para exploração e produção de hidrocarbonetos.",
+      "intro": "A ANPG é responsável pela gestão de concessões e licenças para exploração e produção de hidrocarbonetos em Angola. O processo de licenciamento é conduzido de forma transparente e competitiva, garantindo que os recursos naturais do país sejam desenvolvidos de forma eficiente e sustentável.",
+      "licenseTypesTitle": "Tipos de Licenças",
+      "licenseTypes": [
+        { "title": "Licença de Pesquisa", "description": "Autorização para actividades de prospecção e pesquisa de hidrocarbonetos em áreas definidas.", "duration": "Até 4 anos, prorrogável" },
+        { "title": "Licença de Avaliação", "description": "Autorização para avaliação de descobertas e estudos de viabilidade comercial.", "duration": "Até 2 anos" },
+        { "title": "Licença de Produção", "description": "Autorização para desenvolvimento e produção comercial de hidrocarbonetos.", "duration": "Até 25 anos, prorrogável" }
+      ],
+      "processTitle": "Processo de Licenciamento",
+      "processSubtitle": "Etapas do processo de atribuição de concessões petrolíferas",
+      "processSteps": [
+        { "title": "Manifestação de Interesse", "description": "Submissão formal de interesse em participar num concurso ou oferta permanente." },
+        { "title": "Qualificação Técnica", "description": "Avaliação das capacidades técnicas e financeiras do candidato." },
+        { "title": "Submissão de Proposta", "description": "Apresentação de proposta técnica e comercial detalhada." },
+        { "title": "Avaliação e Negociação", "description": "Análise das propostas e negociação dos termos contratuais." },
+        { "title": "Aprovação Governamental", "description": "Submissão para aprovação final das autoridades competentes." },
+        { "title": "Assinatura do Contrato", "description": "Formalização do contrato de concessão petrolífera." }
+      ],
+      "ctaTitle": "Interessado em investir?",
+      "ctaDescription": "Consulte as oportunidades actuais e inicie o seu processo de candidatura.",
+      "ctaOpportunities": "Ver Oportunidades",
+      "ctaContact": "Contactar"
+    },
+    "oversight": {
+      "title": "Fiscalização",
+      "subtitle": "Serviços & Competências",
+      "description": "Supervisão e controlo das operações petrolíferas em todo o território nacional.",
+      "intro": "A ANPG exerce funções de supervisão e controlo sobre todas as operações petrolíferas em território nacional. O nosso objectivo é garantir que as actividades sejam conduzidas de acordo com as melhores práticas da indústria, os termos contratuais e a legislação vigente.",
+      "stats": [
+        { "value": "450+", "label": "Inspecções Anuais" },
+        { "value": "47", "label": "Blocos Monitorizados" },
+        { "value": "100%", "label": "Cobertura Nacional" },
+        { "value": "24/7", "label": "Monitorização Contínua" }
+      ],
+      "areasTitle": "Áreas de Fiscalização",
+      "areas": [
+        { "title": "Monitorização de Operações", "description": "Acompanhamento contínuo das actividades de exploração e produção em todos os blocos petrolíferos." },
+        { "title": "Auditorias Técnicas", "description": "Realização de auditorias regulares para verificar o cumprimento dos planos de desenvolvimento aprovados." },
+        { "title": "Segurança Operacional", "description": "Fiscalização das normas de segurança e saúde ocupacional nas instalações petrolíferas." },
+        { "title": "Conformidade Ambiental", "description": "Verificação do cumprimento das normas ambientais e dos planos de gestão de impacto." }
+      ],
+      "complianceTitle": "Áreas de Conformidade",
+      "complianceIntro": "A ANPG verifica o cumprimento das obrigações em diversas áreas fundamentais:",
+      "complianceAreas": [
+        "Planos de Desenvolvimento de Campo",
+        "Programas de Trabalho e Orçamentos",
+        "Relatórios de Produção",
+        "Gestão de Reservatórios",
+        "Segurança de Instalações",
+        "Protecção Ambiental",
+        "Conteúdo Local",
+        "Obrigações Contratuais"
+      ],
+      "reportingTitle": "Reporte de Incidentes",
+      "reportingDescription": "Todos os operadores são obrigados a reportar incidentes de segurança, derrames ou anomalias operacionais à ANPG. O reporte deve ser feito de forma imediata para incidentes críticos e dentro de 24 horas para outras ocorrências.",
+      "emergencyLine": "Linha de Emergência: +244 222 XXX XXX"
+    },
+    "tendersPage": {
+      "title": "Licitações",
+      "subtitle": "Serviços & Competências",
+      "description": "Organização de processos para atribuição de direitos de exploração.",
+      "intro": "A ANPG organiza concursos públicos internacionais para a atribuição de direitos de exploração e produção de hidrocarbonetos. Os processos são conduzidos de forma transparente, competitiva e em conformidade com as melhores práticas internacionais.",
+      "activeTitle": "Oportunidades Activas",
+      "activeTenders": [
+        { "id": "tender-2025", "title": "Licitação 2025", "status": "active", "blocks": 10, "deadline": "30 Junho 2025", "href": "/opportunities/tender-2025" },
+        { "id": "permanent-offer", "title": "Oferta Permanente", "status": "ongoing", "blocks": 15, "deadline": "Contínuo", "href": "/opportunities/permanent-offer" }
+      ],
+      "statusActive": "Em Curso",
+      "statusOngoing": "Permanente",
+      "blocksLabel": "blocos",
+      "viewDetails": "Ver detalhes",
+      "phasesTitle": "Fases da Licitação",
+      "phasesSubtitle": "O processo típico de uma licitação de blocos petrolíferos",
+      "phases": [
+        { "title": "Anúncio e Data Room", "description": "Publicação do edital e disponibilização de dados técnicos aos interessados." },
+        { "title": "Qualificação", "description": "Análise das credenciais técnicas e financeiras dos candidatos." },
+        { "title": "Submissão de Propostas", "description": "Período para apresentação de propostas técnicas e comerciais." },
+        { "title": "Avaliação", "description": "Análise e classificação das propostas recebidas." },
+        { "title": "Negociação", "description": "Negociação dos termos contratuais com os candidatos seleccionados." },
+        { "title": "Adjudicação", "description": "Anúncio dos resultados e assinatura dos contratos." }
+      ],
+      "pastTitle": "Licitações Anteriores",
+      "pastTenders": [
+        { "year": "2023", "title": "Licitação 2023", "blocksOffered": 12, "blocksAwarded": 8, "investment": "USD 2.3B", "href": "/opportunities/tender-2023" },
+        { "year": "2020", "title": "Primeira Ronda de Licenciamento", "blocksOffered": 10, "blocksAwarded": 6, "investment": "USD 1.8B", "href": "#" }
+      ],
+      "blocksOffered": "blocos oferecidos",
+      "blocksAwarded": "atribuídos",
+      "investmentCaptured": "Investimento Captado"
+    },
+    "tender2025Content": {
+      "launchDate": "Lançamento: 4º Trimestre 2025",
+      "bannerTitle": "Angola, o local certo para o seu investimento!",
+      "bannerDescription": "A Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG), na sua qualidade de Concessionária Nacional, anuncia a Licitação 2025 para atribuição de concessões petrolíferas para a exploração das Bacias Marítimas do Kwanza e de Benguela, aberto a entidades nacionais ou estrangeiras.",
+      "bannerHighlight": "Bacias Marítimas do Kwanza e de Benguela",
+      "objectivesTitle": "Objectivos",
+      "objectivesSubtitle": "Metas estratégicas da Licitação 2025",
+      "objectives": [
+        { "title": "Reavaliar Potencial", "description": "Reavaliar o potencial petrolífero existente nas Bacias Terrestres do Baixo Congo e do Kwanza." },
+        { "title": "Inovação Tecnológica", "description": "Alavancar a inovação tecnológica e as boas práticas de governação." },
+        { "title": "Relançar E&P", "description": "Relançar a exploração e produção de hidrocarbonetos nas zonas terrestres das bacias." },
+        { "title": "PMEs e Emprego", "description": "Estimular a participação de pequenas e médias empresas petrolíferas e promover a incorporação de mão-de-obra angolana qualificada." },
+        { "title": "Mitigar Declínio", "description": "Atenuar o declínio da produção com o incremento das actividades de exploração e descoberta de novos recursos." }
+      ],
+      "phasesTitle": "Fases do Processo",
+      "phasesSubtitle": "Cronograma detalhado da licitação",
+      "phases": [
+        { "title": "Envio de Cartas", "description": "Envio de cartas a informar sobre o processo e promoção.", "period": "Março - Outubro 2025", "status": "active" },
+        { "title": "Lançamento Oficial", "description": "Lançamento da Licitação para atribuição de concessões petrolíferas.", "period": "4º Trimestre 2025", "status": "upcoming" },
+        { "title": "Submissão de Propostas", "description": "Período de 30 a 40 dias para submissão das propostas após o lançamento oficial.", "period": "1º Trimestre 2026", "status": "upcoming" },
+        { "title": "Acto Público", "description": "Abertura das propostas no primeiro dia útil após o término do prazo.", "period": "1º Trimestre 2026", "status": "upcoming" },
+        { "title": "Qualificação e Avaliação", "description": "Período de 30 a 45 dias para qualificação e avaliação das propostas.", "period": "1º Trimestre 2026", "status": "upcoming" },
+        { "title": "Adjudicação", "description": "Comunicação dos resultados aos concorrentes.", "period": "1º Trimestre 2026", "status": "upcoming" },
+        { "title": "Negociação", "description": "Período de 15 a 65 dias para negociação dos contratos.", "period": "1º - 2º Trimestre 2026", "status": "upcoming" },
+        { "title": "Assinatura", "description": "Assinatura final dos contratos de concessão.", "period": "1º - 3º Trimestre 2026", "status": "upcoming" }
+      ],
+      "statusInProgress": "Em curso",
+      "mapTitle": "Mapa de Blocos",
+      "mapSubtitle": "Localização dos blocos disponíveis nas Bacias do Kwanza e Benguela",
+      "documentsTitle": "Documentos Úteis",
+      "documentsSubtitle": "Materiais de apoio ao processo",
+      "documents": [
+        { "title": "Brochura Técnica", "description": "Informações técnicas sobre as Bacias do Kwanza e Benguela", "type": "PDF", "size": "4.2 MB" },
+        { "title": "Modelo de Contrato", "description": "Contrato de Partilha de Produção 2025", "type": "PDF", "size": "1.8 MB" },
+        { "title": "Termos de Referência", "description": "Requisitos e critérios de avaliação", "type": "PDF", "size": "2.1 MB" },
+        { "title": "Mapa de Blocos", "description": "Localização geográfica dos blocos disponíveis", "type": "PDF", "size": "8.5 MB" }
+      ],
+      "faqTitle": "Perguntas Frequentes",
+      "faqSubtitle": "Esclarecimentos sobre o processo de licitação",
+      "ctaTitle": "Interessado em Participar?",
+      "ctaDescription": "Manifeste o seu interesse e receba informações actualizadas sobre o processo de licitação, incluindo datas importantes e requisitos de participação.",
+      "ctaInterest": "Manifestar Interesse",
+      "ctaContact": "Contactar Equipa",
+      "heroInterest": "Manifestar Interesse",
+      "heroBrochure": "Descarregar Brochura"
+    },
+    "dataPage": {
+      "title": "Dados & Analytics",
+      "subtitle": "Serviços & Competências",
+      "description": "Publicação de estatísticas e relatórios sobre o sector energético.",
+      "intro": "A ANPG é responsável pela recolha, análise e publicação de dados e estatísticas sobre o sector energético angolano. Disponibilizamos informação actualizada e transparente para apoiar a tomada de decisões de investidores, operadores e entidades governamentais.",
+      "metrics": [
+        { "value": "1.1M", "label": "Barris/Dia", "description": "Produção actual de petróleo" },
+        { "value": "47", "label": "Blocos Activos", "description": "Em exploração e produção" },
+        { "value": "15+", "label": "Operadores", "description": "Empresas internacionais" },
+        { "value": "8B+", "label": "Barris", "description": "Reservas provadas" }
+      ],
+      "resourcesTitle": "Recursos de Dados",
+      "resources": [
+        { "title": "Mapa de Concessões", "description": "Mapa interactivo de todos os blocos petrolíferos com informações sobre operadores e participações.", "href": "/ep-data/maps" },
+        { "title": "Plataforma IONA", "description": "Sistema integrado de gestão de dados de exploração e produção.", "href": "/ep-data/iona" },
+        { "title": "Pacotes de Dados", "description": "Dados técnicos disponíveis para licenciamento por operadores e investidores.", "href": "/ep-data/packages" },
+        { "title": "Estatísticas de Produção", "description": "Dados actualizados sobre a produção petrolífera angolana.", "href": "/production" }
+      ],
+      "publicationsTitle": "Publicações Recentes",
+      "viewAll": "Ver Todas",
+      "publications": [
+        { "title": "Relatório Anual 2024", "type": "Relatório", "date": "Janeiro 2025" },
+        { "title": "Estatísticas de Produção Q4 2024", "type": "Estatísticas", "date": "Janeiro 2025" },
+        { "title": "Boletim Mensal Dezembro 2024", "type": "Boletim", "date": "Dezembro 2024" },
+        { "title": "Análise do Sector Petrolífero", "type": "Análise", "date": "Novembro 2024" }
+      ],
+      "dashboardTitle": "Dashboard Interactivo",
+      "dashboardDescription": "Explore dados de produção e estatísticas em tempo real.",
+      "dashboardCta": "Aceder ao Dashboard"
+    },
+    "productionHistoryContent": {
+      "downloadReport": "Descarregar Relatório",
+      "statsLabels": {
+        "start": "Início",
+        "firstExport": "Primeira exportação",
+        "historicPeak": "Pico Histórico",
+        "peakUnit": "Mil bbl/dia (2008)",
+        "current": "Actual (Jun 2025)",
+        "currentUnit": "Mil bbl/dia",
+        "gas": "Gás (Jun 2025)",
+        "gasUnit": "MMscf/dia"
+      },
+      "longTermTitle": "Evolução Histórica (1978-2025)",
+      "longTermSubtitle": "Produção de petróleo bruto em milhares de barris por dia",
+      "declineNote": "O declínio desde 2008 deve-se à maturação natural dos campos e à falta de novas descobertas significativas. As licitações de 2023 e 2025 visam reverter esta tendência.",
+      "monthlyTitle": "Produção Mensal (2024-2025)",
+      "monthlySubtitle": "Dados mensais detalhados de petróleo e gás associado",
+      "chartLabels": {
+        "production": "Produção",
+        "oil": "Petróleo (kbbl/dia)",
+        "gas": "Gás (MMscf/dia)"
+      },
+      "decadeTitle": "Produção por Década",
+      "decadeSubtitle": "Médias e picos de produção por período",
+      "decadeLabels": {
+        "peak": "Pico",
+        "average": "Média"
+      },
+      "milestonesTitle": "Marcos Históricos",
+      "milestonesSubtitle": "Momentos-chave na história petrolífera de Angola",
+      "milestones": [
+        { "year": "1955", "title": "Início da Exploração", "description": "Primeiras actividades de prospecção petrolífera em Angola pela Petrangol." },
+        { "year": "1966", "title": "Primeira Descoberta Offshore", "description": "Descoberta do campo de petróleo offshore no enclave de Cabinda." },
+        { "year": "1968", "title": "Início da Produção", "description": "Angola inicia a exportação comercial de petróleo bruto." },
+        { "year": "1978", "title": "Criação da Sonangol", "description": "Fundação da Sociedade Nacional de Combustíveis de Angola." },
+        { "year": "2002", "title": "Fim da Guerra Civil", "description": "Paz permite expansão significativa das actividades de exploração." },
+        { "year": "2008", "title": "Pico de Produção", "description": "Angola atinge o pico histórico de 1.875 mil barris por dia." },
+        { "year": "2019", "title": "Criação da ANPG", "description": "Agência Nacional de Petróleo, Gás e Biocombustíveis assume funções de Concessionária Nacional." },
+        { "year": "2024", "title": "Estabilização", "description": "Implementação de estratégias para estabilizar produção acima de 1 milhão bbl/dia." }
+      ],
+      "ctaTitle": "Aceda aos Dados Completos",
+      "ctaDescription": "Explore o dashboard interactivo com dados detalhados de produção por bloco, operador e período temporal.",
+      "ctaDashboard": "Dashboard de Produção",
+      "ctaData": "Explorar Dados de E&P"
+    }
+  },
+  "hero": {
+    "subtitle": "Agência Nacional de Petróleo, Gás e Biocombustíveis",
+    "title": "Energia",
+    "titleHighlight": "para mais.",
+    "description": "Regulamos, fiscalizamos e promovemos o desenvolvimento do sector do petróleo, gás e biocombustíveis em Angola com transparência e ambição.",
+    "ctaPrimary": "Oportunidades de Investimento",
+    "ctaSecondary": "Explorar Dados",
+    "scrollHint": "Descobrir mais"
+  },
+  "stats": {
+    "label": "Impacto & Resultados",
+    "title": "Upstream em números",
+    "subtitle": "Cada projecto que lançamos, cada investimento que atraímos e cada parceria que construímos criam oportunidades de desenvolvimento para o país, para as comunidades e para cada um.",
+    "exploreData": "Explorar todos os dados",
+    "barrelsDay": "Barris/Dia",
+    "oilProduction": "Produção petrolífera",
+    "activeBlocks": "Blocos Activos",
+    "explorationProduction": "Em exploração e produção",
+    "invested": "USD Investidos",
+    "lastFiveYears": "Nos últimos 5 anos",
+    "operators": "Operadores",
+    "internationalCompanies": "Empresas internacionais"
+  },
+  "about": {
+    "label": "Sobre a ANPG",
+    "title": "Regulando o Presente,",
+    "titleHighlight": "Construindo o Futuro",
+    "description": "A Agência Nacional de Petróleo, Gás e Biocombustíveis é a entidade reguladora do sector petrolífero angolano, responsável pela gestão e supervisão das actividades de exploração, produção e comercialização de hidrocarbonetos.",
+    "yearsExperience": "Anos de experiência no sector petrolífero angolano",
+    "cta": "Conhecer a ANPG",
+    "values": {
+      "integrity": {
+        "title": "Integridade",
+        "description": "Actuamos com honestidade, ética e responsabilidade em todas as nossas acções."
+      },
+      "transparency": {
+        "title": "Transparência",
+        "description": "Compromisso com a clareza e abertura em todas as operações."
+      },
+      "excellence": {
+        "title": "Excelência",
+        "description": "Padrões internacionais de qualidade e eficiência."
+      },
+      "sustainability": {
+        "title": "Sustentabilidade",
+        "description": "Desenvolvimento responsável dos recursos energéticos."
+      },
+      "innovation": {
+        "title": "Inovação",
+        "description": "Adopção de tecnologias avançadas no sector."
+      },
+      "collaboration": {
+        "title": "Colaboração",
+        "description": "Trabalho em equipa e parcerias estratégicas para alcançar objectivos comuns."
+      }
+    }
+  },
+  "services": {
+    "label": "Serviços & Competências",
+    "title": "Áreas de Actuação",
+    "subtitle": "Agimos para potenciar ao máximo as energias de Angola. Estamos certos do impacto positivo que o desenvolvimento do sector tem na nossa economia, na nossa reputação internacional e no desenvolvimento do nosso país.",
+    "licensing": {
+      "title": "Licenciamento",
+      "description": "Gestão de concessões e licenças para exploração e produção de hidrocarbonetos."
+    },
+    "oversight": {
+      "title": "Fiscalização",
+      "description": "Supervisão e controlo das operações petrolíferas em todo o território nacional."
+    },
+    "regulation": {
+      "title": "Regulação",
+      "description": "Desenvolvimento e aplicação do quadro regulatório do sector energético."
+    },
+    "tenders": {
+      "title": "Licitações",
+      "description": "Organização de processos para atribuição de direitos de exploração."
+    },
+    "analytics": {
+      "title": "Dados & Analytics",
+      "description": "Publicação de estatísticas e relatórios sobre o sector energético."
+    },
+    "sustainability": {
+      "title": "Sustentabilidade",
+      "description": "Promoção de práticas ambientalmente responsáveis no sector."
+    }
+  },
+  "investment": {
+    "label": "Oportunidades de Investimento",
+    "title": "Invista hoje no futuro",
+    "titleHighlight": "energético de Angola.",
+    "description": "Angola oferece um ambiente favorável ao investimento no sector petrolífero, com um quadro regulatório transparente, incentivos fiscais atractivos e acesso a recursos de classe mundial.",
+    "ctaGuide": "Guia do Investidor",
+    "ctaBlocks": "Ver Blocos Disponíveis",
+    "featuredBlocks": "Blocos em Destaque",
+    "viewAllBlocks": "Ver todos os blocos",
+    "location": "Luanda, Angola",
+    "highlights": {
+      "blocks": "Acesso a 47 blocos petrolíferos onshore e offshore",
+      "fiscal": "Regime fiscal competitivo e estável",
+      "infrastructure": "Infraestrutura de classe mundial",
+      "support": "Apoio regulatório dedicado aos investidores",
+      "reserves": "Reservas comprovadas superiores a 8 mil milhões de barris"
+    },
+    "blockStatus": {
+      "production": "Em Produção",
+      "development": "Em Desenvolvimento"
+    }
+  },
+  "news": {
+    "label": "Notícias & Insights",
+    "title": "Últimas Actualizações",
+    "viewAll": "Ver Todas as Notícias",
+    "categories": {
+      "institutional": "Institucional",
+      "energy": "Energia",
+      "sustainability": "Sustentabilidade",
+      "investments": "Investimentos",
+      "operations": "Operações",
+      "partnerships": "Parcerias",
+      "exploration": "Exploração",
+      "localContent": "Conteúdo Local"
+    },
+    "articles": {
+      "tender2025": {
+        "title": "ANPG anuncia resultados do Concurso Público 2025",
+        "excerpt": "Seis novos blocos atribuídos a consórcios internacionais, representando um investimento de USD 2.3 mil milhões."
+      },
+      "gasProduction": {
+        "title": "Produção de gás natural atinge recorde histórico",
+        "excerpt": "Angola registou um aumento de 15% na produção de gás natural no último trimestre."
+      },
+      "biofuels": {
+        "title": "Novo quadro regulatório para biocombustíveis aprovado",
+        "excerpt": "Legislação visa promover a transição energética e diversificar a matriz energética nacional."
+      },
+      "totalExpansion": {
+        "title": "TotalEnergies expande operações no Bloco 32",
+        "excerpt": "Investimento adicional de USD 1.5 mil milhões para desenvolvimento de novas infraestruturas."
+      },
+      "fpsoDeployment": {
+        "title": "Novo FPSO chega às águas angolanas",
+        "excerpt": "Embarcação de produção flutuante inicia operações no Bloco 17, aumentando capacidade em 200 mil barris/dia."
+      },
+      "newPartnership": {
+        "title": "ANPG assina acordo estratégico com Equinor",
+        "excerpt": "Parceria visa desenvolvimento de projectos de exploração em águas ultra-profundas na Bacia do Kwanza."
+      },
+      "drillingSuccess": {
+        "title": "Descoberta significativa no offshore angolano",
+        "excerpt": "Poço exploratório confirma reservas estimadas em 500 milhões de barris de petróleo recuperável."
+      },
+      "trainingProgram": {
+        "title": "Programa de formação técnica capacita 500 jovens",
+        "excerpt": "Iniciativa de conteúdo local prepara profissionais angolanos para o sector petrolífero."
+      }
+    }
+  },
+  "cta": {
+    "title": "Pronto para Investir no Futuro Energético de Angola?",
+    "description": "Entre em contacto com a nossa equipa de relações com investidores para saber mais sobre as oportunidades disponíveis.",
+    "contactInvestments": "Contactar Investimentos",
+    "scheduleMeeting": "Agendar Reunião"
+  },
+  "contactForm": {
+    "title": "Enviar Mensagem",
+    "fields": {
+      "name": "Nome",
+      "email": "Email",
+      "phone": "Telefone (opcional)",
+      "subject": "Assunto",
+      "message": "Mensagem"
+    },
+    "placeholders": {
+      "name": "O seu nome completo",
+      "email": "O seu email",
+      "phone": "+244 xxx xxx xxx",
+      "subject": "Seleccione o assunto",
+      "message": "Descreva o motivo do seu contacto..."
+    },
+    "subjects": {
+      "general": "Informação Geral",
+      "investment": "Oportunidades de Investimento",
+      "tender": "Licitações e Concursos",
+      "data": "Acesso a Dados Técnicos",
+      "partnership": "Parcerias e Joint Ventures",
+      "media": "Imprensa e Media",
+      "other": "Outro Assunto"
+    },
+    "validation": {
+      "nameMin": "O nome deve ter pelo menos 2 caracteres",
+      "nameMax": "O nome não pode exceder 100 caracteres",
+      "emailInvalid": "Por favor introduza um email válido",
+      "emailMax": "O email não pode exceder 255 caracteres",
+      "phoneInvalid": "Por favor introduza um número de telefone válido",
+      "subjectRequired": "Por favor seleccione um assunto",
+      "messageMin": "A mensagem deve ter pelo menos 10 caracteres",
+      "messageMax": "A mensagem não pode exceder 2000 caracteres"
+    },
+    "submit": "Enviar Mensagem",
+    "submitting": "A enviar...",
+    "disclaimer": "Ao submeter este formulário, concorda com a nossa Política de Privacidade.",
+    "success": {
+      "title": "Mensagem Enviada!",
+      "description": "Recebemos a sua mensagem e responderemos assim que possível. Obrigado pelo seu contacto."
+    },
+    "successToast": {
+      "title": "Mensagem enviada com sucesso!",
+      "description": "A nossa equipa responderá brevemente."
+    }
+  },
+  "footer": {
+    "description": "Agência Nacional de Petróleo, Gás e Biocombustíveis de Angola. Regulando o presente, construindo o futuro energético.",
+    "institutional": "Institucional",
+    "services": "Responsabilidades",
+    "investors": "Investidores",
+    "resources": "Recursos",
+    "copyright": "© 2025 ANPG. Todos os direitos reservados.",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos de Uso",
+    "links": {
+      "about": "Sobre a ANPG",
+      "anpg": "A ANPG",
+      "socialResponsibility": "Responsabilidade Social",
+      "history": "História",
+      "regulation": "Regulação",
+      "licensing": "Licenciamento",
+      "oversight": "Fiscalização",
+      "tenders": "Licitações",
+      "opportunities": "Oportunidades",
+      "investorPortal": "Portal do Investidor",
+      "availableBlocks": "Blocos Disponíveis",
+      "contact": "Contactos",
+      "faq": "Perguntas Frequentes",
+      "energyData": "Dados de E&P",
+      "production": "Produção",
+      "news": "Notícias",
+      "localContent": "Conteúdo Local",
+      "whistleblower": "Canal de Denúncias"
+    }
+  },
+  "investorPortal": {
+    "featuresLabel": "Funcionalidades",
+    "featuresTitle": "O Que Oferecemos",
+    "featuresSubtitle": "Acesso completo a ferramentas e recursos para investidores qualificados",
+    "comingSoon": "Em Breve",
+    "features": {
+      "dataRoom": {
+        "title": "Data Room Virtual",
+        "description": "Acesso seguro a pacotes de dados sísmicos e geológicos"
+      },
+      "dashboard": {
+        "title": "Dashboard de Oportunidades",
+        "description": "Visão geral dos blocos disponíveis e licitações activas"
+      },
+      "interest": {
+        "title": "Manifestação de Interesse",
+        "description": "Formulário para registo de interesse em blocos específicos"
+      },
+      "documents": {
+        "title": "Centro de Documentos",
+        "description": "Biblioteca de contratos-modelo, legislação e brochuras"
+      },
+      "meetings": {
+        "title": "Agendamento de Reuniões",
+        "description": "Marque reuniões com a equipa de investimentos"
+      },
+      "secure": {
+        "title": "Acesso Seguro",
+        "description": "Área reservada com autenticação para investidores"
+      }
+    },
+    "highlights": {
+      "blocks": "Blocos petrolíferos disponíveis",
+      "reserves": "Barris de reservas provadas",
+      "fiscal": "Taxa de imposto sobre rendimento",
+      "operators": "Operadores internacionais"
+    },
+    "opportunitiesLabel": "Oportunidades",
+    "opportunitiesTitle": "Blocos Disponíveis",
+    "opportunitiesSubtitle": "Explore os blocos disponíveis para licitação e oferta permanente",
+    "viewAllBlocks": "Ver Mapa Completo",
+    "searchBlocks": "Pesquisar blocos...",
+    "viewDetails": "Ver Detalhes",
+    "noResults": "Nenhum bloco encontrado",
+    "adjustFilters": "Ajuste os filtros para ver mais resultados",
+    "documentsLabel": "Documentação",
+    "documentsTitle": "Centro de Documentos",
+    "documentsSubtitle": "Legislação, contratos-modelo, brochuras e relatórios",
+    "searchDocuments": "Pesquisar documentos...",
+    "download": "Descarregar",
+    "noDocuments": "Nenhum documento encontrado",
+    "adjustSearch": "Ajuste a pesquisa para ver mais resultados",
+    "needMore": "Precisa de mais documentos?",
+    "requestAccess": "Solicite acesso ao Data Room Virtual para documentação técnica completa",
+    "dataRoom": "Data Room",
+    "contactUs": "Contacte-nos",
+    "ctaBadge": "Registe-se Agora",
+    "ctaTitle": "Torne-se um Investidor Qualificado",
+    "ctaDescription": "Registe-se para aceder a funcionalidades exclusivas como o Data Room Virtual, agendamento de reuniões e manifestação de interesse em blocos específicos.",
+    "ctaRegister": "Criar Conta",
+    "ctaContact": "Falar com a Equipa",
+    "stats": {
+      "basins": "Bacias sedimentares",
+      "partners": "Parceiros internacionais",
+      "production": "Barris/dia",
+      "investment": "Investimento total"
+    },
+    "meetingsLabel": "Reuniões",
+    "meetingsTitle": "Agendar Reunião",
+    "meetingsSubtitle": "Marque uma reunião com a nossa equipa de investimentos"
+  },
+  "meetingScheduler": {
+    "title": "Agendar Reunião",
+    "description": "Seleccione uma data e hora convenientes para reunir com a nossa equipa de investimentos",
+    "steps": {
+      "date": "Data",
+      "time": "Hora",
+      "details": "Detalhes",
+      "confirmation": "Confirmação"
+    },
+    "selectDate": "Seleccione uma Data",
+    "selectDateDesc": "Escolha um dia útil para a sua reunião. Fins-de-semana e dias passados não estão disponíveis.",
+    "selectTime": "Seleccione um Horário",
+    "changeDate": "Alterar Data",
+    "changeTime": "Alterar Hora",
+    "timezone": "Horário de Angola (WAT - UTC+1)",
+    "yourDetails": "Os Seus Dados",
+    "at": "às",
+    "form": {
+      "name": "Nome Completo",
+      "namePlaceholder": "Introduza o seu nome",
+      "company": "Empresa",
+      "companyPlaceholder": "Nome da empresa ou organização",
+      "email": "Email",
+      "emailPlaceholder": "seu@email.com",
+      "phone": "Telefone (opcional)",
+      "phonePlaceholder": "+244 xxx xxx xxx",
+      "topic": "Assunto da Reunião",
+      "topicPlaceholder": "Seleccione o assunto",
+      "message": "Mensagem Adicional (opcional)",
+      "messagePlaceholder": "Descreva brevemente o que gostaria de discutir..."
+    },
+    "topics": {
+      "blockInterest": "Interesse em Blocos Específicos",
+      "dataAccess": "Acesso a Dados Técnicos",
+      "partnership": "Parcerias e Joint Ventures",
+      "tenderInfo": "Informações sobre Licitações",
+      "general": "Consulta Geral"
+    },
+    "submit": "Confirmar Agendamento",
+    "validation": {
+      "required": "Por favor preencha todos os campos obrigatórios",
+      "invalidEmail": "Por favor introduza um email válido"
+    },
+    "successToast": "Reunião agendada com sucesso!",
+    "confirmation": {
+      "title": "Reunião Agendada!",
+      "subtitle": "A sua solicitação foi recebida com sucesso",
+      "emailNote": "Receberá um email de confirmação com os detalhes da reunião em breve.",
+      "scheduleAnother": "Agendar Outra Reunião"
+    }
+  },
+  "common": {
+    "learnMore": "Saber Mais",
+    "viewAll": "Ver Tudo",
+    "contact": "Contactar",
+    "download": "Descarregar",
+    "backToHome": "Voltar ao Início",
+    "comingSoon": "Em Breve",
+    "placeholder": "Esta página está em construção. Conteúdo completo em breve."
+  },
+  "faq": {
+    "breadcrumb": "Perguntas Frequentes",
+    "hero": {
+      "title": "Perguntas Frequentes",
+      "description": "Encontre respostas às perguntas mais comuns sobre investimento no sector petrolífero angolano e processos de licitação."
+    },
+    "intro": "Compilámos as perguntas mais frequentes de investidores e parceiros sobre oportunidades de investimento, processos de licitação e requisitos operacionais em Angola.",
+    "contactCta": {
+      "text": "Não encontrou a resposta que procurava?",
+      "link": "Contacte-nos directamente"
+    },
+    "categories": {
+      "investment": {
+        "title": "Investimento no Sector Petrolífero",
+        "q1": {
+          "question": "Quais são as principais oportunidades de investimento em Angola?",
+          "answer": "Angola oferece oportunidades em exploração onshore e offshore, desenvolvimento de campos maduros, projectos de gás natural e infraestruturas de apoio. A Licitação 2025 e a Oferta Permanente disponibilizam blocos nas bacias do Kwanza e Benguela com potencial comprovado."
+        },
+        "q2": {
+          "question": "Qual é o investimento mínimo necessário?",
+          "answer": "O investimento mínimo varia consoante o tipo de bloco e programa de trabalho proposto. Os termos específicos são definidos no caderno de encargos de cada licitação. Geralmente, são exigidas garantias financeiras e compromissos de investimento mínimo durante o período de exploração."
+        },
+        "q3": {
+          "question": "Como posso manifestar interesse antes de uma licitação?",
+          "answer": "Pode registar-se no Portal do Investidor para receber actualizações sobre novas oportunidades. Para manifestações formais de interesse, utilize o formulário disponível na página da respectiva licitação ou contacte directamente a ANPG."
+        },
+        "q4": {
+          "question": "Existem incentivos fiscais para investidores?",
+          "answer": "Angola oferece um regime fiscal competitivo para o sector petrolífero, incluindo incentivos para exploração em águas profundas e ultra-profundas. Os termos fiscais específicos são negociados caso a caso e detalhados nos contratos de partilha de produção."
+        }
+      },
+      "tendering": {
+        "title": "Processos de Licitação",
+        "q1": {
+          "question": "Como funcionam as licitações da ANPG?",
+          "answer": "As licitações seguem um processo transparente que inclui: publicação do edital, período de consulta de dados, submissão de propostas, avaliação técnica e comercial, e adjudicação. Todo o processo é regulado pela legislação angolana e supervisionado por entidades competentes."
+        },
+        "q2": {
+          "question": "Quem pode participar nas licitações?",
+          "answer": "Podem participar empresas nacionais e estrangeiras que cumpram os requisitos de qualificação técnica e financeira. É necessária experiência comprovada em exploração e produção de hidrocarbonetos, bem como capacidade financeira adequada ao programa de trabalho proposto."
+        },
+        "q3": {
+          "question": "Qual é o prazo típico para submissão de propostas?",
+          "answer": "Após o lançamento oficial, os concorrentes dispõem geralmente de 30 a 40 dias para submeter propostas. Recomendamos que as empresas interessadas se registem antecipadamente para aceder aos dados técnicos e preparar as suas propostas adequadamente."
+        },
+        "q4": {
+          "question": "Como são avaliadas as propostas?",
+          "answer": "A avaliação considera critérios técnicos (programa de trabalho, capacidade operacional, experiência) e comerciais (bónus de assinatura, compromissos de investimento, participação do Estado). Os pesos relativos são definidos no edital de cada licitação."
+        }
+      },
+      "contracts": {
+        "title": "Contratos e Regulamentação",
+        "q1": {
+          "question": "Que tipo de contratos são utilizados?",
+          "answer": "Angola utiliza o modelo de Contrato de Partilha de Produção (CPP), conforme estabelecido pela Lei das Actividades Petrolíferas. Este modelo define a partilha de custos e produção entre o Estado e os operadores, garantindo benefícios mútuos."
+        },
+        "q2": {
+          "question": "Qual é a duração típica dos contratos?",
+          "answer": "O período de exploração inicial é de 4 a 5 anos, prorrogável mediante justificação técnica. Após descoberta comercial, o período de desenvolvimento e produção pode estender-se por 20 a 25 anos, dependendo das características do campo."
+        },
+        "q3": {
+          "question": "Quais são os requisitos ambientais?",
+          "answer": "Todas as operações devem cumprir a legislação ambiental angolana e as melhores práticas internacionais. É obrigatória a apresentação de Estudos de Impacto Ambiental (EIA) antes do início das actividades, bem como planos de descomissionamento."
+        }
+      },
+      "localContent": {
+        "title": "Conteúdo Local",
+        "q1": {
+          "question": "O que é a política de Conteúdo Local?",
+          "answer": "A política de Conteúdo Local visa maximizar a participação de empresas e trabalhadores angolanos na cadeia de valor do sector petrolífero. Inclui requisitos de contratação local, formação profissional e transferência de tecnologia."
+        },
+        "q2": {
+          "question": "É obrigatória a participação de empresas angolanas?",
+          "answer": "Sim, é incentivada e em muitos casos obrigatória a participação de empresas angolanas nos consórcios e na cadeia de fornecimento. Os requisitos específicos variam consoante o tipo de contrato e são detalhados nos cadernos de encargos."
+        },
+        "q3": {
+          "question": "Que apoio existe para empresas locais?",
+          "answer": "A ANPG promove programas de capacitação e desenvolvimento de fornecedores locais. Existem também incentivos para parcerias entre empresas internacionais e angolanas, facilitando a transferência de conhecimento e tecnologia."
+        }
+      },
+      "data": {
+        "title": "Dados Técnicos e Informação",
+        "q1": {
+          "question": "Como posso aceder aos dados técnicos dos blocos?",
+          "answer": "Os dados técnicos estão disponíveis através da plataforma IONA e do Portal do Investidor. Para acesso a pacotes de dados detalhados, incluindo informação sísmica, é necessária uma solicitação formal à ANPG, podendo ser aplicadas taxas de acesso."
+        },
+        "q2": {
+          "question": "Que tipo de dados estão disponíveis?",
+          "answer": "Disponibilizamos dados geológicos, geofísicos (sísmicos 2D e 3D), relatórios de poços, estudos de reservatório e mapas de concessões. A extensão dos dados varia consoante o histórico de exploração de cada bloco."
+        },
+        "q3": {
+          "question": "Os dados são confidenciais?",
+          "answer": "Sim, os dados técnicos são tratados com confidencialidade. O acesso é controlado e os utilizadores devem assinar acordos de confidencialidade antes de receberem informação sensível sobre os blocos."
+        }
+      }
+    }
+  }
+}

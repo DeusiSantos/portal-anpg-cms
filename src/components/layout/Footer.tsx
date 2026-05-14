@@ -1,3 +1,4 @@
+// Footer.tsx - CORRIGIDO
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { 
@@ -12,15 +13,52 @@ import {
 } from "lucide-react";
 import logoWhite from "@/assets/logo-white.svg";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
-import { useMenuItems } from "@/hooks/useCMSData";
+import { useMenuItemsByGroup } from "@/hooks/useCMSData";
 
 export function Footer() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { settings } = useSiteSettings();
+  const isEn = i18n.language === "en";
   
-  // Buscar menus para o rodapé - grupos específicos da nova API
-  const { data: footerInstitutional } = useMenuItems("footer-institutional");
-  const { data: footerInvestors } = useMenuItems("footer-investors");
+  // Buscar menus para o rodapé - grupo "footer"
+  const { data: footerMenus, isLoading } = useMenuItemsByGroup("footer", isEn);
+
+  // Organizar menus por parentId para criar hierarquia
+  const organizeFooterMenus = () => {
+    if (!footerMenus || footerMenus.length === 0) return { institutional: [], investors: [], resources: [], services: [] };
+    
+    // Encontrar itens de topo (sem parentId)
+    const topLevelItems = footerMenus.filter(item => !item.parentId);
+    
+    const result: { [key: string]: any[] } = {
+      institutional: [],
+      investors: [],
+      resources: [],
+      services: []
+    };
+    
+    // Mapear top level items para suas seções baseado no label
+    topLevelItems.forEach(parent => {
+      const children = footerMenus.filter(item => item.parentId === parent.id);
+      
+      // Identificar a seção pelo label do parent
+      const parentLabel = parent.label.toLowerCase();
+      
+      if (parentLabel.includes('institucional') || parentLabel.includes('institutional')) {
+        result.institutional = children;
+      } else if (parentLabel.includes('investidor') || parentLabel.includes('investor')) {
+        result.investors = children;
+      } else if (parentLabel.includes('recurso') || parentLabel.includes('resource')) {
+        result.resources = children;
+      } else if (parentLabel.includes('serviço') || parentLabel.includes('service')) {
+        result.services = children;
+      }
+    });
+    
+    return result;
+  };
+  
+  const footerSections = organizeFooterMenus();
 
   // Get dynamic settings with fallbacks
   const logoUrl = settings.logo?.dark || logoWhite;
@@ -70,14 +108,14 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Institutional Column - Dinâmico do CMS */}
-          {footerInstitutional && footerInstitutional.length > 0 && (
-            <div>
-              <h4 className="footer-heading text-primary-foreground mb-4">
-                {t("footer.institutional")}
-              </h4>
+          {/* Institutional Column */}
+          <div>
+            <h4 className="footer-heading text-primary-foreground mb-4">
+              {t("footer.institutional")}
+            </h4>
+            {footerSections.institutional.length > 0 ? (
               <ul className="space-y-3">
-                {footerInstitutional.map((item) => (
+                {footerSections.institutional.map((item) => (
                   <li key={item.id}>
                     <Link to={item.url || "#"} className="footer-link text-pearl/70 hover:text-primary transition-colors">
                       {item.label}
@@ -85,47 +123,32 @@ export function Footer() {
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-
-          {/* Investors Column - Dinâmico do CMS */}
-          {footerInvestors && footerInvestors.length > 0 && (
-            <div>
-              <h4 className="footer-heading text-primary-foreground mb-4">
-                {t("footer.investors")}
-              </h4>
-              <ul className="space-y-3">
-                {footerInvestors.map((item) => (
-                  <li key={item.id}>
-                    <Link to={item.url || "#"} className="footer-link text-pearl/70 hover:text-primary transition-colors">
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Links úteis - Fallback caso não haja dados do CMS */}
-          {(!footerInstitutional || footerInstitutional.length === 0) && (
-            <div>
-              <h4 className="footer-heading text-primary-foreground mb-4">
-                {t("footer.institutional")}
-              </h4>
+            ) : (
               <ul className="space-y-3">
                 <li><Link to="/about" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.aboutUs")}</Link></li>
                 <li><Link to="/about/anpg" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.anpg")}</Link></li>
                 <li><Link to="/about/social-responsibility" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.socialResponsibility")}</Link></li>
                 <li><Link to="/about/history" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.history")}</Link></li>
               </ul>
-            </div>
-          )}
+            )}
+          </div>
 
-          {(!footerInvestors || footerInvestors.length === 0) && (
-            <div>
-              <h4 className="footer-heading text-primary-foreground mb-4">
-                {t("footer.investors")}
-              </h4>
+          {/* Investors Column */}
+          <div>
+            <h4 className="footer-heading text-primary-foreground mb-4">
+              {t("footer.investors")}
+            </h4>
+            {footerSections.investors.length > 0 ? (
+              <ul className="space-y-3">
+                {footerSections.investors.map((item) => (
+                  <li key={item.id}>
+                    <Link to={item.url || "#"} className="footer-link text-pearl/70 hover:text-primary transition-colors">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
               <ul className="space-y-3">
                 <li><Link to="/opportunities" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.opportunities")}</Link></li>
                 <li><Link to="/investor-portal" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.investorPortal")}</Link></li>
@@ -133,8 +156,33 @@ export function Footer() {
                 <li><Link to="/faq" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.faq")}</Link></li>
                 <li><Link to="/contacts" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.contacts")}</Link></li>
               </ul>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Resources Column */}
+          <div>
+            <h4 className="footer-heading text-primary-foreground mb-4">
+              {t("footer.resources")}
+            </h4>
+            {footerSections.resources.length > 0 ? (
+              <ul className="space-y-3">
+                {footerSections.resources.map((item) => (
+                  <li key={item.id}>
+                    <Link to={item.url || "#"} className="footer-link text-pearl/70 hover:text-primary transition-colors">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <ul className="space-y-3">
+                <li><Link to="/ep-data" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.epData")}</Link></li>
+                <li><Link to="/production" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.production")}</Link></li>
+                <li><Link to="/exploration" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.exploration")}</Link></li>
+                <li><Link to="/media" className="footer-link text-pearl/70 hover:text-primary transition-colors">{t("footer.media")}</Link></li>
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 

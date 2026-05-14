@@ -1,0 +1,15 @@
+{
+  "title": "Perguntas Frequentes",
+  "subtitle": "Apoio e Informação",
+  "description": "Respostas às perguntas mais frequentes sobre as actividades da ANPG.",
+  "intro": "Encontre respostas para as perguntas mais comuns sobre as actividades regulatórias, licenciamento e oportunidades de investimento da ANPG.",
+  "contactCtaText": "Não encontrou a resposta que procura? Contacte-nos directamente.",
+  "contactCtaLink": "Contactar a ANPG",
+  "noFaqs": "Sem FAQs disponíveis no momento.",
+  "noFaqsEn": "No FAQs available at the moment.",
+  "errorText": "Erro ao carregar FAQs. Por favor, tente novamente mais tarde.",
+  "errorTextEn": "Error loading FAQs. Please try again later.",
+  "reloadLabel": "Recarregar página",
+  "reloadLabelEn": "Reload page",
+  "questions": "perguntas"
+}

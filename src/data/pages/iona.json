@@ -1,0 +1,35 @@
+{
+  "title": "Plataforma IONA",
+  "subtitle": "Gestão de Dados",
+  "description": "Sistema integrado de gestão de dados de exploração e produção de Angola.",
+  "introTitle": "Plataforma IONA",
+  "introDescription": "A plataforma IONA (Integrated Oil and Natural Gas Analytics) é o sistema centralizado da ANPG para gestão, análise e partilha de dados do sector petrolífero angolano. Permite o acesso a dados técnicos, geológicos e de produção de forma segura e eficiente.",
+  "featuresTitle": "Funcionalidades",
+  "features": [
+    {
+      "icon": "Database",
+      "title": "Gestão de Dados",
+      "description": "Armazenamento centralizado e seguro de todos os dados de exploração e produção do sector petrolífero angolano."
+    },
+    {
+      "icon": "Map",
+      "title": "Visualização Geoespacial",
+      "description": "Mapas interactivos com blocos petrolíferos, poços e infra-estruturas do sector."
+    },
+    {
+      "icon": "FileText",
+      "title": "Relatórios e Análises",
+      "description": "Geração automática de relatórios técnicos e análises de produção e exploração."
+    },
+    {
+      "icon": "Layers",
+      "title": "Integração de Dados",
+      "description": "Integração de dados sísmicos, geológicos, petrofísicos e de produção numa plataforma única."
+    }
+  ],
+  "accessTitle": "Como Aceder",
+  "accessDescription": "O acesso à plataforma IONA é restrito a entidades autorizadas, incluindo operadores, associadas da concessionária e outras entidades previamente aprovadas pela ANPG.",
+  "accessEmail": "iona@anpg.co.ao",
+  "accessButtonText": "Solicitar Acesso",
+  "accessButtonLink": "/contacts"
+}

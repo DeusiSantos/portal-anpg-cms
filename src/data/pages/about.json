@@ -1,0 +1,126 @@
+{
+  "pt": {
+    "title": "Sobre a ANPG",
+    "titleHighlight": "",
+    "subtitle": "Institucional",
+    "description": "Conheça a Agência Nacional de Petróleo, Gás e Biocombustíveis de Angola.",
+    "breadcrumbLabel": "Sobre nós",
+    "content": {
+      "mission": "Regular, supervisionar e fiscalizar o exercício das actividades petrolíferas, na sua fase de exploração, desenvolvimento, produção, armazenagem, transporte, refinação e comercialização, bem como a actividade de abastecimento de combustíveis.",
+      "vision": "Ser uma agência reguladora de referência no sector petrolífero africano, reconhecida pela excelência regulatória, transparência e contribuição para o desenvolvimento sustentável de Angola.",
+      "intro": "A Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG) é a entidade reguladora do sector petrolífero angolano, criada pelo Decreto Presidencial n.º 49/19 de 13 de Fevereiro de 2019.",
+      "role": "A ANPG tem por missão regular, supervisionar e fiscalizar as actividades petrolíferas em Angola, garantindo o cumprimento da legislação aplicável e promovendo o desenvolvimento sustentável do sector.",
+      "pcaMessage": "O sector petrolífero angolano continua a ser um pilar fundamental da economia nacional. A ANPG compromete-se a garantir uma regulação eficiente e transparente, atraindo investimentos e promovendo o desenvolvimento sustentável.",
+      "pcaName": "Paulino Jerónimo",
+      "pcaTitle": "Presidente do Conselho de Administração"
+    },
+    "strategicObjectives": {
+      "label": "Estratégia",
+      "title": "Objectivos Estratégicos",
+      "items": [
+        { "key": "reserves", "label": "Maximizar reservas provadas e recuperação de hidrocarbonetos" },
+        { "key": "growth", "label": "Assegurar o crescimento sustentável do sector" },
+        { "key": "localContent", "label": "Aumentar os níveis de Conteúdo Local" },
+        { "key": "governance", "label": "Garantir boa governação, transparência e prestação de contas" },
+        { "key": "data", "label": "Melhorar a Gestão de Dados do Sector Petrolífero Nacional" },
+        { "key": "safety", "label": "Alcançar níveis de excelência na área de QSMS" }
+      ]
+    },
+    "values": {
+      "integrity": {
+        "title": "Integridade",
+        "description": "Actuamos com honestidade, ética e responsabilidade em todas as nossas acções."
+      },
+      "transparency": {
+        "title": "Transparência",
+        "description": "Compromisso com a clareza e abertura em todas as operações."
+      },
+      "excellence": {
+        "title": "Excelência",
+        "description": "Padrões internacionais de qualidade e eficiência."
+      },
+      "sustainability": {
+        "title": "Sustentabilidade",
+        "description": "Desenvolvimento responsável dos recursos energéticos."
+      },
+      "innovation": {
+        "title": "Inovação",
+        "description": "Adopção de tecnologias avançadas no sector."
+      },
+      "collaboration": {
+        "title": "Colaboração",
+        "description": "Trabalho em equipa e parcerias estratégicas para alcançar objectivos comuns."
+      }
+    },
+    "cta": {
+      "title": "Quer saber mais sobre a ANPG?",
+      "description": "Explore as nossas páginas institucionais para conhecer melhor a nossa história, equipa e compromissos.",
+      "buttonPrimaryText": "Saber Mais",
+      "buttonPrimaryLink": "/about/anpg",
+      "buttonSecondaryText": "Contactar",
+      "buttonSecondaryLink": "/contacts"
+    }
+  },
+  "en": {
+    "title": "About ANPG",
+    "titleHighlight": "",
+    "subtitle": "Institutional",
+    "description": "Learn about Angola's National Oil, Gas and Biofuels Agency and our mission to regulate the energy sector.",
+    "breadcrumbLabel": "About us",
+    "content": {
+      "mission": "To manage the National Petroleum System by promoting and regulating the execution of petroleum activities, striving for value creation for stakeholders, application of best practices and transparent operations.",
+      "vision": "To be recognized as a National Regulatory Agency of Excellence.",
+      "intro": "The National Oil, Gas and Biofuels Agency, abbreviated ANPG, was created by Presidential Decree No. 49/19 of February 6th. ANPG is a Public Law Legal Entity endowed with legal personality, administrative, financial and patrimonial autonomy.",
+      "role": "ANPG is the National Concessionaire and Regulatory Body for petroleum activities. In this capacity, ANPG is responsible for negotiating petroleum concession contracts, promoting access and new investment opportunities, as well as administering and supervising concession areas for exploration and production of oil, natural gas and their derivatives throughout the national territory.",
+      "pcaMessage": "The National Oil, Gas and Biofuels Agency is the National Concessionaire responsible for managing and optimizing E&P operations, with the objective of ensuring sector sustainability and more effective governance and oversight.",
+      "pcaName": "Paulino Jerónimo",
+      "pcaTitle": "Chairman of the Board of Directors"
+    },
+    "strategicObjectives": {
+      "label": "Strategy",
+      "title": "Strategic Objectives",
+      "items": [
+        { "key": "reserves", "label": "Maximize proven reserves and hydrocarbon recovery" },
+        { "key": "growth", "label": "Ensure sustainable sector growth" },
+        { "key": "localContent", "label": "Increase Local Content levels" },
+        { "key": "governance", "label": "Ensure good governance, transparency and accountability" },
+        { "key": "data", "label": "Improve National Petroleum Sector Data Management" },
+        { "key": "safety", "label": "Achieve excellence levels in QHSE" }
+      ]
+    },
+    "values": {
+      "integrity": {
+        "title": "Integrity",
+        "description": "We act with honesty, ethics and responsibility in all our actions."
+      },
+      "transparency": {
+        "title": "Transparency",
+        "description": "Commitment to clarity and openness in all operations."
+      },
+      "excellence": {
+        "title": "Excellence",
+        "description": "International standards of quality and efficiency."
+      },
+      "sustainability": {
+        "title": "Sustainability",
+        "description": "Responsible development of energy resources."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "Adoption of advanced technologies in the sector."
+      },
+      "collaboration": {
+        "title": "Collaboration",
+        "description": "Teamwork and strategic partnerships to achieve common goals."
+      }
+    },
+    "cta": {
+      "title": "Want to learn more about ANPG?",
+      "description": "Explore our institutional pages to learn more about our history, team and commitments.",
+      "buttonPrimaryText": "Learn More",
+      "buttonPrimaryLink": "/about/anpg",
+      "buttonSecondaryText": "Contact Us",
+      "buttonSecondaryLink": "/contacts"
+    }
+  }
+}

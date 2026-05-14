@@ -1,0 +1,104 @@
+{
+  "title": "Núcleo de Integração Energética e Biocombustíveis",
+  "subtitle": "Promovendo a transição energética sustentável em Angola",
+  "intro": "O Núcleo de Integração Energética e Biocombustíveis da ANPG tem como missão promover a diversificação da matriz energética angolana, fomentando o desenvolvimento de biocombustíveis e a integração de fontes de energia alternativas no sector petrolífero nacional.",
+  "areasTitle": "Áreas de Actuação",
+  "areas": [
+    {
+      "key": "biofuels",
+      "title": "Biocombustíveis",
+      "desc": "Desenvolvimento e regulação da produção de biocombustíveis a partir de matérias-primas locais, contribuindo para a redução da dependência de combustíveis fósseis."
+    },
+    {
+      "key": "transition",
+      "title": "Transição Energética",
+      "desc": "Apoio a projectos de transição energética que promovam a utilização eficiente dos recursos energéticos e a adopção de tecnologias limpas."
+    },
+    {
+      "key": "sustainability",
+      "title": "Sustentabilidade Ambiental",
+      "desc": "Implementação de práticas sustentáveis no sector energético, assegurando o cumprimento dos compromissos ambientais internacionais."
+    },
+    {
+      "key": "partnerships",
+      "title": "Parcerias Internacionais",
+      "desc": "Estabelecimento de parcerias estratégicas com organizações internacionais para a transferência de tecnologia e conhecimento no domínio das energias renováveis."
+    }
+  ],
+  "statsTitle": "Indicadores-Chave",
+  "stats": [
+    {
+      "key": "projects",
+      "value": "12",
+      "label": "Projectos Activos"
+    },
+    {
+      "key": "investment",
+      "value": "$2.4B",
+      "label": "Investimento Previsto"
+    },
+    {
+      "key": "jobs",
+      "value": "5.000+",
+      "label": "Empregos Estimados"
+    },
+    {
+      "key": "reduction",
+      "value": "30%",
+      "label": "Redução de Emissões"
+    }
+  ],
+  "timelineTitle": "Marcos do Projecto",
+  "timeline": [
+    {
+      "year": "2020",
+      "title": "Criação do Núcleo",
+      "desc": "Estabelecimento formal do Núcleo de Integração Energética e Biocombustíveis dentro da ANPG."
+    },
+    {
+      "year": "2021",
+      "title": "Primeiro Estudo de Viabilidade",
+      "desc": "Conclusão do estudo de viabilidade para produção de bioetanol a partir de cana-de-açúcar."
+    },
+    {
+      "year": "2022",
+      "title": "Parcerias Internacionais",
+      "desc": "Assinatura de acordos de cooperação com Brasil e União Europeia para transferência de tecnologia."
+    },
+    {
+      "year": "2023",
+      "title": "Planta Piloto de Biodiesel",
+      "desc": "Inauguração da primeira planta piloto de produção de biodiesel no Bengo."
+    },
+    {
+      "year": "2024",
+      "title": "Regulamentação Nacional",
+      "desc": "Aprovação do quadro regulatório para mistura obrigatória de biocombustíveis nos combustíveis fósseis."
+    },
+    {
+      "year": "2025",
+      "title": "Expansão Industrial",
+      "desc": "Início da construção de três unidades industriais de biocombustíveis nas províncias do Kwanza Sul, Malanje e Huíla."
+    }
+  ],
+  "contactTitle": "Contacte o Núcleo",
+  "contactIntro": "Tem interesse em colaborar com o Núcleo de Integração Energética e Biocombustíveis? Preencha o formulário abaixo.",
+  "contactFields": {
+    "name": "Nome Completo",
+    "email": "E-mail",
+    "organization": "Organização",
+    "interest": "Área de Interesse",
+    "message": "Mensagem",
+    "submit": "Enviar Mensagem",
+    "submitting": "A enviar...",
+    "successTitle": "Mensagem Enviada",
+    "successDesc": "Agradecemos o seu contacto. A nossa equipa responderá brevemente."
+  },
+  "interestOptions": {
+    "biofuels": "Biocombustíveis",
+    "transition": "Transição Energética",
+    "sustainability": "Sustentabilidade",
+    "partnerships": "Parcerias",
+    "other": "Outro"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Licitação 2023",
+  "subtitle": "Resultados",
+  "description": "Resultados e informações sobre a licitação de 2023.",
+  "introTitle": "Concurso Público Internacional 2023",
+  "introDescription": "O Concurso Público Internacional 2023 foi lançado pela ANPG para a atribuição de direitos de exploração e produção de petróleo em blocos seleccionados da bacia do Kwanza e do Congo. O processo foi concluído com a adjudicação de vários blocos a consórcios internacionais.",
+  "introStatus": "Concurso Encerrado",
+  "resultsTitle": "Resultados do Concurso",
+  "results": [
+    { "value": "12", "title": "Blocos Oferecidos", "description": "Blocos petrolíferos disponibilizados para licitação" },
+    { "value": "8", "title": "Blocos Adjudicados", "description": "Blocos com contratos assinados" },
+    { "value": "15", "title": "Empresas Participantes", "description": "Operadoras e investidores internacionais" },
+    { "value": "2024", "title": "Contratos Assinados", "description": "Ano de conclusão das adjudicações" }
+  ],
+  "timelineTitle": "Cronograma do Concurso",
+  "timeline": [
+    { "phase": "Lançamento do Concurso", "date": "Janeiro 2023", "description": "Publicação do edital e disponibilização do data room para empresas pré-qualificadas." },
+    { "phase": "Período de Due Diligence", "date": "Fevereiro – Abril 2023", "description": "Acesso ao data room técnico com dados sísmicos, geológicos e histórico de poços." },
+    { "phase": "Submissão de Propostas", "date": "Maio 2023", "description": "Prazo final para submissão das ofertas vinculativas pelos consórcios candidatos." },
+    { "phase": "Avaliação e Negociação", "date": "Junho – Setembro 2023", "description": "Avaliação técnica e financeira das propostas e negociação dos termos contratuais." },
+    { "phase": "Adjudicação", "date": "Outubro 2023", "description": "Anúncio oficial dos blocos adjudicados e dos operadores seleccionados." },
+    { "phase": "Assinatura de Contratos", "date": "2024", "description": "Assinatura dos contratos de partilha de produção com os operadores adjudicados." }
+  ]
+}

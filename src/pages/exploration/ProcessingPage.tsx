@@ -1,9 +1,7 @@
 import { useState, useMemo } from "react";
 import { Database, Map, BarChart3, Users, Globe, Calendar, ArrowRight } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { useContentBlocks } from "@/hooks/useCMSData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { seismic2dSurveys, seismic3dSurveys, seismic4dSurveys, basinColors } from "@/data/seismic";
 import type { SeismicSurvey } from "@/data/seismic";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 export default function ProcessingPage() {
-  const { t, i18n } = useTranslation();
-  const isPt = i18n.language === "pt";
-  const { data: cmsBlocks } = useContentBlocks("exploration-processing");
-  const getSection = (key: string) => cmsBlocks?.find(b => b.section_key === key)?.content;
+  const { data: pageData } = usePageData("exploration");
 
   const [filterBasin, setFilterBasin] = useState("all");
   const [filterType, setFilterType] = useState("all");
@@ -33,7 +29,6 @@ export default function ProcessingPage() {
   const coverage2d = useMemo(() => allSurveys.filter(s => s.type === "2d").reduce((a, s) => a + s.coverage, 0), [allSurveys]);
   const coverage3d4d = useMemo(() => allSurveys.filter(s => s.type !== "2d").reduce((a, s) => a + s.coverage, 0), [allSurveys]);
 
-  // Basin aggregation
   const basinStats = useMemo(() => {
     const rec: Record<string, { count2d: number; count3d: number; count4d: number; coverage: number; operators: Set<string> }> = {};
     allSurveys.forEach(s => {
@@ -48,7 +43,6 @@ export default function ProcessingPage() {
     return Object.entries(rec).sort((a, b) => b[1].coverage - a[1].coverage);
   }, [allSurveys]);
 
-  // Chart data: coverage by basin (bar chart)
   const basinChartData = useMemo(() =>
     basinStats.map(([basin, d]) => {
       const ops = [...d.operators].sort();
@@ -64,7 +58,6 @@ export default function ProcessingPage() {
     [basinStats, allSurveys]
   );
 
-  // Chart data: temporal evolution (area chart)
   const temporalData = useMemo(() => {
     const minYear = Math.min(...years);
     const maxYear = Math.max(...years);
@@ -82,7 +75,6 @@ export default function ProcessingPage() {
     return data;
   }, [allSurveys, years]);
 
-  // Pie chart: surveys by type
   const typeDistribution = useMemo(() => {
     const c2d = allSurveys.filter(s => s.type === "2d").length;
     const c3d = allSurveys.filter(s => s.type === "3d").length;
@@ -94,7 +86,6 @@ export default function ProcessingPage() {
     ];
   }, [allSurveys]);
 
-  // Block extraction
   const blockSurveys = useMemo(() => {
     const rec: Record<string, SeismicSurvey[]> = {};
     [...seismic3dSurveys, ...seismic4dSurveys].forEach(s => {
@@ -112,7 +103,6 @@ export default function ProcessingPage() {
     });
   }, []);
 
-  // Filtered inventory
   const filteredSurveys = useMemo(() =>
     allSurveys.filter(s =>
       (filterBasin === "all" || s.basin === filterBasin) &&
@@ -121,18 +111,18 @@ export default function ProcessingPage() {
   );
 
   const stats = [
-    { icon: Database, label: isPt ? "Levantamentos Processados" : "Processed Surveys", value: allSurveys.length },
-    { icon: Map, label: isPt ? "Cobertura 2D" : "2D Coverage", value: `${coverage2d.toLocaleString()} km` },
-    { icon: BarChart3, label: isPt ? "Cobertura 3D/4D" : "3D/4D Coverage", value: `${coverage3d4d.toLocaleString()} km²` },
-    { icon: Users, label: isPt ? "Operadores" : "Operators", value: operators.length },
-    { icon: Globe, label: isPt ? "Bacias" : "Basins", value: basins.length },
-    { icon: Calendar, label: isPt ? "Período" : "Period", value: `${Math.min(...years)}–${Math.max(...years)}` },
+    { icon: Database, label: "Levantamentos Processados", value: allSurveys.length },
+    { icon: Map, label: "Cobertura 2D", value: `${coverage2d.toLocaleString()} km` },
+    { icon: BarChart3, label: "Cobertura 3D/4D", value: `${coverage3d4d.toLocaleString()} km²` },
+    { icon: Users, label: "Operadores", value: operators.length },
+    { icon: Globe, label: "Bacias", value: basins.length },
+    { icon: Calendar, label: "Período", value: `${Math.min(...years)}–${Math.max(...years)}` },
   ];
 
   const mapLinks = [
-    { href: "/exploration/seismic-2d", label: isPt ? "Mapa Sísmico 2D" : "2D Seismic Map", desc: isPt ? "Polilinhas de levantamentos 2D" : "2D survey polylines" },
-    { href: "/exploration/seismic-3d", label: isPt ? "Mapa Sísmico 3D" : "3D Seismic Map", desc: isPt ? "Polígonos de cobertura 3D" : "3D coverage polygons" },
-    { href: "/exploration/seismic-4d", label: isPt ? "Mapa Sísmico 4D" : "4D Seismic Map", desc: isPt ? "Monitorização time-lapse 4D" : "4D time-lapse monitoring" },
+    { href: "/exploration/seismic-2d", label: "Mapa Sísmico 2D", desc: "Polilinhas de levantamentos 2D" },
+    { href: "/exploration/seismic-3d", label: "Mapa Sísmico 3D", desc: "Polígonos de cobertura 3D" },
+    { href: "/exploration/seismic-4d", label: "Mapa Sísmico 4D", desc: "Monitorização time-lapse 4D" },
   ];
 
   const tooltipStyle = { backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--foreground))" };
@@ -144,7 +134,7 @@ export default function ProcessingPage() {
     return (
       <div style={tooltipStyle} className="p-3 shadow-lg text-sm max-w-[260px]">
         <p className="font-bold text-foreground mb-1">{label}</p>
-        <p className="text-muted-foreground text-xs mb-2">{d?.count} {isPt ? "levantamentos" : "surveys"}</p>
+        <p className="text-muted-foreground text-xs mb-2">{d?.count} levantamentos</p>
         {payload.map((p: any) => (
           <div key={p.dataKey} className="flex justify-between gap-4">
             <span style={{ color: p.color }}>{p.dataKey}</span>
@@ -153,7 +143,7 @@ export default function ProcessingPage() {
         ))}
         {d?.operators && d.operators.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border">
-            <p className="text-xs text-muted-foreground mb-1">{isPt ? "Operadores:" : "Operators:"}</p>
+            <p className="text-xs text-muted-foreground mb-1">Operadores:</p>
             <p className="text-xs leading-relaxed">{d.operators.join(", ")}</p>
           </div>
         )}
@@ -170,7 +160,7 @@ export default function ProcessingPage() {
     return (
       <div style={tooltipStyle} className="p-3 shadow-lg text-sm max-w-[260px]">
         <p className="font-bold text-foreground mb-1">{label}</p>
-        <p className="text-muted-foreground text-xs mb-2">{total} {isPt ? "novos levantamentos" : "new surveys"}</p>
+        <p className="text-muted-foreground text-xs mb-2">{total} novos levantamentos</p>
         {payload.filter((p: any) => p.value > 0).map((p: any) => (
           <div key={p.dataKey} className="flex justify-between gap-4">
             <span style={{ color: p.color }}>{p.dataKey || p.name}</span>
@@ -179,7 +169,7 @@ export default function ProcessingPage() {
         ))}
         {d?.operators && d.operators.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border">
-            <p className="text-xs text-muted-foreground mb-1">{isPt ? "Operadores:" : "Operators:"}</p>
+            <p className="text-xs text-muted-foreground mb-1">Operadores:</p>
             <p className="text-xs leading-relaxed">{d.operators.join(", ")}</p>
           </div>
         )}
@@ -199,15 +189,15 @@ export default function ProcessingPage() {
       <div style={tooltipStyle} className="p-3 shadow-lg text-sm max-w-[260px]">
         <p className="font-bold text-foreground mb-1">{entry.name}</p>
         <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">{isPt ? "Levantamentos" : "Surveys"}</span>
+          <span className="text-muted-foreground">Levantamentos</span>
           <span className="font-mono">{entry.value}</span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">{isPt ? "Cobertura" : "Coverage"}</span>
+          <span className="text-muted-foreground">Cobertura</span>
           <span className="font-mono">{totalCov.toLocaleString()} {unit}</span>
         </div>
         <div className="mt-2 pt-2 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-1">{isPt ? "Operadores:" : "Operators:"} ({ops.length})</p>
+          <p className="text-xs text-muted-foreground mb-1">Operadores: ({ops.length})</p>
           <p className="text-xs leading-relaxed">{ops.slice(0, 6).join(", ")}{ops.length > 6 ? ` +${ops.length - 6}` : ""}</p>
         </div>
       </div>
@@ -221,7 +211,7 @@ export default function ProcessingPage() {
       <div style={tooltipStyle} className="p-3 shadow-lg text-sm">
         <p className="font-bold text-foreground">{label}</p>
         <div className="flex justify-between gap-4 mt-1">
-          <span className="text-muted-foreground">{isPt ? "Total acumulado" : "Cumulative total"}</span>
+          <span className="text-muted-foreground">Total acumulado</span>
           <span className="font-mono">{payload[0].value}</span>
         </div>
       </div>
@@ -231,33 +221,22 @@ export default function ProcessingPage() {
   return (
     <PageLayout
       pageKey="exploration-processing"
-      titleKey="pages.exploration.processing"
-      subtitleKey="pages.exploration.processingSubtitle"
-      
+      title={pageData?.processing}
+      subtitle={pageData?.processingSubtitle}
       icon={<Database className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.exploration", href: "/exploration" },
-        { labelKey: "pages.exploration.processing" },
+        { label: pageData?.processing || "Processamento" },
       ]}
     >
       <div className="space-y-12">
-        {/* CMS intro */}
-        {["intro", "workflow", "centres"].map((key) => {
-          const section = getSection(key);
-          if (!section) return null;
-          return (
-            <section key={key}>
-              <h2 className="text-2xl font-bold text-foreground mb-4">{(section as any).title}</h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">{(section as any).body}</p>
-            </section>
-          );
-        })}
+        <p className="text-muted-foreground text-lg leading-relaxed">
+          {pageData?.processingContent || "O processamento de dados sísmicos é uma etapa fundamental na avaliação do potencial petrolífero das bacias sedimentares angolanas."}
+        </p>
 
         {/* Stats */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            {isPt ? "Resumo Estatístico" : "Statistical Summary"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Resumo Estatístico</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {stats.map((s) => (
               <Card key={s.label} className="hover:-translate-y-0">
@@ -273,14 +252,11 @@ export default function ProcessingPage() {
 
         {/* Charts */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            {isPt ? "Análise Gráfica" : "Graphical Analysis"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Análise Gráfica</h2>
           <div className="grid lg:grid-cols-2 gap-6">
-            {/* Coverage by basin */}
             <Card className="hover:-translate-y-0">
               <CardHeader>
-                <CardTitle className="text-lg">{isPt ? "Cobertura Sísmica por Bacia" : "Seismic Coverage by Basin"}</CardTitle>
+                <CardTitle className="text-lg">Cobertura Sísmica por Bacia</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={320}>
@@ -298,10 +274,9 @@ export default function ProcessingPage() {
               </CardContent>
             </Card>
 
-            {/* Temporal evolution */}
             <Card className="hover:-translate-y-0">
               <CardHeader>
-                <CardTitle className="text-lg">{isPt ? "Evolução Temporal de Campanhas" : "Campaign Temporal Evolution"}</CardTitle>
+                <CardTitle className="text-lg">Evolução Temporal de Campanhas</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={320}>
@@ -319,10 +294,9 @@ export default function ProcessingPage() {
               </CardContent>
             </Card>
 
-            {/* Type distribution pie */}
             <Card className="hover:-translate-y-0">
               <CardHeader>
-                <CardTitle className="text-lg">{isPt ? "Distribuição por Tipo" : "Distribution by Type"}</CardTitle>
+                <CardTitle className="text-lg">Distribuição por Tipo</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={280}>
@@ -338,10 +312,9 @@ export default function ProcessingPage() {
               </CardContent>
             </Card>
 
-            {/* Cumulative growth */}
             <Card className="hover:-translate-y-0">
               <CardHeader>
-                <CardTitle className="text-lg">{isPt ? "Crescimento Acumulado" : "Cumulative Growth"}</CardTitle>
+                <CardTitle className="text-lg">Crescimento Acumulado</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={280}>
@@ -350,7 +323,7 @@ export default function ProcessingPage() {
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                     <YAxis className="fill-muted-foreground" tick={{ fontSize: 11 }} />
                     <Tooltip content={<CumulativeTooltip />} />
-                    <Area type="monotone" dataKey="cumulative" fill="hsl(var(--primary))" stroke="hsl(var(--primary))" fillOpacity={0.3} name={isPt ? "Total Acumulado" : "Cumulative Total"} />
+                    <Area type="monotone" dataKey="cumulative" fill="hsl(var(--primary))" stroke="hsl(var(--primary))" fillOpacity={0.3} name="Total Acumulado" />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -360,20 +333,18 @@ export default function ProcessingPage() {
 
         {/* Basin table */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            {isPt ? "Dados Processados por Bacia" : "Processed Data by Basin"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Dados Processados por Bacia</h2>
           <Card className="hover:-translate-y-0">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{isPt ? "Bacia" : "Basin"}</TableHead>
+                    <TableHead>Bacia</TableHead>
                     <TableHead className="text-center">2D</TableHead>
                     <TableHead className="text-center">3D</TableHead>
                     <TableHead className="text-center">4D</TableHead>
-                    <TableHead className="text-right">{isPt ? "Cobertura Total" : "Total Coverage"}</TableHead>
-                    <TableHead className="text-center">{isPt ? "Operadores" : "Operators"}</TableHead>
+                    <TableHead className="text-right">Cobertura Total</TableHead>
+                    <TableHead className="text-center">Operadores</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -398,9 +369,7 @@ export default function ProcessingPage() {
 
         {/* Block history */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            {isPt ? "Dados por Bloco" : "Data by Block"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Dados por Bloco</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {blockSurveys.map(([block, surveys]) => (
               <Card key={block} className="hover:-translate-y-0">
@@ -426,32 +395,30 @@ export default function ProcessingPage() {
 
         {/* Full inventory */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            {isPt ? "Inventário Completo" : "Full Inventory"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Inventário Completo</h2>
           <div className="flex flex-wrap gap-3 mb-4">
             <Select value={filterBasin} onValueChange={setFilterBasin}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder={isPt ? "Bacia" : "Basin"} />
+                <SelectValue placeholder="Bacia" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{isPt ? "Todas as Bacias" : "All Basins"}</SelectItem>
+                <SelectItem value="all">Todas as Bacias</SelectItem>
                 {basins.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder={isPt ? "Tipo" : "Type"} />
+                <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{isPt ? "Todos" : "All"}</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="2d">2D</SelectItem>
                 <SelectItem value="3d">3D</SelectItem>
                 <SelectItem value="4d">4D</SelectItem>
               </SelectContent>
             </Select>
             <span className="self-center text-sm text-muted-foreground">
-              {filteredSurveys.length} {isPt ? "resultados" : "results"}
+              {filteredSurveys.length} resultados
             </span>
           </div>
           <Card className="hover:-translate-y-0">
@@ -460,13 +427,13 @@ export default function ProcessingPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{isPt ? "Nome" : "Name"}</TableHead>
-                      <TableHead>{isPt ? "Tipo" : "Type"}</TableHead>
-                      <TableHead>{isPt ? "Categoria" : "Category"}</TableHead>
-                      <TableHead>{isPt ? "Bacia" : "Basin"}</TableHead>
-                      <TableHead>{isPt ? "Operador" : "Operator"}</TableHead>
-                      <TableHead className="text-center">{isPt ? "Ano" : "Year"}</TableHead>
-                      <TableHead className="text-right">{isPt ? "Cobertura" : "Coverage"}</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Bacia</TableHead>
+                      <TableHead>Operador</TableHead>
+                      <TableHead className="text-center">Ano</TableHead>
+                      <TableHead className="text-right">Cobertura</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -474,7 +441,7 @@ export default function ProcessingPage() {
                       <TableRow key={s.id}>
                         <TableCell className="font-medium max-w-[200px] truncate">{s.name}</TableCell>
                         <TableCell><Badge variant="secondary" className="text-xs">{s.type.toUpperCase()}</Badge></TableCell>
-                        <TableCell className="text-xs text-muted-foreground capitalize">{s.category === "proprietary" ? (isPt ? "Proprietária" : "Proprietary") : "Multicliente"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground capitalize">{s.category === "proprietary" ? "Proprietária" : "Multicliente"}</TableCell>
                         <TableCell>{s.basin}</TableCell>
                         <TableCell className="text-sm">{s.operator}</TableCell>
                         <TableCell className="text-center font-mono">{s.year}</TableCell>
@@ -490,9 +457,7 @@ export default function ProcessingPage() {
 
         {/* Map links */}
         <section>
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            {isPt ? "Mapas Interactivos" : "Interactive Maps"}
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Mapas Interactivos</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {mapLinks.map(m => (
               <Link key={m.href} to={m.href}>

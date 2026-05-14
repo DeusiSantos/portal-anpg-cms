@@ -1,55 +1,33 @@
 import { Map, Download, Building2, Layers, List } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { ConcessionsMap } from "@/components/concessions/ConcessionsMap";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense } from "react";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 const GeographicMap = lazy(() => import("@/components/concessions/GeographicMap").then(m => ({ default: m.GeographicMap })));
-import { usePetroleumBlocks, basinLabels } from "@/hooks/usePetroleumBlocks";
 
 export default function EpMapsPage() {
-  const { t } = useTranslation();
-  const { data: blocks = [] } = usePetroleumBlocks();
+  const { data: pageData } = usePageData("epMaps");
 
-  const operatorStats = useMemo(() => {
-    const operators: Record<string, { blocks: number; production: number }> = {};
-    blocks.forEach(block => {
-      if (!operators[block.operator]) {
-        operators[block.operator] = { blocks: 0, production: 0 };
-      }
-      operators[block.operator].blocks++;
-      if (block.statusKey === "production") {
-        operators[block.operator].production++;
-      }
-    });
-    return Object.entries(operators)
-      .map(([name, data]) => ({ name, ...data }))
-      .sort((a, b) => b.blocks - a.blocks)
-      .slice(0, 8);
-  }, [blocks]);
+  const basins: Array<{ key: string; label: string; count: number }> = pageData?.basins || [];
+  const topOperators: Array<{ name: string; blocks: number; production: number }> = pageData?.topOperatorsList || [];
 
-  const basinStats = useMemo(() => {
-    const basins: Record<string, number> = {};
-    blocks.forEach(block => {
-      basins[block.basinKey] = (basins[block.basinKey] || 0) + 1;
-    });
-    return basins;
-  }, [blocks]);
-
-  const uniqueBasins = useMemo(() => {
-    return [...new Set(blocks.map(b => b.basinKey))].sort();
-  }, [blocks]);
+  const basinColors = [
+    "from-primary/20 to-primary/5 border-primary/30",
+    "from-accent/20 to-accent/5 border-accent/30",
+    "from-secondary/40 to-secondary/10 border-border",
+    "from-muted/60 to-muted/20 border-border",
+  ];
 
   return (
     <PageLayout
       pageKey="ep-maps"
-      titleKey="pages.epMaps.title"
-      subtitleKey="pages.epMaps.subtitle"
-      descriptionKey="pages.epMaps.description"
-      
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<Map className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.epData", href: "/ep-data" },
@@ -59,7 +37,7 @@ export default function EpMapsPage() {
         <div className="flex flex-wrap gap-4 mt-4">
           <Button variant="hero" size="lg">
             <Download className="w-4 h-4 mr-2" />
-            {t("pages.epMaps.downloadPdf")}
+            {pageData?.downloadPdf || "Download PDF"}
           </Button>
         </div>
       }
@@ -72,27 +50,19 @@ export default function EpMapsPage() {
               <Layers className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("pages.epMaps.basinDistribution")}</h2>
-              <p className="text-muted-foreground text-sm">{t("pages.epMaps.basinDistributionDesc")}</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{pageData?.basinDistribution || "Distribuição por Bacia"}</h2>
+              <p className="text-muted-foreground text-sm">{pageData?.basinDistributionDesc || ""}</p>
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {uniqueBasins.map((key, index) => {
-              const colors = [
-                "from-primary/20 to-primary/5 border-primary/30",
-                "from-accent/20 to-accent/5 border-accent/30",
-                "from-secondary/40 to-secondary/10 border-border",
-                "from-muted/60 to-muted/20 border-border",
-              ];
-              return (
-                <div key={key} className={`p-6 rounded-2xl bg-gradient-to-br ${colors[index % colors.length]} border`}>
-                  <h3 className="font-bold text-foreground mb-1">{basinLabels[key] || key}</h3>
-                  <p className="text-3xl font-bold text-primary">{basinStats[key] || 0}</p>
-                  <p className="text-sm text-muted-foreground">{t("pages.epMaps.blocks")}</p>
-                </div>
-              );
-            })}
+            {basins.map((basin, index) => (
+              <div key={basin.key} className={`p-6 rounded-2xl bg-gradient-to-br ${basinColors[index % basinColors.length]} border`}>
+                <h3 className="font-bold text-foreground mb-1">{basin.label}</h3>
+                <p className="text-3xl font-bold text-primary">{basin.count}</p>
+                <p className="text-sm text-muted-foreground">{pageData?.blocksLabel || "Blocos"}</p>
+              </div>
+            ))}
           </div>
         </section>
       </SectionTransition>
@@ -105,8 +75,8 @@ export default function EpMapsPage() {
               <Map className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("pages.epMaps.concessionsMap")}</h2>
-              <p className="text-muted-foreground text-sm">{t("pages.epMaps.concessionsMapDesc")}</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{pageData?.concessionsMap || "Mapa de Concessões"}</h2>
+              <p className="text-muted-foreground text-sm">{pageData?.concessionsMapDesc || ""}</p>
             </div>
           </div>
 
@@ -114,17 +84,17 @@ export default function EpMapsPage() {
             <TabsList className="mb-6">
               <TabsTrigger value="map" className="gap-2">
                 <Map className="w-4 h-4" />
-                {t("pages.epMaps.mapView")}
+                {pageData?.mapView || "Vista Mapa"}
               </TabsTrigger>
               <TabsTrigger value="list" className="gap-2">
                 <List className="w-4 h-4" />
-                {t("pages.epMaps.listView")}
+                {pageData?.listView || "Vista Lista"}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="map">
-              <Suspense fallback={<div className="h-[600px] w-full rounded-2xl border border-border bg-muted/50 flex items-center justify-center text-muted-foreground">{t("pages.epMaps.loadingMap")}</div>}>
-                <GeographicMap blocks={blocks} />
+              <Suspense fallback={<div className="h-[600px] w-full rounded-2xl border border-border bg-muted/50 flex items-center justify-center text-muted-foreground">{pageData?.loadingMap || "A carregar mapa..."}</div>}>
+                <GeographicMap blocks={[]} />
               </Suspense>
             </TabsContent>
 
@@ -143,13 +113,13 @@ export default function EpMapsPage() {
               <Building2 className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{t("pages.epMaps.topOperators")}</h2>
-              <p className="text-muted-foreground text-sm">{t("pages.epMaps.topOperatorsDesc")}</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">{pageData?.topOperators || "Principais Operadores"}</h2>
+              <p className="text-muted-foreground text-sm">{pageData?.topOperatorsDesc || ""}</p>
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {operatorStats.map((operator, index) => (
+            {topOperators.map((operator, index) => (
               <div
                 key={operator.name}
                 className="p-5 rounded-xl bg-secondary/50 border border-border hover:border-primary/30 transition-all"
@@ -161,11 +131,11 @@ export default function EpMapsPage() {
                   <h3 className="font-semibold text-foreground">{operator.name}</h3>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("pages.epMaps.operatedBlocks")}</span>
+                  <span className="text-muted-foreground">{pageData?.operatedBlocks || "Blocos Operados"}</span>
                   <span className="font-medium text-foreground">{operator.blocks}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
-                  <span className="text-muted-foreground">{t("pages.epMaps.inProduction")}</span>
+                  <span className="text-muted-foreground">{pageData?.inProduction || "Em Produção"}</span>
                   <span className="font-medium text-primary">{operator.production}</span>
                 </div>
               </div>
@@ -183,11 +153,11 @@ export default function EpMapsPage() {
                 <Map className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground mb-2">{t("pages.epMaps.updatedData")}</h3>
+                <h3 className="font-semibold text-foreground mb-2">{pageData?.updatedData || "Dados Actualizados"}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {t("pages.epMaps.updatedDataDesc")}{" "}
+                  {pageData?.updatedDataDesc || "Informação actualizada sobre os blocos petrolíferos de Angola."}{" "}
                   <a href="https://anpg.co.ao" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    {t("pages.epMaps.officialPortal")}
+                    {pageData?.officialPortal || "Portal Oficial ANPG"}
                   </a>.
                 </p>
               </div>

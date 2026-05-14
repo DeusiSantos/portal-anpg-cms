@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { HelpCircle } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { usePageData } from "@/hooks/pages/usePageData";
 import {
   Accordion,
   AccordionContent,
@@ -110,8 +111,9 @@ const getEnglishContent = <T extends { contents: Array<{ lang: number } & any> }
 };
 
 export default function FAQPage() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
+  const { data: pageData } = usePageData("faq");
 
   // Buscar categorias
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
@@ -229,14 +231,14 @@ export default function FAQPage() {
   const processedGroups = processFaqGroups();
   const totalFaqs = processedGroups.reduce((acc, group) => acc + group.faqs.length, 0);
 
-  const breadcrumbs = [{ labelKey: "faq.breadcrumb" }];
+  const breadcrumbs = [{ label: pageData?.title || "FAQ" }];
 
   if (error) {
     return (
       <PageLayout
         pageKey="faq"
-        titleKey="faq.hero.title"
-        descriptionKey="faq.hero.description"
+        title={pageData?.title}
+        description={pageData?.description}
         icon={<HelpCircle className="w-8 h-8" />}
         breadcrumbs={breadcrumbs}
       >
@@ -244,15 +246,15 @@ export default function FAQPage() {
           <div className="text-center py-12">
             <HelpCircle className="w-16 h-16 text-red-500 mx-auto mb-4 opacity-50" />
             <p className="text-red-500 mb-4">
-              {isEn 
-                ? "Error loading FAQs. Please try again later." 
-                : "Erro ao carregar FAQs. Por favor, tente novamente mais tarde."}
+              {isEn
+                ? (pageData?.errorTextEn || "Error loading FAQs. Please try again later.")
+                : (pageData?.errorText || "Erro ao carregar FAQs. Por favor, tente novamente mais tarde.")}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="text-primary hover:underline"
             >
-              {isEn ? "Reload page" : "Recarregar página"}
+              {isEn ? (pageData?.reloadLabelEn || "Reload page") : (pageData?.reloadLabel || "Recarregar página")}
             </button>
           </div>
         </div>
@@ -263,15 +265,15 @@ export default function FAQPage() {
   return (
     <PageLayout
       pageKey="faq"
-      titleKey="faq.hero.title"
-      descriptionKey="faq.hero.description"
+      title={pageData?.title}
+      description={pageData?.description}
       icon={<HelpCircle className="w-8 h-8" />}
       breadcrumbs={breadcrumbs}
     >
       <div className="max-w-4xl mx-auto space-y-12">
         <div className="text-center">
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t("faq.intro")}
+            {pageData?.intro || "Encontre respostas para as perguntas mais comuns sobre as actividades regulatórias, licenciamento e oportunidades de investimento da ANPG."}
           </p>
         </div>
 
@@ -299,7 +301,7 @@ export default function FAQPage() {
                   {getCategoryName(category)}
                 </h2>
                 <Badge variant="outline" className="text-sm">
-                  {groupFaqs.length} {isEn ? "questions" : "perguntas"}
+                  {groupFaqs.length} {isEn ? "questions" : (pageData?.questions || "perguntas")}
                 </Badge>
               </div>
               
@@ -338,22 +340,22 @@ export default function FAQPage() {
           <div className="text-center py-12">
             <HelpCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
             <p className="text-muted-foreground">
-              {isEn 
-                ? "No FAQs available at the moment." 
-                : "Sem FAQs disponíveis no momento."}
+              {isEn
+                ? (pageData?.noFaqsEn || "No FAQs available at the moment.")
+                : (pageData?.noFaqs || "Sem FAQs disponíveis no momento.")}
             </p>
           </div>
         )}
 
         <div className="text-center pt-8 pb-4 border-t border-border">
           <p className="text-muted-foreground mb-4">
-            {t("faq.contactCta.text")}
+            {pageData?.contactCtaText || "Não encontrou a resposta que procura? Contacte-nos directamente."}
           </p>
           <Link
             to="/contacts"
             className="inline-flex items-center gap-2 text-primary hover:underline font-medium transition-all duration-200 hover:gap-3"
           >
-            {t("faq.contactCta.link")}
+            {pageData?.contactCtaLink || "Contactar a ANPG"}
             <span aria-hidden="true">→</span>
           </Link>
         </div>

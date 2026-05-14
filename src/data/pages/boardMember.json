@@ -1,0 +1,30 @@
+{
+  "pt": {
+    "loadingTitle": "A carregar...",
+    "notFoundTitle": "Membro Não Encontrado",
+    "notFoundMessage": "O membro do conselho solicitado não foi encontrado.",
+    "backToBoard": "Voltar ao Conselho",
+    "backToAnpg": "Voltar à ANPG",
+    "biographyTitle": "Biografia",
+    "messageTitle": "Mensagem",
+    "contactTitle": "Informações de Contacto",
+    "pelouroTitle": "Cargo & Pelouro",
+    "titleLabel": "Título",
+    "portfolioLabel": "Pelouro",
+    "noBiography": "Nenhuma biografia disponível."
+  },
+  "en": {
+    "loadingTitle": "Loading...",
+    "notFoundTitle": "Member Not Found",
+    "notFoundMessage": "The requested board member was not found.",
+    "backToBoard": "Back to Board",
+    "backToAnpg": "Back to ANPG",
+    "biographyTitle": "Biography",
+    "messageTitle": "Message",
+    "contactTitle": "Contact Information",
+    "pelouroTitle": "Position & Portfolio",
+    "titleLabel": "Title",
+    "portfolioLabel": "Portfolio",
+    "noBiography": "No biography available."
+  }
+}

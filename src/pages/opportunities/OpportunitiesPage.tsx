@@ -1,47 +1,29 @@
 import { Gift, FileCheck, Archive } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { PageLayout } from "@/components/layout/PageLayout";
+import { usePageData } from "@/hooks/pages/usePageData";
+
+const iconMap: Record<string, React.ElementType> = { Gift, FileCheck, Archive };
 
 export default function OpportunitiesPage() {
-  const { t } = useTranslation();
+  const { data: pageData } = usePageData("opportunities");
 
-  const opportunities = [
-    {
-      icon: FileCheck,
-      titleKey: "nav.submenu.tender2025",
-      descriptionKey: "nav.submenu.tender2025Desc",
-      href: "/opportunities/tender-2025",
-    },
-    {
-      icon: Gift,
-      titleKey: "nav.submenu.permanentOffer",
-      descriptionKey: "nav.submenu.permanentOfferDesc",
-      href: "/opportunities/permanent-offer",
-    },
-    {
-      icon: Archive,
-      titleKey: "nav.submenu.tender2023",
-      descriptionKey: "nav.submenu.tender2023Desc",
-      href: "/opportunities/tender-2023",
-    },
-  ];
+  const items: Array<{ icon: string; title: string; description: string; href: string }> = pageData?.items || [];
 
   return (
     <PageLayout
       pageKey="opportunities"
-      titleKey="pages.opportunities.title"
-      subtitleKey="pages.opportunities.subtitle"
-      descriptionKey="pages.opportunities.description"
-      
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<Gift className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.opportunities" },
       ]}
     >
       <div className="grid md:grid-cols-3 gap-6">
-        {opportunities.map((item) => {
-          const Icon = item.icon;
+        {items.map((item) => {
+          const Icon = iconMap[item.icon] || Gift;
           return (
             <Link
               key={item.href}
@@ -52,10 +34,10 @@ export default function OpportunitiesPage() {
                 <Icon className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
-                {t(item.titleKey)}
+                {item.title}
               </h3>
               <p className="text-muted-foreground">
-                {t(item.descriptionKey)}
+                {item.description}
               </p>
             </Link>
           );

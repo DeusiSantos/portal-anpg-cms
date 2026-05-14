@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { usePageData } from "@/hooks/pages/usePageData";
 import { 
   Calendar, 
   ArrowLeft, 
@@ -8,8 +8,7 @@ import {
   Twitter, 
   Linkedin,
   ChevronRight,
-  Newspaper,
-  Loader2
+  Newspaper
 } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -195,8 +194,8 @@ function useRelatedNews(currentNewsId: string, currentCategoryId: string, limit:
 
 export default function NewsDetailPage() {
   const { newsId } = useParams<{ newsId: string }>();
-  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { data: pageData } = usePageData("newsDetail");
 
   // Buscar a notícia atual
   const { data: news, isLoading, isError } = useNewsArticle(newsId);
@@ -207,8 +206,8 @@ export default function NewsDetailPage() {
   if (isLoading) {
     return (
       <PageLayout
-        title="A carregar..."
-        subtitle="Media"
+        title={pageData?.loadingTitle || "A carregar..."}
+        subtitle={pageData?.subtitle || "Media"}
         icon={<Newspaper className="w-8 h-8 text-primary" />}
         breadcrumbs={[{ labelKey: "nav.media", href: "/media" }, { label: "..." }]}
       >
@@ -226,24 +225,24 @@ export default function NewsDetailPage() {
   if (isError || !news || !news.isActive) {
     return (
       <PageLayout
-        title="Notícia não encontrada"
-        subtitle="Media"
+        title={pageData?.notFoundTitle || "Notícia não encontrada"}
+        subtitle={pageData?.subtitle || "Media"}
         icon={<Newspaper className="w-8 h-8 text-primary" />}
         breadcrumbs={[
           { labelKey: "nav.media", href: "/media" },
-          { label: "Notícia não encontrada" },
+          { label: pageData?.notFoundTitle || "Notícia não encontrada" },
         ]}
       >
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">
-            A notícia que procura não foi encontrada
+            {pageData?.notFoundHeading || "A notícia que procura não foi encontrada"}
           </h2>
           <p className="text-muted-foreground mb-8">
-            Verifique o endereço ou navegue pelas nossas notícias recentes.
+            {pageData?.notFoundMessage || "Verifique o endereço ou navegue pelas nossas notícias recentes."}
           </p>
           <Button onClick={() => navigate("/media")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar às Notícias
+            {pageData?.backButton || "Voltar às Notícias"}
           </Button>
         </div>
       </PageLayout>
@@ -265,7 +264,7 @@ export default function NewsDetailPage() {
   return (
     <PageLayout
       title={news.title}
-      subtitle="Media"
+      subtitle={pageData?.subtitle || "Media"}
       backgroundImage={news.image}
       icon={<Newspaper className="w-8 h-8 text-primary" />}
       breadcrumbs={[
@@ -275,13 +274,13 @@ export default function NewsDetailPage() {
     >
       <div className="max-w-4xl mx-auto">
         <SectionTransition>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate("/media")}
             className="mb-8 -ml-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar às Notícias
+            {pageData?.backButton || "Voltar às Notícias"}
           </Button>
         </SectionTransition>
 
@@ -328,7 +327,7 @@ export default function NewsDetailPage() {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Partilhar:</span>
+                <span className="text-muted-foreground">{pageData?.shareLabel || "Partilhar:"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => handleShare('facebook')} className="rounded-full hover:bg-primary/10 hover:text-primary hover:border-primary/30">
@@ -349,7 +348,7 @@ export default function NewsDetailPage() {
       {relatedNews.length > 0 && (
         <SectionTransition delay={0.6}>
           <div className="mt-16 pt-16 border-t border-border">
-            <h2 className="text-2xl font-bold text-foreground mb-8">Notícias Relacionadas</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-8">{pageData?.relatedTitle || "Notícias Relacionadas"}</h2>
             
             <StaggerContainer className="grid md:grid-cols-3 gap-6">
               {relatedNews.map((item) => (
@@ -381,7 +380,7 @@ export default function NewsDetailPage() {
             
             <div className="mt-8 text-center">
               <Button variant="outline" size="lg" onClick={() => navigate("/media")}>
-                Ver Todas as Notícias
+                {pageData?.viewAllButton || "Ver Todas as Notícias"}
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>

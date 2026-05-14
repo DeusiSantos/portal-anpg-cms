@@ -1,0 +1,162 @@
+{
+  "title": "A Nossa História",
+  "subtitle": "Desde 1910",
+  "description": "Mais de um século de história petrolífera, desde a primeira licença de exploração até à criação da ANPG.",
+  "breadcrumbAbout": "Sobre Nós",
+  "intro": "",
+  "timelineTitle": "Linha do Tempo",
+  "today": "Hoje",
+  "eras": [
+    {
+      "name": "Pioneirismo",
+      "years": "1910-1955",
+      "color": "from-status-warning/20 to-status-warning/30"
+    },
+    {
+      "name": "Crescimento",
+      "years": "1958-1990",
+      "color": "from-status-warning/30 to-status-warning/40"
+    },
+    {
+      "name": "Expansão",
+      "years": "1999-2008",
+      "color": "from-primary/20 to-primary/30"
+    },
+    {
+      "name": "Modernização",
+      "years": "2009-2021",
+      "color": "from-status-success/20 to-status-success/30"
+    }
+  ],
+  "stats": [
+    {
+      "value": "110+",
+      "label": "Anos de História"
+    },
+    {
+      "value": "2M",
+      "label": "Barris/Dia (Pico)"
+    },
+    {
+      "value": "1976",
+      "label": "Criação da Sonangol"
+    },
+    {
+      "value": "2019",
+      "label": "Criação da ANPG"
+    }
+  ],
+  "highlightYears": [
+    1968,
+    1976,
+    1999,
+    2007,
+    2008,
+    2013,
+    2019
+  ],
+  "noEventsText": "Sem eventos históricos disponíveis.",
+  "errorText": "Erro ao carregar eventos históricos. Por favor, tente novamente mais tarde.",
+  "timeline": [
+    {
+      "year": 1910,
+      "title": "Primeira Licença de Exploração",
+      "description": "Primeira licença de exploração de hidrocarbonetos atribuída à empresa Canha & Formigal, no onshore do Kwanza."
+    },
+    {
+      "year": 1915,
+      "title": "Primeiro Poço Perfurado",
+      "description": "Perfuração do primeiro poço de petróleo, Dande-1, na Bacia do Kwanza."
+    },
+    {
+      "year": 1955,
+      "title": "Primeira Descoberta Comercial",
+      "description": "Petrofina realiza a primeira descoberta comercial de petróleo, no vale do Kwanza, com a perfuração do poço Benfica 2."
+    },
+    {
+      "year": 1958,
+      "title": "Início da Refinação",
+      "description": "Início da actividade de refinação de petróleo, com a criação da Refinaria de Luanda, propriedade da Petrangol."
+    },
+    {
+      "year": 1966,
+      "title": "Descoberta no Bloco 0",
+      "description": "Nova fase com atribuição de diversas concessões e criação de blocos. Primeira descoberta no poço Limba, Bloco 0."
+    },
+    {
+      "year": 1968,
+      "title": "Campo de Malongo",
+      "description": "Entrada em funcionamento do campo de Malongo, em Cabinda. Primeiro grande salto na produção petrolífera angolana."
+    },
+    {
+      "year": 1973,
+      "title": "Petróleo: Principal Exportação",
+      "description": "O petróleo torna-se na principal exportação de Angola, superando o café."
+    },
+    {
+      "year": 1976,
+      "title": "Criação da Sonangol",
+      "description": "Criação da Sociedade Nacional de Combustíveis de Angola – Sonangol. A produção rondava os 100 mil barris/dia."
+    },
+    {
+      "year": 1978,
+      "title": "Primeira Lei Petrolífera",
+      "description": "Primeira Lei das Actividades Petrolíferas (Lei 13/78), estabelecendo o quadro regulatório do sector."
+    },
+    {
+      "year": 1990,
+      "title": "500 Mil Barris/Dia",
+      "description": "Angola atinge a produção de 500 mil barris/dia, consolidando-se como produtor relevante na região."
+    },
+    {
+      "year": 1999,
+      "title": "Produção em Águas Profundas",
+      "description": "Entra em funcionamento o primeiro FPSO no offshore angolano (Bloco 14), marcando o início da produção em águas profundas."
+    },
+    {
+      "year": 2000,
+      "title": "1 Milhão de Barris/Dia",
+      "description": "Angola atinge a produção máxima de 1.000.000 de barris/dia, tornando-se um player global."
+    },
+    {
+      "year": 2007,
+      "title": "Adesão à OPEP",
+      "description": "Angola torna-se membro da OPEP – Organização dos Países Exportadores de Petróleo."
+    },
+    {
+      "year": 2008,
+      "title": "Pico Histórico: 2 Milhões",
+      "description": "Angola atinge a produção máxima diária de 2.000.000 de barris. Produção média anual de 1.993.000 barris/dia."
+    },
+    {
+      "year": 2009,
+      "title": "Presidência da OPEP",
+      "description": "Angola assume a presidência da OPEP, tornando-se o maior produtor de crude da África subsariana."
+    },
+    {
+      "year": 2011,
+      "title": "Descobertas no Pré-Sal",
+      "description": "Descobertas significativas no Pré-Sal (Azul – Bloco 23; Cameia – Bloco 21), abrindo novas fronteiras exploratórias."
+    },
+    {
+      "year": 2013,
+      "title": "Exportação de LNG",
+      "description": "Início da produção de gás natural liquefeito (LNG) e expedição do primeiro carregamento para o Brasil."
+    },
+    {
+      "year": 2019,
+      "title": "Criação da ANPG",
+      "description": "Reestruturação do sector petrolífero que resulta na criação da ANPG. Licitação de 10 blocos nas Bacias de Benguela e Namibe."
+    },
+    {
+      "year": 2020,
+      "title": "Regulamentação do Conteúdo Local",
+      "description": "Publicação do Decreto Presidencial n.º 271/20, definindo os Procedimentos de Implementação do Conteúdo Local."
+    },
+    {
+      "year": 2021,
+      "title": "Nova Licitação",
+      "description": "Licitação por Concurso Limitado de 8 blocos nas Bacias Marítimas do Baixo Congo e do Kwanza."
+    }
+  ]
+}

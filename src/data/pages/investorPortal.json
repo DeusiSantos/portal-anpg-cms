@@ -1,0 +1,24 @@
+{
+  "title": "Portal do Investidor",
+  "subtitle": "Área Reservada",
+  "description": "Aceda à área reservada do Portal do Investidor da ANPG.",
+  "welcomeMessage": "Bem-vindo ao Portal do Investidor da ANPG. Esta plataforma disponibiliza informação privilegiada sobre o sector petrolífero angolano, incluindo dados de produção, oportunidades de investimento, relatórios técnicos e actualizações regulatórias. Angola mantém-se como um dos principais destinos de investimento em exploração e produção de petróleo em África.",
+  "highlights": [
+    {
+      "value": "1,1M bbl/dia",
+      "label": "Produção de Petróleo"
+    },
+    {
+      "value": "47",
+      "label": "Blocos Activos"
+    },
+    {
+      "value": "12B+ USD",
+      "label": "Investidos no Sector"
+    },
+    {
+      "value": "35+",
+      "label": "Operadores Internacionais"
+    }
+  ]
+}

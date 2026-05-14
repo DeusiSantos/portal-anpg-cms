@@ -1,24 +1,19 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { ArrowRight, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useContentBlock } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 export function CTASection() {
-  const { t } = useTranslation();
+  const { data: homeData } = usePageData("home");
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
-  const { data: cmsBlock } = useContentBlock("home", "cta");
-
-  // CMS content shape: { title, description, ctaPrimary, ctaSecondary, email, phone }
-  const c = cmsBlock?.content;
 
   return (
     <section ref={ref} className="relative py-24 lg:py-32 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary to-anpg-red-dark" />
-      
+
       {/* Decorative Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -36,10 +31,10 @@ export function CTASection() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-6">
-              {c?.title || t("cta.title")}
+              {homeData?.cta?.title || "Pronto para Investir no Futuro Energético de Angola?"}
             </h2>
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto">
-              {c?.description || t("cta.description")}
+              {homeData?.cta?.description || ""}
             </p>
           </motion.div>
 
@@ -50,15 +45,15 @@ export function CTASection() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
           >
             <Button variant="heroOutline" size="xl" className="w-full sm:w-auto group">
-              {c?.ctaPrimary || t("cta.contactInvestments")}
+              {homeData?.cta?.contactInvestments || "Contactar Investimentos"}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="xl" 
+            <Button
+              variant="ghost"
+              size="xl"
               className="w-full sm:w-auto text-primary-foreground hover:bg-primary-foreground/10"
             >
-              {c?.ctaSecondary || t("cta.scheduleMeeting")}
+              {homeData?.cta?.scheduleMeeting || "Agendar Reunião"}
             </Button>
           </motion.div>
 
@@ -69,13 +64,13 @@ export function CTASection() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-8 text-primary-foreground/80"
           >
-            <a href={`mailto:${c?.email || "investimentos@anpg.co.ao"}`} className="flex items-center gap-2 hover:text-primary-foreground transition-colors">
+            <a href="mailto:investimentos@anpg.co.ao" className="flex items-center gap-2 hover:text-primary-foreground transition-colors">
               <Mail className="w-5 h-5" />
-              <span>{c?.email || "investimentos@anpg.co.ao"}</span>
+              <span>investimentos@anpg.co.ao</span>
             </a>
-            <a href={`tel:${c?.phone || "+244222337925"}`} className="flex items-center gap-2 hover:text-primary-foreground transition-colors">
+            <a href="tel:+244222337925" className="flex items-center gap-2 hover:text-primary-foreground transition-colors">
               <Phone className="w-5 h-5" />
-              <span>{c?.phone || "+244 222 337 925"}</span>
+              <span>+244 222 337 925</span>
             </a>
           </motion.div>
         </div>

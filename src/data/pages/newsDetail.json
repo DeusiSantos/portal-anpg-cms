@@ -1,0 +1,11 @@
+{
+  "loadingTitle": "A carregar...",
+  "subtitle": "Media",
+  "notFoundTitle": "Notícia não encontrada",
+  "notFoundHeading": "A notícia que procura não foi encontrada",
+  "notFoundMessage": "Verifique o endereço ou navegue pelas nossas notícias recentes.",
+  "backButton": "Voltar às Notícias",
+  "shareLabel": "Partilhar:",
+  "relatedTitle": "Notícias Relacionadas",
+  "viewAllButton": "Ver Todas as Notícias"
+}

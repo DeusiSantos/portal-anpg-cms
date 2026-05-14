@@ -1,0 +1,49 @@
+{
+  "title": "Política de Privacidade",
+  "subtitle": "Legal",
+  "description": "Informações sobre como a ANPG recolhe, utiliza e protege os seus dados pessoais.",
+  "intro": "A Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG) está empenhada em proteger a privacidade e os dados pessoais de todos os utilizadores do nosso website. Esta política descreve as nossas práticas de recolha, utilização e protecção de informação.",
+  "lastUpdated": "Última actualização",
+  "lastUpdatedValue": "Janeiro 2025",
+  "sections": [
+    {
+      "key": "collection",
+      "title": "Recolha de Dados",
+      "content": "Recolhemos informações que nos fornece directamente, como nome, endereço de email, empresa e cargo, quando preenche formulários no nosso website, nomeadamente para agendamento de reuniões, manifestação de interesse em blocos petrolíferos ou pedidos de informação. Também recolhemos dados de navegação automaticamente, incluindo endereço IP, tipo de navegador e páginas visitadas."
+    },
+    {
+      "key": "usage",
+      "title": "Utilização dos Dados",
+      "content": "Utilizamos os seus dados para responder às suas solicitações, processar pedidos de informação, enviar comunicações relacionadas com oportunidades de investimento e licitações, e melhorar os nossos serviços. Os dados são tratados com base no seu consentimento ou no interesse legítimo da ANPG em cumprir as suas funções institucionais."
+    },
+    {
+      "key": "security",
+      "title": "Segurança",
+      "content": "Implementamos medidas técnicas e organizacionais adequadas para proteger os seus dados contra acessos não autorizados, perda ou destruição. Os nossos sistemas são regularmente auditados e actualizados para garantir a segurança da informação."
+    },
+    {
+      "key": "rights",
+      "title": "Os Seus Direitos",
+      "content": "Tem o direito de aceder, rectificar, apagar ou limitar o tratamento dos seus dados pessoais. Pode também solicitar a portabilidade dos dados ou opor-se ao seu tratamento. Para exercer estes direitos, contacte-nos através do email indicado abaixo."
+    },
+    {
+      "key": "cookies",
+      "title": "Cookies",
+      "content": "O nosso website utiliza cookies essenciais para o funcionamento do site e cookies de análise para compreender como os visitantes interagem com as nossas páginas. Pode gerir as suas preferências de cookies através das definições do seu navegador."
+    },
+    {
+      "key": "contact",
+      "title": "Contacto",
+      "content": "Para questões relacionadas com a protecção de dados ou para exercer os seus direitos, contacte o nosso Encarregado de Protecção de Dados através do email privacidade@anpg.co.ao."
+    }
+  ],
+  "dpo": {
+    "title": "Encarregado de Protecção de Dados",
+    "entity": "Entidade",
+    "entityValue": "ANPG - Agência Nacional de Petróleo, Gás e Biocombustíveis",
+    "email": "Email",
+    "emailValue": "privacidade@anpg.co.ao",
+    "address": "Morada",
+    "addressValue": "Rua Kwamme Nkrumah, Nº 6-8, Ingombota, Luanda, Angola"
+  }
+}

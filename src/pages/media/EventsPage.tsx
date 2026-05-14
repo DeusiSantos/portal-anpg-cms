@@ -1,8 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, ChevronRight, CalendarDays, Search, X, Filter, Loader2 } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { Calendar, MapPin, ChevronRight, CalendarDays, Search, X, Loader2 } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { StaggerContainer, StaggerItem } from "@/components/layout/StaggerContainer";
@@ -26,75 +24,29 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
-import api from "@/service/api";
-import { getFullImageUrl } from "@/service/api";
+import { usePageData } from "@/hooks/pages/usePageData";
 
-// Tipos da API
-type EventStatus = 1 | 2 | 3;
-
-interface EventCategoryContent {
-  lang: number;
-  name: string;
-  description: string;
-}
-
-interface EventCategory {
-  id: string;
-  slug: string;
-  displayOrder: number;
-  contents: EventCategoryContent[];
-  isActive: boolean;
-}
-
-interface EventContent {
-  lang: number;
-  title: string;
-  description: string;
-  body: string;
-}
-
+// Tipo local de evento
 interface EventItem {
   id: string;
-  slug: string;
+  slug?: string;
+  title: string;
+  description: string;
+  location: string;
   startAt: string;
   endAt: string;
-  location: string;
-  mapUrl: string;
-  registrationUrl: string;
-  featuredImageUrl: string | null;
-  featuredImagePath: string | null;
-  categoryId: string;
-  status: EventStatus;
-  contents: EventContent[];
-  isActive: boolean;
-  createdAt: string;
+  image?: string;
 }
-
-interface EventsResponse {
-  items: EventItem[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  totalActive: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
-
-// Função para obter conteúdo por idioma
-const getContentByLang = (contents: EventContent[], lang: number): EventContent | undefined => {
-  return contents?.find(c => c.lang === lang);
-};
 
 // Função para verificar se a data está dentro do intervalo
 const isWithinDateRange = (dateString: string, filter: string): boolean => {
   if (filter === "all") return true;
-  
+
   const eventDate = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - eventDate.getTime();
   const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  
+
   switch (filter) {
     case "week": return diffDays <= 7;
     case "month": return diffDays <= 30;
@@ -106,70 +58,37 @@ const isWithinDateRange = (dateString: string, filter: string): boolean => {
 
 const EVENTS_PER_PAGE = 6;
 
-// Opções de filtro
-const dateFilters = [
-  { key: "all", label: "Todos os períodos" },
-  { key: "week", label: "Última semana" },
-  { key: "month", label: "Último mês" },
-  { key: "quarter", label: "Último trimestre" },
-  { key: "year", label: "Último ano" },
-];
-
-const sortOptions = [
-  { key: "newest", label: "Mais recentes primeiro" },
-  { key: "oldest", label: "Mais antigos primeiro" },
-];
-
-const statusOptions = [
-  { key: "all", label: "Todos os eventos" },
-  { key: "upcoming", label: "Próximos eventos" },
-  { key: "past", label: "Eventos passados" },
-];
-
 export default function EventsPage() {
-  const { t, i18n } = useTranslation();
-  const isEn = i18n.language === "en";
-  const lang = isEn ? 2 : 1;
-  
+  const { data: pageData, isLoading } = usePageData("events");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Buscar eventos da API
-  const { data: eventsData, isLoading, isError } = useQuery({
-    queryKey: ['events-public', currentPage, searchQuery, dateFilter, sortOrder, statusFilter],
-    queryFn: async () => {
-      const params: Record<string, string | number> = {
-        page: currentPage,
-        pageSize: EVENTS_PER_PAGE,
-        status: 2, // Apenas publicados
-      };
-      
-      if (searchQuery) {
-        params.search = searchQuery;
-      }
-      
-      const response = await api.get<EventsResponse>('/events', { params });
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const events = eventsData?.items || [];
-  const totalCount = eventsData?.totalCount || 0;
-  const totalPages = eventsData?.totalPages || 1;
+  // Dados do JSON
+  const allEvents: EventItem[] = useMemo(() => pageData?.events || [], [pageData]);
 
   // Filtrar e ordenar eventos localmente
   const filteredEvents = useMemo(() => {
-    let results = [...events];
-    
+    let results = [...allEvents];
+
+    // Filtro por pesquisa
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      results = results.filter(event =>
+        event.title.toLowerCase().includes(query) ||
+        event.description.toLowerCase().includes(query) ||
+        event.location.toLowerCase().includes(query)
+      );
+    }
+
     // Filtro por data
     if (dateFilter !== "all") {
       results = results.filter(event => isWithinDateRange(event.startAt, dateFilter));
     }
-    
+
     // Filtro por status (próximos vs passados)
     if (statusFilter !== "all") {
       const now = new Date();
@@ -183,7 +102,7 @@ export default function EventsPage() {
         return true;
       });
     }
-    
+
     // Ordenar
     results.sort((a, b) => {
       const dateA = new Date(a.startAt);
@@ -192,11 +111,12 @@ export default function EventsPage() {
         ? dateB.getTime() - dateA.getTime()
         : dateA.getTime() - dateB.getTime();
     });
-    
+
     return results;
-  }, [events, dateFilter, statusFilter, sortOrder]);
+  }, [allEvents, searchQuery, dateFilter, statusFilter, sortOrder]);
 
   // Paginação
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / EVENTS_PER_PAGE));
   const paginatedEvents = filteredEvents.slice(
     (currentPage - 1) * EVENTS_PER_PAGE,
     currentPage * EVENTS_PER_PAGE
@@ -245,19 +165,6 @@ export default function EventsPage() {
     }
   };
 
-  const formatDateEn = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return 'Date not available';
-    }
-  };
-
   const isUpcoming = (dateString: string) => {
     return new Date(dateString) >= new Date();
   };
@@ -278,17 +185,36 @@ export default function EventsPage() {
     return pages;
   };
 
+  const dateFilters = [
+    { key: "all", label: pageData?.dateFilters?.all || "Todos os períodos" },
+    { key: "week", label: pageData?.dateFilters?.week || "Última semana" },
+    { key: "month", label: pageData?.dateFilters?.month || "Último mês" },
+    { key: "quarter", label: pageData?.dateFilters?.quarter || "Último trimestre" },
+    { key: "year", label: pageData?.dateFilters?.year || "Último ano" },
+  ];
+
+  const sortOptions = [
+    { key: "newest", label: pageData?.sort?.newest || "Mais recentes primeiro" },
+    { key: "oldest", label: pageData?.sort?.oldest || "Mais antigos primeiro" },
+  ];
+
+  const statusOptions = [
+    { key: "all", label: pageData?.status?.all || "Todos os eventos" },
+    { key: "upcoming", label: pageData?.status?.upcoming || "Próximos eventos" },
+    { key: "past", label: pageData?.status?.past || "Eventos passados" },
+  ];
+
   if (isLoading) {
     return (
       <PageLayout
         pageKey="media-events"
-        titleKey="pages.events.title"
-        subtitleKey="pages.events.subtitle"
-        descriptionKey="pages.events.description"
+        title={pageData?.title}
+        subtitle={pageData?.subtitle}
+        description={pageData?.description}
         icon={<CalendarDays className="w-8 h-8 text-primary" />}
         breadcrumbs={[
           { labelKey: "nav.media", href: "/media" },
-          { label: isEn ? "Events" : "Eventos" },
+          { label: "Eventos" },
         ]}
       >
         <div className="flex justify-center items-center py-20">
@@ -298,36 +224,16 @@ export default function EventsPage() {
     );
   }
 
-  if (isError) {
-    return (
-      <PageLayout
-        pageKey="media-events"
-        titleKey="pages.events.title"
-        subtitleKey="pages.events.subtitle"
-        descriptionKey="pages.events.description"
-        icon={<CalendarDays className="w-8 h-8 text-primary" />}
-        breadcrumbs={[
-          { labelKey: "nav.media", href: "/media" },
-          { label: isEn ? "Events" : "Eventos" },
-        ]}
-      >
-        <div className="text-center py-20 text-red-500">
-          Erro ao carregar eventos. Tente novamente mais tarde.
-        </div>
-      </PageLayout>
-    );
-  }
-
   return (
     <PageLayout
       pageKey="media-events"
-      titleKey="pages.events.title"
-      subtitleKey="pages.events.subtitle"
-      descriptionKey="pages.events.description"
+      title={pageData?.title}
+      subtitle={pageData?.subtitle}
+      description={pageData?.description}
       icon={<CalendarDays className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.media", href: "/media" },
-        { label: isEn ? "Events" : "Eventos" },
+        { label: "Eventos" },
       ]}
     >
       <SectionTransition>
@@ -338,17 +244,17 @@ export default function EventsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder={isEn ? "Search events..." : "Pesquisar eventos..."}
+                placeholder={pageData?.search || "Pesquisar eventos..."}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10 bg-background"
               />
             </div>
-            
+
             <div className="w-full lg:w-48">
               <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="bg-background">
-                  <SelectValue placeholder={isEn ? "Status" : "Estado"} />
+                  <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
                   {statusOptions.map((option) => (
@@ -359,12 +265,12 @@ export default function EventsPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="w-full lg:w-48">
               <Select value={dateFilter} onValueChange={handleDateFilterChange}>
                 <SelectTrigger className="bg-background">
                   <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder={isEn ? "Date filter" : "Filtrar por data"} />
+                  <SelectValue placeholder="Filtrar por data" />
                 </SelectTrigger>
                 <SelectContent>
                   {dateFilters.map((filter) => (
@@ -375,11 +281,11 @@ export default function EventsPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="w-full lg:w-48">
               <Select value={sortOrder} onValueChange={handleSortChange}>
                 <SelectTrigger className="bg-background">
-                  <SelectValue placeholder={isEn ? "Sort by" : "Ordenar por"} />
+                  <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
                   {sortOptions.map((option) => (
@@ -390,22 +296,20 @@ export default function EventsPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="w-4 h-4 mr-1" />
-                {isEn ? "Clear" : "Limpar"}
+                {pageData?.clear || "Limpar"}
               </Button>
             )}
           </div>
-          
+
           {hasActiveFilters && (
             <p className="text-sm text-muted-foreground mt-4">
-              {filteredEvents.length === 0 
-                ? (isEn ? "No events found" : "Nenhum evento encontrado")
-                : `${filteredEvents.length} ${filteredEvents.length === 1 
-                    ? (isEn ? "event found" : "evento encontrado") 
-                    : (isEn ? "events found" : "eventos encontrados")}`
+              {filteredEvents.length === 0
+                ? (pageData?.noResults || "Nenhum evento encontrado")
+                : `${filteredEvents.length} ${filteredEvents.length === 1 ? "evento encontrado" : "eventos encontrados"}`
               }
             </p>
           )}
@@ -414,27 +318,25 @@ export default function EventsPage() {
         {/* Events Grid */}
         {paginatedEvents.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            {isEn ? "No events available at the moment." : "Sem eventos disponíveis no momento."}
+            {pageData?.noResults || "Sem eventos disponíveis no momento."}
           </div>
         ) : (
           <StaggerContainer className="grid gap-6">
             {paginatedEvents.map((event) => {
-              const content = getContentByLang(event.contents, lang);
-              const imageUrl = event.featuredImageUrl ? getFullImageUrl(event.featuredImageUrl) : null;
               const upcoming = isUpcoming(event.startAt);
-              
+
               return (
                 <StaggerItem key={event.id}>
                   <Link
-                    to={`/events/${event.slug}`}
+                    to={`/events/${event.slug || event.id}`}
                     className="group block bg-secondary/30 border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300"
                   >
                     <div className="flex flex-col md:flex-row">
-                      {imageUrl && (
+                      {event.image && (
                         <div className="md:w-72 h-48 md:h-auto flex-shrink-0">
                           <img
-                            src={imageUrl}
-                            alt={content?.title}
+                            src={event.image}
+                            alt={event.title}
                             className="w-full h-full object-cover"
                             onError={(e) => { e.currentTarget.src = '/placeholder-image.jpg'; }}
                           />
@@ -444,11 +346,11 @@ export default function EventsPage() {
                         <div className="flex items-center gap-3 mb-3 flex-wrap">
                           <Badge variant={upcoming ? "default" : "secondary"} className="text-xs">
                             <Calendar className="w-3 h-3 mr-1" />
-                            {isEn ? formatDateEn(event.startAt) : formatDate(event.startAt)}
+                            {formatDate(event.startAt)}
                           </Badge>
                           {upcoming && (
                             <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                              {isEn ? "Upcoming" : "Próximo"}
+                              {pageData?.upcoming || "Próximo"}
                             </Badge>
                           )}
                           {event.location && (
@@ -459,13 +361,13 @@ export default function EventsPage() {
                           )}
                         </div>
                         <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors mb-2">
-                          {content?.title}
+                          {event.title}
                         </h3>
                         <p className="text-muted-foreground line-clamp-2 mb-4">
-                          {content?.description}
+                          {event.description}
                         </p>
                         <span className="inline-flex items-center text-sm font-medium text-primary group-hover:gap-2 transition-all">
-                          {isEn ? "View details" : "Ver detalhes"}
+                          {pageData?.viewDetails || "Ver detalhes"}
                           <ChevronRight className="w-4 h-4 ml-1" />
                         </span>
                       </div>
@@ -483,12 +385,12 @@ export default function EventsPage() {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious 
+                  <PaginationPrevious
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
                   />
                 </PaginationItem>
-                
+
                 {getPageNumbers().map((page, index) => (
                   <PaginationItem key={index}>
                     {page === 'ellipsis' ? (
@@ -503,9 +405,9 @@ export default function EventsPage() {
                     )}
                   </PaginationItem>
                 ))}
-                
+
                 <PaginationItem>
-                  <PaginationNext 
+                  <PaginationNext
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     className={cn(currentPage === totalPages && "pointer-events-none opacity-50")}
                   />

@@ -1,3 +1,4 @@
+// AdminAuditPage.tsx - Sem colunas ID, De e Para
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ interface WorkflowHistory {
   userName: string | null;
   ipAddress: string;
   createdAt: string;
+  action: string | null;
 }
 
 interface AuditTrialDto {
@@ -71,20 +73,48 @@ interface AuditTrialsPaged {
   pageSize?: number;
 }
 
+// Função para extrair status do JSON before/after
+const extractStatus = (jsonStr: string | null): string => {
+  if (!jsonStr) return '—';
+  
+  try {
+    const data = JSON.parse(jsonStr);
+    return data.Status || data.state || data.status || '—';
+  } catch {
+    return jsonStr.replace(/\s+/g, ' ').trim().slice(0, 48) || '—';
+  }
+};
+
+// Função para extrair nome da entidade da ação
+const extractEntityNameFromAction = (action: string | null): string => {
+  if (!action) return '(desconhecido)';
+  
+  if (action.includes('Menu')) return 'Menu';
+  if (action.includes('News')) return 'News';
+  if (action.includes('PetroleumBlock')) return 'PetroleumBlock';
+  if (action.includes('ProductionStatistics')) return 'ProductionStatistics';
+  if (action.includes('InvestorDocument')) return 'InvestorDocument';
+  if (action.includes('ExpressionOfInterest')) return 'ExpressionOfInterest';
+  if (action.includes('Identity')) return 'Identity';
+  if (action.includes('Faq')) return 'Faq';
+  if (action.includes('Workflow')) return 'Workflow';
+  
+  return action.split('_')[0] || '(desconhecido)';
+};
+
 function auditTrialToRow(a: AuditTrialDto): WorkflowHistory {
-  const snippet = (s: string | null, n: number) =>
-    (s || "").replace(/\s+/g, " ").trim().slice(0, n) || "—";
   return {
     id: a.id,
     entityId: a.entityPrimaryKey || "",
-    entityName: a.entityName || "(desconhecido)",
-    fromStatus: snippet(a.before, 48),
-    toStatus: snippet(a.after, 48),
+    entityName: a.entityName || extractEntityNameFromAction(a.action),
+    fromStatus: extractStatus(a.before),
+    toStatus: extractStatus(a.after),
     comment: a.action,
     changedBy: a.userEmail,
     userName: a.userName,
     ipAddress: "—",
     createdAt: a.createdAt,
+    action: a.action,
   };
 }
 
@@ -95,26 +125,37 @@ const ENTITY_TYPES = [
   { value: 'ProductionStatistics', label: 'Estatísticas de Produção' },
   { value: 'InvestorDocument', label: 'Documentos Investidor' },
   { value: 'ExpressionOfInterest', label: 'EOI' },
+  { value: 'Menu', label: 'Menu' },
+  { value: 'Faq', label: 'FAQ' },
+  { value: 'Workflow', label: 'Workflow' },
+  { value: 'User', label: 'Utilizador' },
+  { value: 'Role', label: 'Perfil' },
+  { value: 'Permission', label: 'Permissão' },
+  { value: 'ContentBlock', label: 'Bloco de Conteúdo' },
+  { value: 'SiteSetting', label: 'Configuração do Site' },
+  { value: 'AuditTrial', label: 'Auditoria' },
 ];
 
-const STATUS_COLORS: Record<string, string> = {
-  Draft: 'bg-gray-500',
-  PendingReview: 'bg-yellow-500',
-  Reviewed: 'bg-blue-500',
-  Approved: 'bg-green-500',
-  Published: 'bg-purple-500',
-  RequestCorrection: 'bg-red-500',
-  Rejected: 'bg-red-700',
-  Archived: 'bg-gray-700',
+const ACTION_LABELS: Record<string, string> = {
+  'Created': 'Criado',
+  'Updated': 'Atualizado',
+  'Deleted': 'Eliminado',
+  'Published': 'Publicado',
+  'Archived': 'Arquivado',
+  'Restored': 'Restaurado',
+  'StatusChanged': 'Status Alterado',
+  'Submitted': 'Submetido',
+  'Approved': 'Aprovado',
+  'Rejected': 'Rejeitado',
+  'Reviewed': 'Revisto',
 };
 
-const getStatusBadge = (status: string) => {
-  const color = STATUS_COLORS[status] || 'bg-gray-500';
-  return (
-    <Badge className={`${color} text-white`}>
-      {status}
-    </Badge>
-  );
+const getActionLabel = (action: string | null): string => {
+  if (!action) return '—';
+  for (const [key, label] of Object.entries(ACTION_LABELS)) {
+    if (action.includes(key)) return label;
+  }
+  return action;
 };
 
 export default function AdminAuditPage() {
@@ -124,7 +165,6 @@ export default function AdminAuditPage() {
   const [selectedHistory, setSelectedHistory] = useState<WorkflowHistory | null>(null);
   const pageSize = 20;
 
-  // Fetch workflow history
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['audit-trials', filterEntity, pageIndex],
     queryFn: async () => {
@@ -146,14 +186,11 @@ export default function AdminAuditPage() {
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Filtrar por entidade (client-side filter)
   const filteredHistories = histories.filter((history) => {
     const searchLower = search.toLowerCase();
     const matchesSearch = 
       history.entityName?.toLowerCase().includes(searchLower) ||
-      history.entityId?.toLowerCase().includes(searchLower) ||
       history.userName?.toLowerCase().includes(searchLower) ||
-      history.ipAddress?.includes(searchLower) ||
       history.comment?.toLowerCase().includes(searchLower);
     
     const matchesEntity = filterEntity === 'all' || history.entityName === filterEntity;
@@ -166,25 +203,21 @@ export default function AdminAuditPage() {
   };
 
   const handlePreviousPage = () => {
-    if (pageIndex > 0) {
-      setPageIndex(pageIndex - 1);
-    }
+    if (pageIndex > 0) setPageIndex(pageIndex - 1);
   };
 
   const handleNextPage = () => {
-    if (pageIndex + 1 < totalPages) {
-      setPageIndex(pageIndex + 1);
-    }
+    if (pageIndex + 1 < totalPages) setPageIndex(pageIndex + 1);
   };
 
   return (
-    <AdminLayout title="Workflow History" subtitle="Histórico de alterações de estado do workflow">
+    <AdminLayout title="Auditoria" subtitle="Histórico de alterações do sistema">
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Histórico de Workflow</CardTitle>
+            <CardTitle>Histórico de Auditoria</CardTitle>
             <CardDescription>
-              Registo de todas as alterações de estado das entidades no sistema
+              Registo de todas as alterações e ações realizadas no sistema
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -193,7 +226,7 @@ export default function AdminAuditPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Pesquisar por entidade, ID, utilizador, IP ou comentário..."
+                  placeholder="Pesquisar por entidade, utilizador ou ação..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
@@ -230,18 +263,16 @@ export default function AdminAuditPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Data/Hora</TableHead>
+                        <TableHead>Ação</TableHead>
                         <TableHead>Entidade</TableHead>
-                        <TableHead>Status Anterior</TableHead>
-                        <TableHead>Novo Status</TableHead>
                         <TableHead>Utilizador</TableHead>
-                        <TableHead>IP Address</TableHead>
                         <TableHead className="text-right">Detalhes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredHistories.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                             Nenhum registo encontrado
                           </TableCell>
                         </TableRow>
@@ -252,17 +283,17 @@ export default function AdminAuditPage() {
                               {format(new Date(history.createdAt), "dd/MM/yyyy HH:mm:ss", { locale: pt })}
                             </TableCell>
                             <TableCell>
+                              <Badge variant="secondary">
+                                {getActionLabel(history.comment)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
                               <Badge variant="outline">
                                 {getEntityLabel(history.entityName)}
                               </Badge>
                             </TableCell>
-                            <TableCell>{getStatusBadge(history.fromStatus)}</TableCell>
-                            <TableCell>{getStatusBadge(history.toStatus)}</TableCell>
                             <TableCell>
                               {history.userName || history.changedBy || 'Sistema'}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">
-                              {history.ipAddress}
                             </TableCell>
                             <TableCell className="text-right">
                               <Button
@@ -328,49 +359,28 @@ export default function AdminAuditPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedHistory && (
-            <div className="space-y-6 py-4">
-              {/* Status Transition */}
-              <div className="flex items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg">
-                <div className="text-center flex-1">
-                  <p className="text-sm text-muted-foreground mb-2">De</p>
-                  {getStatusBadge(selectedHistory.fromStatus)}
-                </div>
-                <div className="text-2xl text-muted-foreground">→</div>
-                <div className="text-center flex-1">
-                  <p className="text-sm text-muted-foreground mb-2">Para</p>
-                  {getStatusBadge(selectedHistory.toStatus)}
-                </div>
+            <div className="space-y-4 py-4">
+              {/* Ação */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">Ação</p>
+                <Badge variant="secondary" className="text-base">
+                  {getActionLabel(selectedHistory.comment)}
+                </Badge>
               </div>
 
-              {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">ID da Entidade</p>
-                  <p className="font-mono text-xs mt-1 break-all">{selectedHistory.entityId}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Entidade</p>
-                  <p className="font-medium mt-1">{getEntityLabel(selectedHistory.entityName)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Utilizador</p>
-                  <p className="font-medium mt-1">{selectedHistory.userName || selectedHistory.changedBy || 'Sistema'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">IP Address</p>
-                  <p className="font-mono text-xs mt-1">{selectedHistory.ipAddress}</p>
-                </div>
+              {/* Utilizador */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">Utilizador</p>
+                <p className="font-medium">{selectedHistory.userName || selectedHistory.changedBy || 'Sistema'}</p>
               </div>
 
-              {/* Comment */}
-              {selectedHistory.comment && (
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-sm">Comentário</p>
-                  <div className="bg-muted/30 rounded-lg p-4">
-                    <p className="text-sm">{selectedHistory.comment}</p>
-                  </div>
-                </div>
-              )}
+              {/* Data */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">Data/Hora</p>
+                <p className="font-mono text-sm">
+                  {format(new Date(selectedHistory.createdAt), "dd/MM/yyyy 'às' HH:mm:ss", { locale: pt })}
+                </p>
+              </div>
             </div>
           )}
         </DialogContent>

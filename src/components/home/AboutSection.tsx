@@ -1,32 +1,15 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { ArrowRight, Shield, Target, Globe, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useContentBlock } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 import refineryImage from "@/assets/refinery.jpg";
 
-const defaultValues = [
-  {
-    iconKey: "Shield",
-    titleKey: "about.values.transparency.title",
-    descriptionKey: "about.values.transparency.description",
-  },
-  {
-    iconKey: "Target",
-    titleKey: "about.values.excellence.title",
-    descriptionKey: "about.values.excellence.description",
-  },
-  {
-    iconKey: "Globe",
-    titleKey: "about.values.sustainability.title",
-    descriptionKey: "about.values.sustainability.description",
-  },
-  {
-    iconKey: "Lightbulb",
-    titleKey: "about.values.innovation.title",
-    descriptionKey: "about.values.innovation.description",
-  },
+const defaultValuesData = [
+  { iconKey: "Shield", title: "Transparência", description: "Compromisso com a clareza e abertura em todas as operações." },
+  { iconKey: "Target", title: "Excelência", description: "Padrões internacionais de qualidade e eficiência." },
+  { iconKey: "Globe", title: "Sustentabilidade", description: "Desenvolvimento responsável dos recursos energéticos." },
+  { iconKey: "Lightbulb", title: "Inovação", description: "Adopção de tecnologias avançadas no sector." },
 ];
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -37,16 +20,13 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export function AboutSection() {
-  const { t } = useTranslation();
+  const { data: homeData } = usePageData("home");
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
-  // CMS content block with fallback
-  const { data: cmsBlock } = useContentBlock("home", "about");
-  const cms = cmsBlock?.content;
-  const image = cms?.image || refineryImage;
-  const statValue = cms?.statValue || "45+";
-  const values = cms?.values?.length ? cms.values : defaultValues;
+  const image = refineryImage;
+  const statValue = "45+";
+  const values = homeData?.about?.values?.length ? homeData.about.values : defaultValuesData;
 
   return (
     <section ref={ref} className="section-padding bg-background overflow-hidden">
@@ -66,7 +46,7 @@ export function AboutSection() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
-              
+
               {/* Floating stat card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -76,7 +56,7 @@ export function AboutSection() {
               >
                 <div className="text-3xl font-bold text-primary mb-1">{statValue}</div>
                 <div className="text-sm text-muted-foreground">
-                  {cms?.statLabel || t("about.yearsExperience")}
+                  {homeData?.about?.yearsExperience || "Anos de experiência no sector petrolífero angolano"}
                 </div>
               </motion.div>
             </div>
@@ -91,21 +71,21 @@ export function AboutSection() {
             transition={{ duration: 0.8 }}
           >
             <span className="text-sm font-semibold text-primary uppercase tracking-widest mb-4 block">
-              {cms?.label || t("about.label")}
+              {homeData?.about?.label || "Sobre a ANPG"}
             </span>
             <h2 className="section-title mb-6">
-              {cms?.title || t("about.title")}<br />
-              <span className="text-primary">{cms?.titleHighlight || t("about.titleHighlight")}</span>
+              {homeData?.about?.title || "Regulando o Presente,"}<br />
+              <span className="text-primary">{homeData?.about?.titleHighlight || "Construindo o Futuro"}</span>
             </h2>
             <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-              {cms?.description || t("about.description")}
+              {homeData?.about?.description || ""}
             </p>
 
             {/* Values Grid */}
             <div className="grid grid-cols-2 gap-6 mb-10">
               {values.map((value: any, index: number) => (
                 <motion.div
-                  key={value.titleKey || index}
+                  key={value.title || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                   transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
@@ -116,10 +96,10 @@ export function AboutSection() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-foreground mb-1">
-                      {value.title || (value.titleKey ? t(value.titleKey) : "")}
+                      {value.title || ""}
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {value.description || (value.descriptionKey ? t(value.descriptionKey) : "")}
+                      {value.description || ""}
                     </p>
                   </div>
                 </motion.div>
@@ -127,7 +107,7 @@ export function AboutSection() {
             </div>
 
             <Button variant="heroOutlineLight" size="lg" className="group">
-              {cms?.cta || t("about.cta")}
+              {homeData?.about?.cta || "Conhecer a ANPG"}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </motion.div>

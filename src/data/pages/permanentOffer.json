@@ -1,0 +1,126 @@
+{
+  "title": "Oferta Permanente",
+  "subtitle": "Blocos Disponíveis",
+  "description": "Blocos petrolíferos disponíveis para negociação contínua fora das licitações.",
+  "intro": "A Oferta Permanente é um mecanismo complementar às rondas de licitação, permitindo às empresas petrolíferas nacionais e internacionais negociar directamente com a ANPG a aquisição de direitos de exploração e produção em blocos seleccionados, de forma contínua e sem prazos fixos.",
+  "howItWorksTitle": "Como Funciona",
+  "howItWorks": [
+    {
+      "title": "Consulta de Blocos",
+      "desc": "Empresas interessadas consultam a lista de blocos disponíveis e os respectivos pacotes de dados técnicos."
+    },
+    {
+      "title": "Manifestação de Interesse",
+      "desc": "Submissão formal de manifestação de interesse junto da ANPG, incluindo perfil da empresa e plano preliminar."
+    },
+    {
+      "title": "Negociação Directa",
+      "desc": "A ANPG avalia a proposta e inicia negociações bilaterais sobre termos contratuais e programas de trabalho."
+    },
+    {
+      "title": "Atribuição do Bloco",
+      "desc": "Após acordo, o contrato de concessão é celebrado e submetido para aprovação ministerial."
+    }
+  ],
+  "advantagesTitle": "Vantagens",
+  "advantages": [
+    {
+      "title": "Flexibilidade Temporal",
+      "desc": "Sem prazos fixos — as empresas podem candidatar-se a qualquer momento."
+    },
+    {
+      "title": "Negociação Directa",
+      "desc": "Processo bilateral que permite termos adaptados ao perfil de cada investidor."
+    },
+    {
+      "title": "Acesso Contínuo",
+      "desc": "Blocos disponíveis são actualizados regularmente à medida que novas áreas são libertadas."
+    },
+    {
+      "title": "Dados Técnicos",
+      "desc": "Pacotes de dados sísmicos e geológicos disponíveis para avaliação prévia."
+    }
+  ],
+  "availableBlocksTitle": "Blocos Disponíveis",
+  "availableBlocksIntro": "Os blocos abaixo estão actualmente disponíveis para negociação no regime de Oferta Permanente. Para informações detalhadas e pacotes de dados, contacte a ANPG.",
+  "blocks": [
+    {
+      "name": "Bloco KON-5",
+      "basin": "Bacia do Kwanza Onshore",
+      "area": "3.850 km²",
+      "depth": "Onshore",
+      "status": "Disponível"
+    },
+    {
+      "name": "Bloco KON-6",
+      "basin": "Bacia do Kwanza Onshore",
+      "area": "4.120 km²",
+      "depth": "Onshore",
+      "status": "Disponível"
+    },
+    {
+      "name": "Bloco KON-8",
+      "basin": "Bacia do Kwanza Onshore",
+      "area": "3.600 km²",
+      "depth": "Onshore",
+      "status": "Em Negociação"
+    },
+    {
+      "name": "Bloco KON-9",
+      "basin": "Bacia do Kwanza Onshore",
+      "area": "4.950 km²",
+      "depth": "Onshore",
+      "status": "Disponível"
+    },
+    {
+      "name": "Bloco KON-10",
+      "basin": "Bacia do Kwanza Onshore",
+      "area": "5.200 km²",
+      "depth": "Onshore",
+      "status": "Disponível"
+    },
+    {
+      "name": "Bloco CON-1",
+      "basin": "Bacia do Congo Onshore",
+      "area": "6.400 km²",
+      "depth": "Onshore",
+      "status": "Disponível"
+    },
+    {
+      "name": "Bloco CON-6",
+      "basin": "Bacia do Congo Onshore",
+      "area": "5.780 km²",
+      "depth": "Onshore",
+      "status": "Em Negociação"
+    },
+    {
+      "name": "Bloco CO-13",
+      "basin": "Bacia do Baixo Congo",
+      "area": "7.100 km²",
+      "depth": "Deepwater",
+      "status": "Disponível"
+    }
+  ],
+  "blockHeaders": {
+    "name": "Bloco",
+    "basin": "Bacia",
+    "area": "Área",
+    "depth": "Profundidade",
+    "status": "Estado"
+  },
+  "noDataText": "Sem dados disponíveis",
+  "eligibilityTitle": "Elegibilidade",
+  "eligibility": [
+    "Empresas com experiência comprovada em exploração e produção de petróleo e gás",
+    "Capacidade financeira demonstrada para executar o programa de trabalho mínimo",
+    "Cumprimento dos requisitos de conteúdo local estabelecidos pela legislação angolana",
+    "Compromisso com as normas ambientais e de segurança da ANPG"
+  ],
+  "ctaTitle": "Interessado em Negociar?",
+  "ctaDesc": "Entre em contacto com a Direcção de Negociações da ANPG para obter mais informações sobre blocos disponíveis e iniciar o processo de manifestação de interesse.",
+  "ctaButton": "Contactar a ANPG",
+  "ctaEmail": "Enviar Email",
+  "ctaEmailAddress": "investimentos@anpg.co.ao",
+  "statusAvailable": "Disponível",
+  "statusNegotiating": "Em Negociação"
+}

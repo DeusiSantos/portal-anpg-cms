@@ -1,0 +1,46 @@
+{
+  "title": "Termos de Utilização",
+  "subtitle": "Legal",
+  "description": "Condições gerais de utilização do website da ANPG.",
+  "intro": "Estes Termos de Utilização regulam o acesso e utilização do website da Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG). Ao aceder a este website, aceita ficar vinculado por estes termos.",
+  "lastUpdated": "Última actualização",
+  "lastUpdatedValue": "Janeiro 2025",
+  "sections": [
+    {
+      "key": "acceptance",
+      "title": "Aceitação dos Termos",
+      "content": "Ao aceder e utilizar este website, declara ter lido, compreendido e aceite estes Termos de Utilização. Se não concordar com alguma parte destes termos, não deverá utilizar este website."
+    },
+    {
+      "key": "usage",
+      "title": "Utilização do Website",
+      "content": "Este website destina-se exclusivamente a fins informativos sobre as actividades da ANPG e oportunidades de investimento no sector petrolífero angolano. Compromete-se a utilizar este website de forma lícita, respeitando a legislação aplicável e os direitos de terceiros."
+    },
+    {
+      "key": "intellectualProperty",
+      "title": "Propriedade Intelectual",
+      "content": "Todos os conteúdos deste website, incluindo textos, imagens, logótipos, gráficos e software, são propriedade da ANPG ou dos seus licenciadores e estão protegidos por direitos de autor e outras leis de propriedade intelectual. Não é permitida a reprodução, distribuição ou modificação sem autorização prévia."
+    },
+    {
+      "key": "disclaimer",
+      "title": "Isenção de Responsabilidade",
+      "content": "A ANPG esforça-se por manter as informações deste website actualizadas e precisas, mas não garante a exactidão, integridade ou actualidade dos conteúdos. A utilização das informações disponibilizadas é da inteira responsabilidade do utilizador."
+    },
+    {
+      "key": "links",
+      "title": "Links Externos",
+      "content": "Este website pode conter links para websites externos. A ANPG não é responsável pelo conteúdo, políticas de privacidade ou práticas de websites de terceiros."
+    },
+    {
+      "key": "jurisdiction",
+      "title": "Lei Aplicável e Jurisdição",
+      "content": "Estes Termos de Utilização são regidos pela legislação da República de Angola. Quaisquer litígios serão submetidos à jurisdição exclusiva dos tribunais angolanos."
+    }
+  ],
+  "updates": {
+    "title": "Alterações aos Termos",
+    "content": "A ANPG reserva-se o direito de modificar estes Termos de Utilização a qualquer momento. As alterações entram em vigor imediatamente após a sua publicação neste website. Recomendamos que consulte esta página periodicamente."
+  },
+  "questions": "Se tiver dúvidas sobre estes Termos, contacte-nos através de",
+  "contactEmail": "geral@anpg.co.ao"
+}

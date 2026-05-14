@@ -1,0 +1,121 @@
+{
+  "launchDate": "Lançamento: 4º Trimestre 2025",
+  "bannerTitle": "Angola, o local certo para o seu investimento!",
+  "bannerDescription": "A Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG), na sua qualidade de Concessionária Nacional, anuncia a Licitação 2025 para atribuição de concessões petrolíferas para a exploração das Bacias Marítimas do Kwanza e de Benguela, aberto a entidades nacionais ou estrangeiras.",
+  "bannerHighlight": "Bacias Marítimas do Kwanza e de Benguela",
+  "objectivesTitle": "Objectivos",
+  "objectivesSubtitle": "Metas estratégicas da Licitação 2025",
+  "objectives": [
+    {
+      "title": "Reavaliar Potencial",
+      "description": "Reavaliar o potencial petrolífero existente nas Bacias Terrestres do Baixo Congo e do Kwanza."
+    },
+    {
+      "title": "Inovação Tecnológica",
+      "description": "Alavancar a inovação tecnológica e as boas práticas de governação."
+    },
+    {
+      "title": "Relançar E&P",
+      "description": "Relançar a exploração e produção de hidrocarbonetos nas zonas terrestres das bacias."
+    },
+    {
+      "title": "PMEs e Emprego",
+      "description": "Estimular a participação de pequenas e médias empresas petrolíferas e promover a incorporação de mão-de-obra angolana qualificada."
+    },
+    {
+      "title": "Mitigar Declínio",
+      "description": "Atenuar o declínio da produção com o incremento das actividades de exploração e descoberta de novos recursos."
+    }
+  ],
+  "phasesTitle": "Fases do Processo",
+  "phasesSubtitle": "Cronograma detalhado da licitação",
+  "phases": [
+    {
+      "title": "Envio de Cartas",
+      "description": "Envio de cartas a informar sobre o processo e promoção.",
+      "period": "Março - Outubro 2025",
+      "status": "active"
+    },
+    {
+      "title": "Lançamento Oficial",
+      "description": "Lançamento da Licitação para atribuição de concessões petrolíferas.",
+      "period": "4º Trimestre 2025",
+      "status": "upcoming"
+    },
+    {
+      "title": "Submissão de Propostas",
+      "description": "Período de 30 a 40 dias para submissão das propostas após o lançamento oficial.",
+      "period": "1º Trimestre 2026",
+      "status": "upcoming"
+    },
+    {
+      "title": "Acto Público",
+      "description": "Abertura das propostas no primeiro dia útil após o término do prazo.",
+      "period": "1º Trimestre 2026",
+      "status": "upcoming"
+    },
+    {
+      "title": "Qualificação e Avaliação",
+      "description": "Período de 30 a 45 dias para qualificação e avaliação das propostas.",
+      "period": "1º Trimestre 2026",
+      "status": "upcoming"
+    },
+    {
+      "title": "Adjudicação",
+      "description": "Comunicação dos resultados aos concorrentes.",
+      "period": "1º Trimestre 2026",
+      "status": "upcoming"
+    },
+    {
+      "title": "Negociação",
+      "description": "Período de 15 a 65 dias para negociação dos contratos.",
+      "period": "1º - 2º Trimestre 2026",
+      "status": "upcoming"
+    },
+    {
+      "title": "Assinatura",
+      "description": "Assinatura final dos contratos de concessão.",
+      "period": "1º - 3º Trimestre 2026",
+      "status": "upcoming"
+    }
+  ],
+  "statusInProgress": "Em curso",
+  "mapTitle": "Mapa de Blocos",
+  "mapSubtitle": "Localização dos blocos disponíveis nas Bacias do Kwanza e Benguela",
+  "documentsTitle": "Documentos Úteis",
+  "documentsSubtitle": "Materiais de apoio ao processo",
+  "documents": [
+    {
+      "title": "Brochura Técnica",
+      "description": "Informações técnicas sobre as Bacias do Kwanza e Benguela",
+      "type": "PDF",
+      "size": "4.2 MB"
+    },
+    {
+      "title": "Modelo de Contrato",
+      "description": "Contrato de Partilha de Produção 2025",
+      "type": "PDF",
+      "size": "1.8 MB"
+    },
+    {
+      "title": "Termos de Referência",
+      "description": "Requisitos e critérios de avaliação",
+      "type": "PDF",
+      "size": "2.1 MB"
+    },
+    {
+      "title": "Mapa de Blocos",
+      "description": "Localização geográfica dos blocos disponíveis",
+      "type": "PDF",
+      "size": "8.5 MB"
+    }
+  ],
+  "faqTitle": "Perguntas Frequentes",
+  "faqSubtitle": "Esclarecimentos sobre o processo de licitação",
+  "ctaTitle": "Interessado em Participar?",
+  "ctaDescription": "Manifeste o seu interesse e receba informações actualizadas sobre o processo de licitação, incluindo datas importantes e requisitos de participação.",
+  "ctaInterest": "Manifestar Interesse",
+  "ctaContact": "Contactar Equipa",
+  "heroInterest": "Manifestar Interesse",
+  "heroBrochure": "Descarregar Brochura"
+}

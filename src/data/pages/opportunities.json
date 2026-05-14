@@ -1,0 +1,25 @@
+{
+  "title": "Oportunidades de Investimento",
+  "subtitle": "Investir em Angola",
+  "description": "Descubra as oportunidades de investimento no sector petrolífero angolano.",
+  "items": [
+    {
+      "icon": "FileCheck",
+      "title": "Concurso 2025",
+      "description": "Concurso público para atribuição de direitos de exploração em novas áreas petrolíferas.",
+      "href": "/opportunities/tender-2025"
+    },
+    {
+      "icon": "Gift",
+      "title": "Oferta Permanente",
+      "description": "Oferta permanente de blocos petrolíferos para investidores interessados.",
+      "href": "/opportunities/permanent-offer"
+    },
+    {
+      "icon": "Archive",
+      "title": "Concurso 2023",
+      "description": "Arquivo do concurso público de 2023 para atribuição de direitos de exploração.",
+      "href": "/opportunities/tender-2023"
+    }
+  ]
+}

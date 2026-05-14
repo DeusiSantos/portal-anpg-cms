@@ -1,0 +1,35 @@
+{
+  "title": "Sustentabilidade",
+  "subtitle": "Serviços",
+  "description": "Compromisso da ANPG com práticas ambientalmente responsáveis no sector petrolífero angolano.",
+  "intro": "A ANPG está comprometida com a promoção de práticas ambientalmente responsáveis no sector petrolífero. Trabalhamos para garantir que o desenvolvimento dos recursos energéticos de Angola seja realizado de forma sustentável, protegendo o ambiente e contribuindo para a transição energética global.",
+  "statsTitle": "Metas Ambientais",
+  "stats": [
+    { "value": "30%", "label": "Redução de Emissões", "description": "Meta para 2030" },
+    { "value": "Zero", "label": "Flaring Rotineiro", "description": "Objectivo até 2030" },
+    { "value": "100%", "label": "Monitorização", "description": "Cobertura ambiental" },
+    { "value": "50+", "label": "Projectos", "description": "Iniciativas ambientais activas" }
+  ],
+  "pillarsTitle": "Pilares da Sustentabilidade",
+  "pillars": [
+    { "iconKey": "Wind", "title": "Transição Energética", "description": "Apoio ao desenvolvimento de fontes de energia renovável e diversificação da matriz energética nacional." },
+    { "iconKey": "Droplets", "title": "Gestão de Recursos Hídricos", "description": "Monitorização e protecção dos recursos hídricos nas áreas de operação petrolífera." },
+    { "iconKey": "TreePine", "title": "Biodiversidade", "description": "Preservação dos ecossistemas e habitats naturais nas zonas de exploração e produção." },
+    { "iconKey": "Recycle", "title": "Economia Circular", "description": "Promoção de práticas de reutilização e reciclagem na indústria petrolífera." }
+  ],
+  "initiativesTitle": "Iniciativas em Curso",
+  "initiatives": [
+    { "title": "Programa de Redução de Emissões", "description": "Implementação de tecnologias para captura e redução de gases de efeito estufa nas operações petrolíferas.", "status": "Em curso" },
+    { "title": "Eliminação do Flaring", "description": "Projectos de aproveitamento do gás associado para geração de energia e outras aplicações.", "status": "Em curso" },
+    { "title": "Monitorização Ambiental Contínua", "description": "Sistema de monitorização em tempo real da qualidade do ar, água e solo nas áreas de operação.", "status": "Activo" },
+    { "title": "Reabilitação de Áreas Degradadas", "description": "Programas de recuperação ambiental em áreas afectadas por operações petrolíferas passadas.", "status": "Em curso" }
+  ],
+  "sdgTitle": "Alinhamento com os ODS",
+  "sdgIntro": "As nossas iniciativas estão alinhadas com os Objectivos de Desenvolvimento Sustentável das Nações Unidas:",
+  "sdgGoals": [
+    { "number": 7, "title": "Energia Limpa", "iconKey": "Sun" },
+    { "number": 13, "title": "Acção Climática", "iconKey": "Wind" },
+    { "number": 14, "title": "Vida Aquática", "iconKey": "Droplets" },
+    { "number": 15, "title": "Vida Terrestre", "iconKey": "TreePine" }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "title": "Mapa de Concessões",
+  "subtitle": "Blocos & Operadores",
+  "description": "Mapa interactivo de todos os blocos petrolíferos de Angola com informações detalhadas sobre operadores e participações.",
+  "basinDistribution": "Distribuição por Bacia",
+  "basinDistributionDesc": "Blocos concessionados por região sedimentar",
+  "blocksLabel": "blocos",
+  "concessionsMap": "Mapa de Concessões",
+  "concessionsMapDesc": "Pesquise e explore todos os blocos por bacia, operador e estado",
+  "mapView": "Vista Mapa",
+  "listView": "Vista Lista",
+  "downloadPdf": "Descarregar Mapa PDF",
+  "topOperators": "Principais Operadores",
+  "topOperatorsDesc": "Empresas com maior presença no sector",
+  "operatedBlocks": "Blocos Operados",
+  "inProduction": "Em Produção",
+  "loadingMap": "A carregar mapa...",
+  "updatedData": "Dados Actualizados",
+  "updatedDataDesc": "Os dados apresentados nesta página são baseados no Mapa de Concessões da ANPG de Maio 2025. Para informações mais detalhadas ou actualizações, consulte o",
+  "officialPortal": "portal oficial da ANPG",
+  "basins": [
+    { "key": "baixo-congo", "label": "Baixo Congo", "count": 15 },
+    { "key": "kwanza", "label": "Kwanza", "count": 12 },
+    { "key": "benguela", "label": "Benguela", "count": 5 },
+    { "key": "namibe", "label": "Namibe", "count": 4 }
+  ],
+  "topOperatorsList": [
+    { "name": "TotalEnergies", "blocks": 8, "production": 6 },
+    { "name": "Chevron", "blocks": 7, "production": 5 },
+    { "name": "Eni", "blocks": 5, "production": 4 },
+    { "name": "BP", "blocks": 4, "production": 3 },
+    { "name": "Sonangol P&P", "blocks": 6, "production": 5 },
+    { "name": "Esso", "blocks": 3, "production": 2 },
+    { "name": "Equinor", "blocks": 3, "production": 2 },
+    { "name": "ExxonMobil", "blocks": 2, "production": 1 }
+  ],
+  "blocks": [
+    {
+      "name": "Bloco 0",
+      "operator": "Chevron",
+      "basin": "Baixo Congo",
+      "area": "5.765 km²",
+      "status": "Em produção",
+      "depth": "Offshore raso (< 200 m)"
+    },
+    {
+      "name": "Bloco 14",
+      "operator": "Chevron",
+      "basin": "Baixo Congo",
+      "area": "4.037 km²",
+      "status": "Em produção",
+      "depth": "Offshore profundo (200–1.500 m)"
+    },
+    {
+      "name": "Bloco 15",
+      "operator": "Esso",
+      "basin": "Baixo Congo",
+      "area": "7.988 km²",
+      "status": "Em produção",
+      "depth": "Offshore profundo (200–1.500 m)"
+    },
+    {
+      "name": "Bloco 17",
+      "operator": "TotalEnergies",
+      "basin": "Baixo Congo",
+      "area": "11.816 km²",
+      "status": "Em produção",
+      "depth": "Offshore ultra-profundo (> 1.500 m)"
+    },
+    {
+      "name": "Bloco 18",
+      "operator": "BP",
+      "basin": "Baixo Congo",
+      "area": "7.600 km²",
+      "status": "Em produção",
+      "depth": "Offshore ultra-profundo (> 1.500 m)"
+    },
+    {
+      "name": "Bloco 31",
+      "operator": "BP",
+      "basin": "Baixo Congo",
+      "area": "9.100 km²",
+      "status": "Em produção",
+      "depth": "Offshore ultra-profundo (> 1.500 m)"
+    },
+    {
+      "name": "Bloco 32",
+      "operator": "TotalEnergies",
+      "basin": "Baixo Congo",
+      "area": "8.000 km²",
+      "status": "Em desenvolvimento",
+      "depth": "Offshore ultra-profundo (> 1.500 m)"
+    },
+    {
+      "name": "Bloco KON5",
+      "operator": "Sonangol P&P",
+      "basin": "Kwanza",
+      "area": "3.200 km²",
+      "status": "Em exploração",
+      "depth": "Onshore"
+    },
+    {
+      "name": "Bloco 20",
+      "operator": "Eni",
+      "basin": "Kwanza",
+      "area": "5.500 km²",
+      "status": "Em produção",
+      "depth": "Offshore profundo (200–1.500 m)"
+    },
+    {
+      "name": "Bloco 21",
+      "operator": "Eni",
+      "basin": "Kwanza",
+      "area": "4.800 km²",
+      "status": "Em exploração",
+      "depth": "Offshore profundo (200–1.500 m)"
+    },
+    {
+      "name": "Bloco 22",
+      "operator": "Equinor",
+      "basin": "Kwanza",
+      "area": "7.200 km²",
+      "status": "Em exploração",
+      "depth": "Offshore ultra-profundo (> 1.500 m)"
+    },
+    {
+      "name": "Bloco 25",
+      "operator": "Sonangol P&P",
+      "basin": "Benguela",
+      "area": "6.100 km²",
+      "status": "Em exploração",
+      "depth": "Offshore profundo (200–1.500 m)"
+    },
+    {
+      "name": "Bloco 35",
+      "operator": "TotalEnergies",
+      "basin": "Namibe",
+      "area": "9.500 km²",
+      "status": "Em exploração",
+      "depth": "Offshore ultra-profundo (> 1.500 m)"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { usePageData } from "@/hooks/pages/usePageData";
 import { 
   Calendar, 
   ArrowLeft, 
@@ -10,8 +11,7 @@ import {
   ChevronRight,
   CalendarDays,
   MapPin,
-  ExternalLink,
-  Loader2
+  ExternalLink
 } from "lucide-react";
 import { useQuery } from '@tanstack/react-query';
 import { PageLayout } from "@/components/layout/PageLayout";
@@ -100,17 +100,21 @@ const formatDate = (isoDateString: string): string => {
 };
 
 // Função para obter o status do evento
-const getEventStatus = (startAt: string, endAt: string): { label: string; color: string } => {
+const getEventStatus = (
+  startAt: string,
+  endAt: string,
+  labels?: { upcoming?: string; ongoing?: string; finished?: string }
+): { label: string; color: string } => {
   const now = new Date();
   const start = new Date(startAt);
   const end = new Date(endAt);
-  
+
   if (now < start) {
-    return { label: "Em breve", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" };
+    return { label: labels?.upcoming || "Em breve", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" };
   } else if (now >= start && now <= end) {
-    return { label: "A decorrer", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" };
+    return { label: labels?.ongoing || "A decorrer", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" };
   } else {
-    return { label: "Finalizado", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" };
+    return { label: labels?.finished || "Finalizado", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" };
   }
 };
 
@@ -212,7 +216,7 @@ function useRelatedEvents(currentEventId: string, limit: number = 3) {
         const portugueseContent = item.contents?.find(c => c.lang === 1);
         const englishContent = item.contents?.find(c => c.lang === 2);
         const content = portugueseContent || englishContent || item.contents?.[0];
-        const eventStatus = getEventStatus(item.startAt, item.endAt);
+        const eventStatus = getEventStatus(item.startAt, item.endAt, undefined);
         
         return {
           id: item.id,
@@ -234,8 +238,8 @@ function useRelatedEvents(currentEventId: string, limit: number = 3) {
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { data: pageData } = usePageData("eventDetail");
 
   const { data: event, isLoading, isError } = useEventById(id);
   const { data: relatedEvents = [] } = useRelatedEvents(id || '', 3);
@@ -243,10 +247,10 @@ export default function EventDetailPage() {
   if (isLoading) {
     return (
       <PageLayout
-        title="A carregar..."
-        subtitle="Eventos"
+        title={pageData?.loadingTitle || "A carregar..."}
+        subtitle={pageData?.subtitle || "Eventos"}
         icon={<CalendarDays className="w-8 h-8 text-primary" />}
-        breadcrumbs={[{ labelKey: "nav.media", href: "/media" }, { label: "Eventos", href: "/media" }, { label: "..." }]}
+        breadcrumbs={[{ labelKey: "nav.media", href: "/media" }, { label: pageData?.subtitle || "Eventos", href: "/media" }, { label: "..." }]}
       >
         <div className="max-w-4xl mx-auto space-y-6">
           <Skeleton className="h-8 w-3/4" />
@@ -262,32 +266,37 @@ export default function EventDetailPage() {
   if (isError || !event || !event.isActive) {
     return (
       <PageLayout
-        title="Evento não encontrado"
-        subtitle="Eventos"
+        title={pageData?.notFoundTitle || "Evento não encontrado"}
+        subtitle={pageData?.subtitle || "Eventos"}
         icon={<CalendarDays className="w-8 h-8 text-primary" />}
         breadcrumbs={[
           { labelKey: "nav.media", href: "/media" },
-          { label: "Eventos", href: "/media" },
-          { label: "Evento não encontrado" },
+          { label: pageData?.subtitle || "Eventos", href: "/media" },
+          { label: pageData?.notFoundTitle || "Evento não encontrado" },
         ]}
       >
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-foreground mb-4">
-            O evento que procura não foi encontrado
+            {pageData?.notFoundHeading || "O evento que procura não foi encontrado"}
           </h2>
           <p className="text-muted-foreground mb-8">
-            Verifique o endereço ou navegue pelos nossos eventos.
+            {pageData?.notFoundMessage || "Verifique o endereço ou navegue pelos nossos eventos."}
           </p>
           <Button onClick={() => navigate("/media")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar aos Eventos
+            {pageData?.backButton || "Voltar aos Eventos"}
           </Button>
         </div>
       </PageLayout>
     );
   }
 
-  const eventStatus = getEventStatus(event.rawStartDate, event.rawEndDate);
+  const statusLabels = {
+    upcoming: pageData?.statusUpcoming,
+    ongoing: pageData?.statusOngoing,
+    finished: pageData?.statusFinished,
+  };
+  const eventStatus = getEventStatus(event.rawStartDate, event.rawEndDate, statusLabels);
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = event.title;
 
@@ -303,24 +312,24 @@ export default function EventDetailPage() {
   return (
     <PageLayout
       title={event.title}
-      subtitle="Eventos"
+      subtitle={pageData?.subtitle || "Eventos"}
       backgroundImage={event.image}
       icon={<CalendarDays className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.media", href: "/media" },
-        { label: "Eventos", href: "/media" },
+        { label: pageData?.subtitle || "Eventos", href: "/media" },
         { label: event.title },
       ]}
     >
       <div className="max-w-4xl mx-auto">
         <SectionTransition>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate("/media")}
             className="mb-8 -ml-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar aos Eventos
+            {pageData?.backButton || "Voltar aos Eventos"}
           </Button>
         </SectionTransition>
 
@@ -386,14 +395,14 @@ export default function EventDetailPage() {
               {event.registrationUrl && (
                 <a href={event.registrationUrl} target="_blank" rel="noopener noreferrer">
                   <Button className="gap-2">
-                    Registar-se <ExternalLink className="w-4 h-4" />
+                    {pageData?.registerButton || "Registar-se"} <ExternalLink className="w-4 h-4" />
                   </Button>
                 </a>
               )}
               {event.mapUrl && (
                 <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" className="gap-2">
-                    Ver no mapa <MapPin className="w-4 h-4" />
+                    {pageData?.mapButton || "Ver no mapa"} <MapPin className="w-4 h-4" />
                   </Button>
                 </a>
               )}
@@ -406,7 +415,7 @@ export default function EventDetailPage() {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Partilhar:</span>
+                <span className="text-muted-foreground">{pageData?.shareLabel || "Partilhar:"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => handleShare('facebook')} className="rounded-full hover:bg-primary/10 hover:text-primary hover:border-primary/30">
@@ -427,7 +436,7 @@ export default function EventDetailPage() {
       {relatedEvents.length > 0 && (
         <SectionTransition delay={0.6}>
           <div className="mt-16 pt-16 border-t border-border">
-            <h2 className="text-2xl font-bold text-foreground mb-8">Eventos Relacionados</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-8">{pageData?.relatedTitle || "Eventos Relacionados"}</h2>
             
             <StaggerContainer className="grid md:grid-cols-3 gap-6">
               {relatedEvents.map((item) => (
@@ -471,7 +480,7 @@ export default function EventDetailPage() {
             
             <div className="mt-8 text-center">
               <Button variant="outline" size="lg" onClick={() => navigate("/media")}>
-                Ver Todos os Eventos
+                {pageData?.viewAllButton || "Ver Todos os Eventos"}
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>

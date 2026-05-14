@@ -1,0 +1,2 @@
+
+ALTER TABLE public.content_blocks DROP CONSTRAINT content_blocks_page_key_section_key_language_key;

@@ -1,13 +1,13 @@
 import { useRef, useState, useMemo } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { ArrowRight, Calendar, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-import { useNewsArticles, useContentBlock, type CMSNewsArticle } from "@/hooks/useCMSData";
+import { useApiNews } from "@/hooks/useApiNews";
 import { newsItems as fallbackNewsItems, getCategoryLabel } from "@/data/newsData";
+import { usePageData } from "@/hooks/pages/usePageData";
 
 const defaultCategories = [
   { id: "all", label: "Todos" },
@@ -18,29 +18,15 @@ const defaultCategories = [
 ];
 
 export function NewsSection() {
-  const { t } = useTranslation();
+  const { data: homeData } = usePageData("home");
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const [activeCategory, setActiveCategory] = useState("all");
 
-  const { data: cmsBlock } = useContentBlock("home", "news");
-  const cms = cmsBlock?.content;
-  const categories = cms?.categories?.length ? cms.categories : defaultCategories;
+  const categories = defaultCategories;
 
-  // Fetch from CMS, fallback to hardcoded data
-  const { data: cmsNews, isLoading } = useNewsArticles({ limit: 20 });
-
-  const newsSource = cmsNews?.length ? cmsNews : fallbackNewsItems.map((item) => ({
-    id: item.id,
-    slug: item.slug || item.id,
-    title: item.title,
-    date: item.date,
-    category: item.category,
-    image: item.image,
-    excerpt: item.excerpt,
-    content: item.content,
-    published_at: null,
-  } as CMSNewsArticle));
+  const { data: apiNews, isLoading } = useApiNews(1, 20);
+  const newsSource = apiNews?.length ? apiNews : fallbackNewsItems;
 
   const filteredNews = useMemo(() => {
     if (activeCategory === "all") {
@@ -65,15 +51,15 @@ export function NewsSection() {
         >
           <div>
             <span className="text-sm font-semibold text-primary uppercase tracking-widest mb-4 block">
-              {cms?.label || t("news.label")}
+              {homeData?.news?.label || "Últimas Notícias"}
             </span>
             <h2 className="section-title">
-              {cms?.title || t("news.title")}
+              {homeData?.news?.title || "Notícias & Comunicados"}
             </h2>
           </div>
           <Link to="/media">
             <Button variant="heroOutlineLight" size="default" className="mt-6 md:mt-0 group">
-              {cms?.viewAll || t("news.viewAll")}
+              {homeData?.news?.viewAll || "Ver Todas as Notícias"}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>

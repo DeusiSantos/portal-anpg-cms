@@ -1,0 +1,31 @@
+{
+  "title": "Dados de E&P",
+  "subtitle": "Exploração & Produção",
+  "description": "Acesso a dados técnicos, estatísticas e informações sobre exploração e produção de hidrocarbonetos.",
+  "items": [
+    {
+      "icon": "Layers",
+      "title": "Plataforma Iona",
+      "description": "Plataforma integrada de dados de exploração e produção de petróleo e gás em Angola.",
+      "href": "/ep-data/iona"
+    },
+    {
+      "icon": "Image",
+      "title": "Banco de Imagens Oasis",
+      "description": "Banco de imagens sísmicas e dados geológicos do sector petrolífero angolano.",
+      "href": "/ep-data/oasis"
+    },
+    {
+      "icon": "Database",
+      "title": "Pacotes de Dados",
+      "description": "Pacotes de dados técnicos disponíveis para investidores e operadores do sector.",
+      "href": "/ep-data/packages"
+    },
+    {
+      "icon": "Map",
+      "title": "Mapas E&P",
+      "description": "Mapas interactivos com blocos petrolíferos, bacias e infra-estruturas de Angola.",
+      "href": "/ep-data/maps"
+    }
+  ]
+}

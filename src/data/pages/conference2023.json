@@ -1,0 +1,28 @@
+{
+  "title": "2ª Conferência de Gestão de Dados 2023",
+  "subtitle": "Evento",
+  "description": "A mais recente conferência sobre gestão de dados no sector petrolífero.",
+  "introTitle": "Angola Oil & Gas 2023",
+  "introDate": "5-6 de Outubro de 2023",
+  "introLocation": "Luanda, Angola",
+  "introDescription": "A Conferência Angola Oil & Gas 2023 foi o maior evento do sector petrolífero angolano, reunindo líderes governamentais, operadoras internacionais e especialistas do sector para debater as oportunidades e desafios da indústria. O evento destacou o potencial de Angola como destino de investimento e apresentou os resultados do Concurso Público Internacional 2023.",
+  "highlightsTitle": "Destaques da Conferência",
+  "highlights": [
+    { "value": "2.000+", "title": "Participantes", "description": "Delegados nacionais e internacionais" },
+    { "value": "60+", "title": "Palestrantes", "description": "Especialistas e líderes do sector" },
+    { "value": "30+", "title": "Países", "description": "Representados na conferência" },
+    { "value": "20", "title": "Sessões", "description": "Painéis e apresentações técnicas" }
+  ],
+  "topicsTitle": "Temas Abordados",
+  "topics": [
+    "Resultados do Concurso Público Internacional 2023",
+    "Investimento em novas áreas de exploração",
+    "Desenvolvimento do sector de gás natural",
+    "Transição energética e descarbonização",
+    "Inovação tecnológica na exploração offshore",
+    "Conteúdo local e parcerias com empresas angolanas",
+    "Sustentabilidade ambiental no sector petrolífero",
+    "Perspectivas de produção para 2024-2030",
+    "Cooperação regional em energia"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "title": "Licenciamento",
+  "subtitle": "Serviços & Competências",
+  "description": "Gestão de concessões e licenças para exploração e produção de hidrocarbonetos.",
+  "intro": "A ANPG é responsável pela gestão de concessões e licenças para exploração e produção de hidrocarbonetos em Angola. O processo de licenciamento é conduzido de forma transparente e competitiva, garantindo que os recursos naturais do país sejam desenvolvidos de forma eficiente e sustentável.",
+  "licenseTypesTitle": "Tipos de Licenças",
+  "licenseTypes": [
+    {
+      "title": "Licença de Pesquisa",
+      "description": "Autorização para actividades de prospecção e pesquisa de hidrocarbonetos em áreas definidas.",
+      "duration": "Até 4 anos, prorrogável"
+    },
+    {
+      "title": "Licença de Avaliação",
+      "description": "Autorização para avaliação de descobertas e estudos de viabilidade comercial.",
+      "duration": "Até 2 anos"
+    },
+    {
+      "title": "Licença de Produção",
+      "description": "Autorização para desenvolvimento e produção comercial de hidrocarbonetos.",
+      "duration": "Até 25 anos, prorrogável"
+    }
+  ],
+  "processTitle": "Processo de Licenciamento",
+  "processSubtitle": "Etapas do processo de atribuição de concessões petrolíferas",
+  "processSteps": [
+    {
+      "title": "Manifestação de Interesse",
+      "description": "Submissão formal de interesse em participar num concurso ou oferta permanente."
+    },
+    {
+      "title": "Qualificação Técnica",
+      "description": "Avaliação das capacidades técnicas e financeiras do candidato."
+    },
+    {
+      "title": "Submissão de Proposta",
+      "description": "Apresentação de proposta técnica e comercial detalhada."
+    },
+    {
+      "title": "Avaliação e Negociação",
+      "description": "Análise das propostas e negociação dos termos contratuais."
+    },
+    {
+      "title": "Aprovação Governamental",
+      "description": "Submissão para aprovação final das autoridades competentes."
+    },
+    {
+      "title": "Assinatura do Contrato",
+      "description": "Formalização do contrato de concessão petrolífera."
+    }
+  ],
+  "ctaTitle": "Interessado em investir?",
+  "ctaDescription": "Consulte as oportunidades actuais e inicie o seu processo de candidatura.",
+  "ctaOpportunities": "Ver Oportunidades",
+  "ctaContact": "Contactar"
+}

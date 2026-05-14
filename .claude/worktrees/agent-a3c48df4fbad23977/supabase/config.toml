@@ -1,0 +1,7 @@
+project_id = "qedtdojwofboowbjvfwf"
+
+[functions.soba-chat]
+verify_jwt = false
+
+[functions.approve-investor]
+verify_jwt = false

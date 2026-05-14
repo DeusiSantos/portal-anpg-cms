@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { Map as MapIcon, Filter } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { useContentBlocks } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 import {
   seismic2dSurveys,
   seismic3dSurveys,
@@ -26,9 +26,8 @@ const surveysByType: Record<string, SeismicSurvey[]> = {
 };
 
 export default function SeismicMapPage({ type }: SeismicMapPageProps) {
-  const { t, i18n } = useTranslation();
-  const { data: cmsBlocks } = useContentBlocks(`exploration-seismic-${type}`);
-  const intro = cmsBlocks?.find((b) => b.section_key === "intro")?.content;
+  const { i18n } = useTranslation();
+  const { data: explorationData } = usePageData("exploration");
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef<L.Layer[]>([]);
@@ -64,9 +63,10 @@ export default function SeismicMapPage({ type }: SeismicMapPageProps) {
     [allSurveys, selectedBasins, yearRange, selectedCategories]
   );
 
-  const titleKey = `pages.exploration.seismic${type}`;
-  const subtitleKey = `pages.exploration.seismic${type}Subtitle`;
   const pageKey = `exploration-seismic-${type}`;
+  const seismicTitle = explorationData?.[`seismic${type}`] as string | undefined;
+  const seismicSubtitle = explorationData?.[`seismic${type}Subtitle`] as string | undefined;
+  const seismicContent = explorationData?.[`seismic${type}Content`] as string | undefined;
 
   // Init map once
   useEffect(() => {
@@ -155,26 +155,18 @@ export default function SeismicMapPage({ type }: SeismicMapPageProps) {
   return (
     <PageLayout
       pageKey={pageKey}
-      titleKey={titleKey}
-      subtitleKey={subtitleKey}
-      
+      title={seismicTitle}
+      subtitle={seismicSubtitle}
       icon={<MapIcon className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.exploration", href: "/exploration" },
-        { labelKey: titleKey },
+        { label: seismicTitle || "" },
       ]}
     >
       <div className="space-y-8">
-        {intro ? (
-          <>
-            <h2 className="text-2xl font-bold text-foreground">{(intro as any).title}</h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">{(intro as any).body}</p>
-          </>
-        ) : (
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            {t(`pages.exploration.seismic${type}Content`)}
-          </p>
-        )}
+        <p className="text-muted-foreground text-lg leading-relaxed">
+          {seismicContent || ""}
+        </p>
 
         {/* Filters */}
         <div className="p-4 rounded-xl border border-border bg-secondary/30 space-y-4">

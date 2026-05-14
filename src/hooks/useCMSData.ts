@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import api, { getFullImageUrl } from "@/service/api";
 
+
 // ─── Types for API Response ───
 //Banner Types
 interface BannerContent {
@@ -71,6 +72,44 @@ export interface CMSMenuItem {
   parent_id: string | null;
   newTab?: boolean;
   children: CMSMenuItem[];
+}
+
+interface MenuContent {
+  lang: number;
+  label: string;
+}
+
+interface MenuItem {
+  id: string;
+  group: string;
+  url: string;
+  icon: string | null;
+  parentId: string | null;
+  displayOrder: number;
+  openInNewTab: boolean;
+  contents: MenuContent[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface MenuResponse {
+  items: MenuItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface FormattedMenuItem {
+  id: string;
+  label: string;
+  url: string;
+  parentId: string | null;
+  displayOrder: number;
+  openInNewTab: boolean;
 }
 
 const getBannerContent = (banner: Banner, lang: number): { title: string; subtitle: string } => {
@@ -1068,3 +1107,38 @@ export function useBoardDepartmentsBySlug(slug?: string) {
   const { data: member } = useBoardMemberBySlug(slug);
   return useBoardDepartments(member?.id);
 }
+
+export const useMenuItemsByGroup = (group: string, isEn: boolean = false) => {
+  return useQuery<FormattedMenuItem[]>({
+    queryKey: ['menu-items', group, isEn],
+    queryFn: async () => {
+      const lang = isEn ? 2 : 1;
+      
+      const response = await api.get<MenuResponse>('/cms/menus', {
+        params: { page: 1, pageSize: 100, Group: group, IsActive: true }
+      });
+      
+      const items = response.data?.items || [];
+      
+      // Formatar os itens do menu
+      const formattedItems: FormattedMenuItem[] = items.map(item => {
+        const content = item.contents?.find(c => c.lang === lang) || item.contents?.[0];
+        
+        return {
+          id: item.id,
+          label: content?.label || 'Sem label',
+          url: item.url || '#',
+          parentId: item.parentId,
+          displayOrder: item.displayOrder,
+          openInNewTab: item.openInNewTab,
+        };
+      });
+      
+      // Ordenar por displayOrder
+      formattedItems.sort((a, b) => a.displayOrder - b.displayOrder);
+      
+      return formattedItems;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};

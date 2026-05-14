@@ -1,19 +1,18 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { 
+import {
   FileCheck, Shield, BarChart3, ArrowUpRight, Scale, Globe2, Leaf
 } from "lucide-react";
-import { useContentBlock } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 
-const defaultServices = [
-  { iconKey: "FileCheck", titleKey: "services.licensing.title", descriptionKey: "services.licensing.description", href: "/regulation/licensing", color: "bg-primary/10 text-primary" },
-  { iconKey: "Shield", titleKey: "services.oversight.title", descriptionKey: "services.oversight.description", href: "/regulation/oversight", color: "bg-primary/10 text-primary" },
-  { iconKey: "Scale", titleKey: "services.regulation.title", descriptionKey: "services.regulation.description", href: "/regulation", color: "bg-primary/10 text-primary" },
-  { iconKey: "Globe2", titleKey: "services.tenders.title", descriptionKey: "services.tenders.description", href: "/regulation/tenders", color: "bg-primary/10 text-primary" },
-  { iconKey: "BarChart3", titleKey: "services.analytics.title", descriptionKey: "services.analytics.description", href: "/data", color: "bg-primary/10 text-primary" },
-  { iconKey: "Leaf", titleKey: "services.sustainability.title", descriptionKey: "services.sustainability.description", href: "/sustainability", color: "bg-primary/10 text-primary" },
+const defaultServicesData = [
+  { iconKey: "FileCheck", title: "Licenciamento", description: "Gestão de concessões e licenças para exploração e produção de hidrocarbonetos.", href: "/regulation/licensing", color: "bg-primary/10 text-primary" },
+  { iconKey: "Shield", title: "Fiscalização", description: "Supervisão e controlo das operações petrolíferas em todo o território nacional.", href: "/regulation/oversight", color: "bg-primary/10 text-primary" },
+  { iconKey: "Scale", title: "Regulação", description: "Desenvolvimento e aplicação do quadro regulatório do sector energético.", href: "/regulation", color: "bg-primary/10 text-primary" },
+  { iconKey: "Globe2", title: "Licitações", description: "Organização de processos para atribuição de direitos de exploração.", href: "/regulation/tenders", color: "bg-primary/10 text-primary" },
+  { iconKey: "BarChart3", title: "Dados & Analytics", description: "Publicação de estatísticas e relatórios sobre o sector energético.", href: "/data", color: "bg-primary/10 text-primary" },
+  { iconKey: "Leaf", title: "Sustentabilidade", description: "Promoção de práticas ambientalmente responsáveis no sector.", href: "/sustainability", color: "bg-primary/10 text-primary" },
 ];
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -26,14 +25,13 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export function ServicesSection() {
-  const { t } = useTranslation();
+  const { data: homeData } = usePageData("home");
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
-  // CMS content block with fallback
-  const { data: cmsBlock } = useContentBlock("home", "services");
-  const cms = cmsBlock?.content;
-  const services = cms?.items?.length ? cms.items : defaultServices;
+  const services = homeData?.services?.items?.length
+    ? homeData.services.items.map((s: any) => ({ ...s, color: "bg-primary/10 text-primary" }))
+    : defaultServicesData;
 
   return (
     <section ref={ref} className="section-padding bg-foreground text-primary-foreground overflow-hidden">
@@ -54,13 +52,13 @@ export function ServicesSection() {
           className="text-center mb-16"
         >
           <span className="text-sm font-semibold text-primary uppercase tracking-widest mb-4 block">
-            {cms?.label || t("services.label")}
+            {homeData?.services?.label || "Serviços & Competências"}
           </span>
           <h2 className="section-title mb-4 text-primary-foreground">
-            {cms?.title || t("services.title")}
+            {homeData?.services?.title || "Áreas de Actuação"}
           </h2>
           <p className="section-subtitle mx-auto text-pearl/70">
-            {cms?.subtitle || t("services.subtitle")}
+            {homeData?.services?.subtitle || ""}
           </p>
         </motion.div>
 
@@ -68,7 +66,7 @@ export function ServicesSection() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service: any, index: number) => (
             <motion.div
-              key={service.titleKey || index}
+              key={service.title || index}
               initial={{ opacity: 0, y: 30 }}
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -84,10 +82,10 @@ export function ServicesSection() {
 
                 {/* Content */}
                 <h3 className="text-xl font-semibold text-primary-foreground mb-3 group-hover:text-primary transition-colors">
-                  {service.title || (service.titleKey ? t(service.titleKey) : "")}
+                  {service.title}
                 </h3>
                 <p className="text-pearl/70 text-sm leading-relaxed">
-                  {service.description || (service.descriptionKey ? t(service.descriptionKey) : "")}
+                  {service.description}
                 </p>
 
                 {/* Arrow */}

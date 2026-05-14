@@ -1,13 +1,13 @@
-import { History, Calendar, Droplets, Factory, Ship, Building2, Award, TrendingUp, Flame, Landmark } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { History, Calendar, Droplets, Factory, Ship, Building2, Award, TrendingUp, Flame, Landmark, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { SectionTransition } from "@/components/layout/SectionTransition";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePageData } from "@/hooks/pages/usePageData";
 import api, { getFullImageUrl } from "@/service/api";
 
-// Tipos da API
 interface TimelineContent {
   lang: number;
   title: string;
@@ -22,52 +22,24 @@ interface TimelineItem {
   imagePath: string | null;
   contents: TimelineContent[];
   isActive: boolean;
-  createdAt: string;
 }
 
 interface TimelineResponse {
   items: TimelineItem[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  totalActive: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
 }
 
-// Função para obter conteúdo em português
-const getPortugueseContent = (item: TimelineItem): TimelineContent | undefined => {
-  return item.contents?.find(c => c.lang === 1);
-};
+const getContent = (item: TimelineItem, lang: number): TimelineContent | undefined =>
+  item.contents?.find(c => c.lang === lang);
 
-// Função para obter conteúdo em inglês
-const getEnglishContent = (item: TimelineItem): TimelineContent | undefined => {
-  return item.contents?.find(c => c.lang === 2);
-};
-
-// Função para buscar eventos da timeline
 const fetchTimelineEvents = async (): Promise<TimelineItem[]> => {
-  try {
-    const response = await api.get<TimelineResponse>('/timelines', {
-      params: { Page: 1, PageSize: 100 }
-    });
-    
-    // Filtrar apenas eventos ativos
-    const activeEvents = response.data.items.filter(event => event.isActive);
-    
-    // Ordenar por ano e displayOrder
-    return activeEvents.sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year;
-      return a.displayOrder - b.displayOrder;
-    });
-  } catch (error) {
-    console.error('Erro ao buscar eventos da timeline:', error);
-    throw error;
-  }
+  const response = await api.get<TimelineResponse>('/timelines', {
+    params: { Page: 1, PageSize: 100 },
+  });
+  return (response.data.items || [])
+    .filter(e => e.isActive)
+    .sort((a, b) => a.year !== b.year ? a.year - b.year : a.displayOrder - b.displayOrder);
 };
 
-// Icon rotation for events without specific icon mapping
 const iconPool = [
   <Droplets className="w-5 h-5" />,
   <Factory className="w-5 h-5" />,
@@ -79,63 +51,45 @@ const iconPool = [
   <Landmark className="w-5 h-5" />,
 ];
 
-// Highlight years (key milestones)
-const highlightYears = new Set([1968, 1976, 1999, 2007, 2008, 2013, 2019]);
-
-const getEras = (t: (key: string) => string) => [
-  { name: t("pages.history.eras.pioneering"), years: "1910-1955", color: "from-status-warning/20 to-status-warning/30" },
-  { name: t("pages.history.eras.growth"), years: "1958-1990", color: "from-status-warning/30 to-status-warning/40" },
-  { name: t("pages.history.eras.expansion"), years: "1999-2008", color: "from-primary/20 to-primary/30" },
-  { name: t("pages.history.eras.modernization"), years: "2009-2021", color: "from-status-success/20 to-status-success/30" },
-];
-
 export default function HistoryPage() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isEn = i18n.language === "en";
-  
-  const { data: events, isLoading, error } = useQuery({
-    queryKey: ['timeline-events-public'],
-    queryFn: fetchTimelineEvents,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-  });
-  
-  const eras = getEras(t);
 
-  if (error) {
+  const { data: pageData, isLoading: pageLoading } = usePageData("history");
+
+  const { data: apiEvents, isLoading: eventsLoading } = useQuery({
+    queryKey: ["timeline-events-public"],
+    queryFn: fetchTimelineEvents,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const eras: Array<{ name: string; years: string; color: string }> = pageData?.eras || [];
+  const stats: Array<{ value: string; label: string }> = pageData?.stats || [];
+  const highlightYears: number[] = pageData?.highlightYears || [1968, 1976, 1999, 2007, 2008, 2013, 2019];
+  const highlightSet = new Set(highlightYears);
+
+  // API events take priority; fall back to static JSON timeline
+  const staticTimeline: Array<{ year: number; title: string; description: string }> = pageData?.timeline || [];
+  const hasApiEvents = apiEvents && apiEvents.length > 0;
+
+  if (pageLoading) {
     return (
-      <PageLayout
-        pageKey="history"
-        titleKey="pages.history.title"
-        subtitleKey="pages.history.subtitle"
-        descriptionKey="pages.history.description"
-        icon={<History className="w-8 h-8 text-primary" />}
-        breadcrumbs={[
-          { labelKey: "nav.aboutUs", href: "/about" },
-          { labelKey: "nav.submenu.ourHistory" },
-        ]}
-      >
-        <div className="max-w-4xl mx-auto text-center py-12">
-          <History className="w-16 h-16 text-red-500 mx-auto mb-4 opacity-50" />
-          <p className="text-red-500">
-            {isEn 
-              ? "Error loading history events. Please try again later." 
-              : "Erro ao carregar eventos históricos. Por favor, tente novamente mais tarde."}
-          </p>
-        </div>
-      </PageLayout>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
     <PageLayout
       pageKey="history"
-      titleKey="pages.history.title"
-      subtitleKey="pages.history.subtitle"
-      descriptionKey="pages.history.description"
+      title={pageData?.title || "A Nossa História"}
+      subtitle={pageData?.subtitle || "Desde 1910"}
+      description={pageData?.description || ""}
       icon={<History className="w-8 h-8 text-primary" />}
       breadcrumbs={[
-        { labelKey: "nav.aboutUs", href: "/about" },
-        { labelKey: "nav.submenu.ourHistory" },
+        { label: pageData?.breadcrumbAbout || "Sobre Nós", href: "/about" },
+        { label: pageData?.title || "A Nossa História" },
       ]}
     >
       {/* Introduction */}
@@ -143,7 +97,7 @@ export default function HistoryPage() {
         <section className="mb-16">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              {t("pages.history.intro")}
+              {pageData?.intro || ""}
             </p>
           </div>
         </section>
@@ -177,34 +131,32 @@ export default function HistoryPage() {
               <Calendar className="w-6 h-6 text-primary" />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              {t("pages.history.timelineTitle")}
+              {pageData?.timelineTitle || "Linha do Tempo"}
             </h2>
           </div>
 
-          {isLoading ? (
+          {eventsLoading ? (
             <div className="space-y-8">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2, 3, 4].map(i => (
                 <Skeleton key={i} className="h-32 w-full rounded-2xl" />
               ))}
             </div>
-          ) : events && events.length > 0 ? (
+          ) : hasApiEvents ? (
             <div className="relative">
               <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/40 to-primary/20 -translate-x-1/2 rounded-full" />
               <div className="md:hidden absolute left-6 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/40 to-primary/20 rounded-full" />
 
               <div className="space-y-8 md:space-y-0">
-                {events.map((event, index) => {
+                {apiEvents.map((event, index) => {
                   const isLeft = index % 2 === 0;
-                  const ptContent = getPortugueseContent(event);
-                  const enContent = getEnglishContent(event);
-                  
-                  // Use o idioma correto
-                  const title = isEn && enContent?.title ? enContent.title : ptContent?.title || 'Sem título';
-                  const description = isEn && enContent?.description ? enContent.description : ptContent?.description || '';
+                  const ptContent = getContent(event, 1);
+                  const enContent = getContent(event, 2);
+                  const title = isEn && enContent?.title ? enContent.title : ptContent?.title || "";
+                  const description = isEn && enContent?.description ? enContent.description : ptContent?.description || "";
                   const hasImage = !!event.imageUrl;
-                  const isHighlight = highlightYears.has(event.year);
-                  const icon = iconPool[index % iconPool.length];
                   const imageUrl = event.imageUrl ? getFullImageUrl(event.imageUrl) : null;
+                  const isHighlight = highlightSet.has(event.year);
+                  const icon = iconPool[index % iconPool.length];
 
                   return (
                     <motion.div
@@ -213,18 +165,12 @@ export default function HistoryPage() {
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true, margin: "-50px" }}
                       transition={{ duration: 0.5, delay: 0.1 }}
-                      className={`relative flex items-start ${
-                        isLeft ? "md:flex-row" : "md:flex-row-reverse"
-                      } md:py-8`}
+                      className={`relative flex items-start ${isLeft ? "md:flex-row" : "md:flex-row-reverse"} md:py-8`}
                     >
                       <div className={`absolute left-6 md:left-1/2 -translate-x-1/2 z-10 ${
-                        isHighlight
-                          ? "w-12 h-12 bg-primary shadow-lg shadow-primary/30"
-                          : "w-10 h-10 bg-secondary border-2 border-primary/30"
+                        isHighlight ? "w-12 h-12 bg-primary shadow-lg shadow-primary/30" : "w-10 h-10 bg-secondary border-2 border-primary/30"
                       } rounded-full flex items-center justify-center`}>
-                        <span className={isHighlight ? "text-primary-foreground" : "text-primary"}>
-                          {icon}
-                        </span>
+                        <span className={isHighlight ? "text-primary-foreground" : "text-primary"}>{icon}</span>
                       </div>
 
                       <div className={`flex-1 ml-20 md:ml-0 ${isLeft ? "md:pr-20 md:mr-8" : "md:pl-20 md:ml-8"}`}>
@@ -233,11 +179,11 @@ export default function HistoryPage() {
                         } ${isHighlight ? "ring-2 ring-primary/30 shadow-lg" : ""} hover:shadow-xl transition-all duration-500`}>
                           {hasImage && imageUrl && (
                             <div className="absolute inset-0">
-                              <img 
-                                src={imageUrl} 
-                                alt={title} 
+                              <img
+                                src={imageUrl}
+                                alt={title}
                                 className="w-full h-full object-cover opacity-40 group-hover:opacity-50 group-hover:scale-105 transition-all duration-700"
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                onError={e => { e.currentTarget.style.display = "none"; }}
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/80 to-foreground/40" />
                             </div>
@@ -274,13 +220,71 @@ export default function HistoryPage() {
                 className="flex justify-center pt-8"
               >
                 <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-                  <span className="text-primary-foreground font-bold text-sm">{t("pages.history.today")}</span>
+                  <span className="text-primary-foreground font-bold text-sm">{pageData?.today || "Hoje"}</span>
+                </div>
+              </motion.div>
+            </div>
+          ) : staticTimeline.length > 0 ? (
+            <div className="relative">
+              <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/40 to-primary/20 -translate-x-1/2 rounded-full" />
+              <div className="md:hidden absolute left-6 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 via-primary/40 to-primary/20 rounded-full" />
+
+              <div className="space-y-8 md:space-y-0">
+                {staticTimeline.map((event, index) => {
+                  const isLeft = index % 2 === 0;
+                  const isHighlight = highlightSet.has(event.year);
+                  const icon = iconPool[index % iconPool.length];
+
+                  return (
+                    <motion.div
+                      key={event.year}
+                      initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ duration: 0.5, delay: 0.1 }}
+                      className={`relative flex items-start ${isLeft ? "md:flex-row" : "md:flex-row-reverse"} md:py-8`}
+                    >
+                      <div className={`absolute left-6 md:left-1/2 -translate-x-1/2 z-10 ${
+                        isHighlight ? "w-12 h-12 bg-primary shadow-lg shadow-primary/30" : "w-10 h-10 bg-secondary border-2 border-primary/30"
+                      } rounded-full flex items-center justify-center`}>
+                        <span className={isHighlight ? "text-primary-foreground" : "text-primary"}>{icon}</span>
+                      </div>
+
+                      <div className={`flex-1 ml-20 md:ml-0 ${isLeft ? "md:pr-20 md:mr-8" : "md:pl-20 md:ml-8"}`}>
+                        <div className={`group relative overflow-hidden rounded-2xl bg-secondary/50 border border-border/50 ${
+                          isHighlight ? "ring-2 ring-primary/30 shadow-lg" : ""
+                        } hover:shadow-xl transition-all duration-500`}>
+                          <div className="relative p-6 md:p-8">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 bg-primary/10 text-primary">
+                              <span className="font-bold text-lg">{event.year}</span>
+                            </div>
+                            <h3 className="text-xl md:text-2xl font-bold mb-3 text-foreground">{event.title}</h3>
+                            <p className="leading-relaxed text-muted-foreground">{event.description}</p>
+                            {isHighlight && <div className="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-2xl" />}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="hidden md:block flex-1" />
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="flex justify-center pt-8"
+              >
+                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+                  <span className="text-primary-foreground font-bold text-sm">{pageData?.today || "Hoje"}</span>
                 </div>
               </motion.div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground">
-              {isEn ? "No historical events available." : "Sem eventos históricos disponíveis."}
+              {pageData?.noEventsText || "Sem eventos históricos disponíveis."}
             </p>
           )}
         </section>
@@ -290,14 +294,9 @@ export default function HistoryPage() {
       <SectionTransition delay={0.3}>
         <section className="mt-20">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { value: "110+", labelKey: "pages.history.stats.years" },
-              { value: "2M", labelKey: "pages.history.stats.peakProduction" },
-              { value: "1976", labelKey: "pages.history.stats.sonangolCreation" },
-              { value: "2019", labelKey: "pages.history.stats.anpgCreation" },
-            ].map((stat, index) => (
+            {stats.map((stat, index) => (
               <motion.div
-                key={stat.labelKey}
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -305,7 +304,7 @@ export default function HistoryPage() {
                 className="text-center p-6 rounded-2xl bg-secondary/50 border border-border/50"
               >
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{t(stat.labelKey)}</div>
+                <div className="text-sm text-muted-foreground">{stat.label}</div>
               </motion.div>
             ))}
           </div>

@@ -1,3 +1,4 @@
+// Header.tsx - CORRIGIDO
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, ChevronDown, Building2 } from "lucide-react";
@@ -71,27 +72,27 @@ const buildMenuHierarchy = (items: MenuItem[], isEn: boolean): NavItem[] => {
   
   const lang = isEn ? 2 : 1;
   
-  // CORRIGIDO: Filtrar itens do grupo "header" (não "main") e ativos
-  const headerItems = items.filter(item => 
-    item.group === 'header' && item.isActive === true
+  // CORRIGIDO: Filtrar itens do grupo "main" (menu principal) e ativos
+  const mainItems = items.filter(item => 
+    item.group === 'main' && item.isActive === true
   );
   
-  console.log('📋 Header items filtrados:', headerItems);
+  console.log('📋 Main items filtrados:', mainItems.length);
   
-  if (headerItems.length === 0) return [];
+  if (mainItems.length === 0) return [];
   
   // Itens de topo (sem parentId)
-  const topLevelItems = headerItems
+  const topLevelItems = mainItems
     .filter(item => !item.parentId)
     .sort((a, b) => a.displayOrder - b.displayOrder);
   
-  console.log('📋 Top level items:', topLevelItems);
+  console.log('📋 Top level items:', topLevelItems.map(i => getMenuLabel(i, lang)));
   
   if (topLevelItems.length === 0) return [];
   
   // Função para obter filhos de um item
   const getChildren = (parentId: string): MenuItem[] => {
-    return headerItems
+    return mainItems
       .filter(item => item.parentId === parentId)
       .sort((a, b) => a.displayOrder - b.displayOrder);
   };
@@ -125,18 +126,20 @@ const buildMenuHierarchy = (items: MenuItem[], isEn: boolean): NavItem[] => {
     };
   });
   
-  console.log('✅ Navegação construída:', navigation);
+  console.log('✅ Navegação construída:', navigation.map(n => n.label));
   
   return navigation;
 };
 
-// Fallback menu quando não há dados da API
+// Fallback menu quando não há dados da API (baseado na resposta da API)
 const FALLBACK_MENU: NavItem[] = [
-  { label: "Institucional", href: "/about" },
+  { label: "Sobre nós", href: "/about" },
   { label: "Exploração", href: "/exploration" },
   { label: "Oportunidades", href: "/opportunities" },
   { label: "Media", href: "/media" },
-  { label: "Contactos", href: "/contacts" },
+  { label: "Responsabilidades", href: "/regulation" },
+  { label: "Dados de E&P", href: "/ep-data" },
+  { label: "Produção", href: "/production" },
 ];
 
 export function Header() {
@@ -149,26 +152,28 @@ export function Header() {
   
   const isEn = i18n.language === 'en';
 
+  // CORRIGIDO: Buscar todos os menus (sem filtrar por group na query)
+  // Vamos buscar todos e filtrar no cliente
   const { data: menusResponse, isLoading } = useQuery({
-    queryKey: ['header-menu-items', isEn],
+    queryKey: ['main-menu-items', isEn],
     queryFn: async () => {
-      // CORRIGIDO: Filtrar por grupo header na query
+      // Buscar todos os menus ativos (sem filtro de group)
       const response = await api.get<MenusResponse>('/cms/menus', {
-        params: { page: 1, pageSize: 100, Group: 'header' }
+        params: { page: 1, pageSize: 100, IsActive: true }
       });
-      console.log('📦 Resposta da API de menus (header):', response.data);
+      console.log('📦 Resposta da API de menus:', response.data);
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const menuItems = menusResponse?.items || [];
+  const allMenuItems = menusResponse?.items || [];
   
   // Construir navegação a partir dos dados da API
   let navigation: NavItem[] = FALLBACK_MENU;
   
-  if (menuItems.length > 0) {
-    const builtMenu = buildMenuHierarchy(menuItems, isEn);
+  if (allMenuItems.length > 0) {
+    const builtMenu = buildMenuHierarchy(allMenuItems, isEn);
     if (builtMenu.length > 0) {
       navigation = builtMenu;
     }

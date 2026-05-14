@@ -1,0 +1,30 @@
+{
+  "title": "Gás",
+  "subtitle": "Projectos e oportunidades no sector do gás natural",
+  "intro": "O sector do gás natural em Angola representa uma oportunidade estratégica de crescimento e diversificação energética. Com reservas significativas e infraestruturas em expansão, Angola posiciona-se como um actor relevante no mercado global de GNL.",
+  "highlights": [
+    {
+      "key": "lng",
+      "title": "Angola LNG",
+      "desc": "Planta de liquefacção com capacidade de 5.2 MTPA"
+    },
+    {
+      "key": "production",
+      "title": "Produção",
+      "desc": "Crescimento sustentado da produção de gás natural"
+    },
+    {
+      "key": "export",
+      "title": "Exportação",
+      "desc": "Angola como exportador estratégico de GNL"
+    },
+    {
+      "key": "investment",
+      "title": "Investimento",
+      "desc": "Novas oportunidades em projectos de gás"
+    }
+  ],
+  "opportunitiesTitle": "Oportunidades no Sector do Gás",
+  "p1": "Angola dispõe de reservas comprovadas de gás natural que sustentam projectos de grande envergadura, incluindo a planta de GNL do Soyo e novos desenvolvimentos em curso. O aproveitamento do gás associado e a redução da queima representam prioridades estratégicas.",
+  "p2": "A ANPG promove activamente o investimento em projectos de gás, oferecendo condições atractivas para operadores interessados em desenvolver recursos gasíferos nas bacias sedimentares angolanas."
+}

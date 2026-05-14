@@ -1,78 +1,59 @@
-import { Users, Building2, FileCheck, Award, ClipboardList, ExternalLink, FileText, CheckCircle2, BarChart3 } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Users, Building2, FileCheck, Award, ClipboardList, ExternalLink, FileText, CheckCircle2, BarChart3, Loader2 } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useContentBlocks } from "@/hooks/useCMSData";
+import { usePageData } from "@/hooks/pages/usePageData";
 
-const iconMap: Record<string, any> = { Building2, ClipboardList, Award, CheckCircle2, Users, FileCheck, BarChart3 };
-
-const defaultStats = [
-  { value: "2.534", label: "Empresas Registadas", iconKey: "Building2" },
-  { value: "1.054", label: "Empresas Visitadas", iconKey: "ClipboardList" },
-  { value: "1.199", label: "Empresas Certificadas", iconKey: "Award" },
-];
-
-const defaultRegimes = [
-  { title: "Regime de Exclusividade", iconKey: "CheckCircle2", color: "bg-primary/10 text-primary", description: "Consiste na obrigação que impede sobre as empresas do sector dos petróleo e as associadas da concessionária Nacional de utilizar os bens e serviços das sociedades comercias Angolanas (empresas 100% Angolanas) que constem na lista de bens e serviços exclusivos." },
-  { title: "Regime de Preferência", iconKey: "Award", color: "bg-status-warning/10 text-status-warning-foreground", description: "Consiste na obrigação que impede sobre as sociedades comercias do sector dos petróleos e associadas da concessionária Nacional de utilizar os bens e serviços das sociedades de direito Angolano (empresas constituídas e estabelecidas de acordo com a legislação angolana)." },
-  { title: "Regime de Concorrência", iconKey: "Users", color: "bg-status-success/10 text-status-success-foreground", description: "Consiste na permissão de contratar livremente bens e serviços que não constem das listas de exclusividade e preferência." },
-];
-
-const defaultRegistrationSteps = [
-  "Geral", "Legal e Estatutário", "Representantes Legais", "Estatuto", "Capital",
-  "Conteúdo Local", "Contabilidade e Finanças", "Conformidade", "Capacidade Técnica",
-  "Informação de Suporte", "Actividade e Experiência", "Confirmar Actividade", "Enviar à ANPG",
-];
+const iconMap: Record<string, React.ElementType> = { Building2, ClipboardList, Award, CheckCircle2, Users, FileCheck, BarChart3 };
 
 export default function LocalContentPage() {
-  const { t } = useTranslation();
+  const { data: pageData, isLoading } = usePageData("localContent");
 
-  const { data: cmsBlocks } = useContentBlocks("local-content");
-  const getSection = (key: string) => cmsBlocks?.find(b => b.section_key === key)?.content;
+  const stats: Array<{ value: string; label: string; iconKey: string }> = pageData?.stats || [];
+  const regimes: Array<{ title: string; iconKey: string; color: string; description: string }> = pageData?.regimes || [];
+  const registrationSteps: string[] = pageData?.registrationSteps || [];
 
-  const introData = getSection("intro");
-  const statsData = getSection("stats");
-  const regimesData = getSection("regimes");
-  const registrationData = getSection("registration");
-  const dashboardData = getSection("dashboard");
-  const docsData = getSection("docs");
-
-  const stats = statsData?.items?.length ? statsData.items : defaultStats;
-  const regimes = regimesData?.items?.length ? regimesData.items : defaultRegimes;
-  const registrationSteps = registrationData?.steps?.length ? registrationData.steps : defaultRegistrationSteps;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <PageLayout
       pageKey="local-content"
-      titleKey="pages.localContent.title"
-      subtitleKey="pages.localContent.subtitle"
-      descriptionKey="pages.localContent.description"
-      
+      title={pageData?.title || "Conteúdo Local"}
+      subtitle={pageData?.subtitle || "Desenvolvimento Nacional"}
+      description={pageData?.description || ""}
       icon={<Users className="w-8 h-8 text-primary" />}
-      breadcrumbs={[{ labelKey: "nav.opportunities", href: "/opportunities" }, { labelKey: "nav.localContent" }]}
+      breadcrumbs={[
+        { label: "Oportunidades", href: "/opportunities" },
+        { label: pageData?.title || "Conteúdo Local" },
+      ]}
     >
       <div className="space-y-16">
         {/* Introduction */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="prose prose-lg max-w-none">
-            <h2 className="text-3xl font-bold text-foreground mb-6">{introData?.heading || "Introdução"}</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-6">{pageData?.introHeading || "Introdução"}</h2>
             <p className="text-muted-foreground leading-relaxed">
-              {introData?.paragraph1 || "O conteúdo Local do sector Petrolífero é um dos objectivos estabelecidos no plano de desenvolvimento nacional, PDN 2018-2022 e visa o fomento e a dinamização da cadeia de fornecimento de bens e serviços, com a finalidade de aumentar a participação de empresas nacionais de sector, bem como a protecção de empregos e quadros angolanos."}
+              {pageData?.introP1 || ""}
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              {introData?.paragraph2 || <>Aos 20 de outubro de 2020, foi publicada a legislação sobre o conteúdo local em Angola por via do <strong className="text-foreground">Decreto Presidencial nº 271/20</strong>, que vem legislar estas actividades com o foco de se criar as condições necessárias para o crescimento efectivo da presença das empresas nacionais no sector assim como a geração de oportunidades de emprego e qualificação da mão de obra nacional.</>}
+              {pageData?.introP2 || ""}
             </p>
           </div>
         </motion.section>
 
         {/* Statistics */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
-          <h2 className="text-2xl font-bold text-foreground mb-2">{statsData?.heading || "Estatísticas de Registo e Certificação"}</h2>
-          <p className="text-muted-foreground mb-8">{statsData?.subheading || "Dados actualizados a Março de 2025"}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{pageData?.statsHeading || "Estatísticas de Registo e Certificação"}</h2>
+          <p className="text-muted-foreground mb-8">{pageData?.statsSubheading || "Dados actualizados a Março de 2025"}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stats.map((stat: any, index: number) => {
+            {stats.map((stat, index) => {
               const Icon = iconMap[stat.iconKey] || Building2;
               return (
                 <motion.div key={stat.label || index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}>
@@ -91,10 +72,10 @@ export default function LocalContentPage() {
 
         {/* Contracting Regimes */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-          <h2 className="text-2xl font-bold text-foreground mb-2">{regimesData?.heading || "Regimes de Contratação"}</h2>
-          <p className="text-muted-foreground mb-8">{regimesData?.subheading || "O Decreto Presidencial nº 271/20 estabelece 3 Regimes de Contratação"}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{pageData?.regimesHeading || "Regimes de Contratação"}</h2>
+          <p className="text-muted-foreground mb-8">{pageData?.regimesSubheading || "O Decreto Presidencial nº 271/20 estabelece 3 Regimes de Contratação"}</p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {regimes.map((regime: any, index: number) => {
+            {regimes.map((regime, index) => {
               const Icon = iconMap[regime.iconKey] || CheckCircle2;
               return (
                 <motion.div key={regime.title || index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}>
@@ -114,7 +95,7 @@ export default function LocalContentPage() {
             })}
           </div>
           <p className="text-muted-foreground mt-8 text-sm">
-            {regimesData?.footnote || "Anualmente a Agência Nacional de Petróleo, Gás e Biocombustíveis (ANPG) enquanto concessionária Nacional, publicará no seu site, as listas dos Bens e Serviços que deveram ser contratados pelos seus operadores e as Associadas da Concessionária em Regime de Exclusividade e Regime de Preferência."}
+            {pageData?.regimesFootnote || ""}
           </p>
         </motion.section>
 
@@ -127,15 +108,15 @@ export default function LocalContentPage() {
                   <FileCheck className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">{registrationData?.heading || "Registo de Fornecedor"}</CardTitle>
-                  <p className="text-muted-foreground mt-1">{registrationData?.subheading || "Processo de registo e certificação de empresas"}</p>
+                  <CardTitle className="text-2xl">{pageData?.registrationHeading || "Registo de Fornecedor"}</CardTitle>
+                  <p className="text-muted-foreground mt-1">{pageData?.registrationSubheading || "Processo de registo e certificação de empresas"}</p>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              <h3 className="font-semibold text-foreground mb-4">{registrationData?.stepsHeading || "Etapas do Processo de Registo"}</h3>
+              <h3 className="font-semibold text-foreground mb-4">{pageData?.registrationStepsHeading || "Etapas do Processo de Registo"}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
-                {registrationSteps.map((step: string, index: number) => (
+                {registrationSteps.map((step, index) => (
                   <div key={step} className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 text-sm">
                     <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">{index + 1}</span>
                     <span className="text-muted-foreground text-xs">{step}</span>
@@ -144,15 +125,15 @@ export default function LocalContentPage() {
               </div>
               <div className="flex flex-wrap gap-4">
                 <Button asChild>
-                  <a href={registrationData?.formUrl || "https://forms.zohopublic.com/anpg/form/CLRegistoFornecedor/formperma/PaYLej_d7dGFaxmudrISHac0UX2LAkar2h7BOarl7J0"} target="_blank" rel="noopener noreferrer" className="gap-2">
+                  <a href={pageData?.registrationFormUrl || "https://forms.zohopublic.com/anpg/form/CLRegistoFornecedor/formperma/PaYLej_d7dGFaxmudrISHac0UX2LAkar2h7BOarl7J0"} target="_blank" rel="noopener noreferrer" className="gap-2">
                     <FileText className="w-4 h-4" />
-                    {registrationData?.formLabel || "Formulário de Registo"}
+                    {pageData?.registrationFormLabel || "Formulário de Registo"}
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </Button>
                 <Button variant="outline" asChild>
-                  <a href={registrationData?.listsUrl || "https://anpg.co.ao/conteudo-local-lista-de-bens-e-servicos/"} target="_blank" rel="noopener noreferrer" className="gap-2">
-                    {registrationData?.listsLabel || "Listas de Bens e Serviços"}
+                  <a href={pageData?.registrationListsUrl || "https://anpg.co.ao/conteudo-local-lista-de-bens-e-servicos/"} target="_blank" rel="noopener noreferrer" className="gap-2">
+                    {pageData?.registrationListsLabel || "Listas de Bens e Serviços"}
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </Button>
@@ -170,8 +151,8 @@ export default function LocalContentPage() {
                   <BarChart3 className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">{dashboardData?.heading || "Dashboard de Empresas Certificadas"}</CardTitle>
-                  <p className="text-muted-foreground mt-1">{dashboardData?.subheading || "Consulte as empresas certificadas no âmbito do Conteúdo Local"}</p>
+                  <CardTitle className="text-2xl">{pageData?.dashboardHeading || "Dashboard de Empresas Certificadas"}</CardTitle>
+                  <p className="text-muted-foreground mt-1">{pageData?.dashboardSubheading || "Consulte as empresas certificadas no âmbito do Conteúdo Local"}</p>
                 </div>
               </div>
             </CardHeader>
@@ -179,7 +160,7 @@ export default function LocalContentPage() {
               <div className="aspect-[16/9] w-full bg-secondary/30">
                 <iframe
                   title="Dashboard Empresas Certificadas - Conteúdo Local ANPG"
-                  src={dashboardData?.embedUrl || "https://app.powerbi.com/view?r=eyJrIjoiY2Q5ZjRhMzMtZjFlZS00M2M0LWIwMjItNGQwMDkxYTMzNTY5IiwidCI6ImE4YjQ5N2NkLTM1NDQtNDEwZi04NzU2LTIzNTRlYjJkMTUyNyIsImMiOjl9"}
+                  src={pageData?.dashboardEmbedUrl || "https://app.powerbi.com/view?r=eyJrIjoiY2Q5ZjRhMzMtZjFlZS00M2M0LWIwMjItNGQwMDkxYTMzNTY5IiwidCI6ImE4YjQ5N2NkLTM1NDQtNDEwZi04NzU2LTIzNTRlYjJkMTUyNyIsImMiOjl9"}
                   className="w-full h-full border-0"
                   allowFullScreen
                 />
@@ -190,7 +171,7 @@ export default function LocalContentPage() {
 
         {/* Documentation */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
-          <h2 className="text-2xl font-bold text-foreground mb-6">{docsData?.heading || "Documentação"}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">{pageData?.docsHeading || "Documentação"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="hover:shadow-elevated transition-all duration-300">
               <CardContent className="p-6 flex items-start gap-4">
@@ -198,11 +179,11 @@ export default function LocalContentPage() {
                   <FileText className="w-6 h-6 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-2">{docsData?.manual?.title || "Manual de Instrução ao Fornecedor"}</h3>
-                  <p className="text-muted-foreground text-sm mb-4">{docsData?.manual?.description || "Guia completo com instruções para o processo de registo e certificação de fornecedores."}</p>
+                  <h3 className="font-semibold text-foreground mb-2">{pageData?.docsManualTitle || "Manual de Instrução ao Fornecedor"}</h3>
+                  <p className="text-muted-foreground text-sm mb-4">{pageData?.docsManualDescription || "Guia completo com instruções para o processo de registo e certificação de fornecedores."}</p>
                   <Button variant="outline" size="sm" asChild>
-                    <a href={docsData?.manual?.url || "https://anpg.co.ao/conteudo-local/"} target="_blank" rel="noopener noreferrer" className="gap-2">
-                      {docsData?.manual?.label || "Descarregar"}
+                    <a href={pageData?.docsManualUrl || "https://anpg.co.ao/conteudo-local/"} target="_blank" rel="noopener noreferrer" className="gap-2">
+                      {pageData?.docsManualLabel || "Descarregar"}
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   </Button>
@@ -215,11 +196,11 @@ export default function LocalContentPage() {
                   <ClipboardList className="w-6 h-6 text-status-warning-foreground" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground mb-2">{docsData?.decree?.title || "Decreto Presidencial nº 271/20"}</h3>
-                  <p className="text-muted-foreground text-sm mb-4">{docsData?.decree?.description || "Legislação sobre o conteúdo local no sector petrolífero de Angola."}</p>
+                  <h3 className="font-semibold text-foreground mb-2">{pageData?.docsDecreeTitle || "Decreto Presidencial nº 271/20"}</h3>
+                  <p className="text-muted-foreground text-sm mb-4">{pageData?.docsDecreeDescription || "Legislação sobre o conteúdo local no sector petrolífero de Angola."}</p>
                   <Button variant="outline" size="sm" asChild>
-                    <a href={docsData?.decree?.url || "https://anpg.co.ao/conteudo-local/"} target="_blank" rel="noopener noreferrer" className="gap-2">
-                      {docsData?.decree?.label || "Ver Documento"}
+                    <a href={pageData?.docsDecreeUrl || "https://anpg.co.ao/conteudo-local/"} target="_blank" rel="noopener noreferrer" className="gap-2">
+                      {pageData?.docsDecreeLabel || "Ver Documento"}
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   </Button>

@@ -1,0 +1,74 @@
+{
+  "title": "Imprensa",
+  "subtitle": "Comunicação",
+  "description": "Notícias, comunicados de imprensa e recursos mediáticos da ANPG.",
+  "tabs": {
+    "news": "Notícias",
+    "publications": "Publicações",
+    "videos": "Vídeos",
+    "press": "Recortes",
+    "events": "Eventos"
+  },
+  "search": "Pesquisar notícias por palavra-chave...",
+  "searchPublications": "Pesquisar publicações...",
+  "searchVideos": "Pesquisar vídeos...",
+  "searchPress": "Pesquisar recortes de imprensa...",
+  "searchEvents": "Pesquisar eventos...",
+  "clearFilters": "Limpar filtros",
+  "allYears": "Todos os anos",
+  "allEventCategories": "Todas as categorias",
+  "byAuthor": "Por ",
+  "downloadLabel": "Download",
+  "noPdf": "Sem PDF",
+  "externalSource": "Fonte externa",
+  "eventPeriod": {
+    "all": "Todos os eventos",
+    "upcoming": "Próximos eventos",
+    "past": "Eventos passados"
+  },
+  "dateFilters": {
+    "all": "Todas as datas",
+    "week": "Última semana",
+    "month": "Último mês",
+    "quarter": "Últimos 3 meses",
+    "year": "Último ano"
+  },
+  "sort": {
+    "newest": "Mais recentes",
+    "oldest": "Mais antigas"
+  },
+  "clear": "Limpar",
+  "categories": {
+    "all": "Todas",
+    "press": "Comunicado de Imprensa",
+    "tender": "Licitação",
+    "highlight": "Destaque",
+    "production": "Produção Mensal"
+  },
+  "noResults": "Nenhuma notícia encontrada",
+  "empty": {
+    "publications": "Nenhuma publicação disponível.",
+    "videos": "Nenhum vídeo disponível.",
+    "press": "Nenhum recorte de imprensa disponível.",
+    "events": "Nenhum evento disponível."
+  },
+  "resultsCount": "{{count}} notícia(s) encontrada(s)",
+  "pageInfo": "Página {{current}} de {{total}} • {{count}} notícias",
+  "publicationsTitle": "Boletim \"Primeiro Óleo\"",
+  "publicationsDescription": "Newsletter oficial da ANPG com informações sobre o sector petrolífero angolano.",
+  "viewAllPublications": "Ver Todas as Publicações",
+  "videosTitle": "Canal ANPG",
+  "videosDescription": "Vídeos institucionais, reportagens e cobertura de eventos do sector petrolífero.",
+  "viewMoreVideos": "Ver Mais Vídeos no YouTube",
+  "pressTitle": "Recortes de Imprensa",
+  "pressDescription": "Cobertura mediática sobre a ANPG e o sector petrolífero angolano.",
+  "viewMorePress": "Ver Mais Recortes",
+  "eventsTitle": "Eventos",
+  "eventsDescription": "Conferências, missões empresariais e eventos do sector petrolífero.",
+  "viewAllEvents": "Ver Todos os Eventos",
+  "news": [],
+  "publications": [],
+  "videos": [],
+  "press": [],
+  "events": []
+}
