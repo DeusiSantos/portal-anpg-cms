@@ -57,7 +57,7 @@ interface NavItem {
 
 const contentItems: NavItem[] = [
   { title: 'Páginas do Site', href: '/admin/site-pages', icon: Globe, permission: 'content' },
-  { title: 'Homepage', href: '/admin/homepage-content', icon: SlidersHorizontal, permission: 'content' },
+  //{ title: 'Homepage', href: '/admin/homepage-content', icon: SlidersHorizontal, permission: 'content' },
   { title: 'Notícias', href: '/admin/news', icon: Newspaper, permission: 'content', badgeKey: 'draftNews' },
   { title: 'Eventos', href: '/admin/events', icon: Calendar, permission: 'content', badgeKey: 'draftEvents' },
   { title: 'Banners', href: '/admin/page-banners', icon: Image, permission: 'content' },
@@ -69,7 +69,7 @@ const contentItems: NavItem[] = [
   { title: 'Central de Media', href: '/admin/media', icon: Image, permission: 'content' },
   { title: 'Linha do Tempo', href: '/admin/history-events', icon: Clock, permission: 'content' },
   { title: 'Base Conhecimento', href: '/admin/knowledge-base', icon: BookOpen, permission: 'content' },
-  { title: 'Páginas CMS', href: '/admin/pages', icon: FileText, permission: 'content' },
+  //{ title: 'Páginas CMS', href: '/admin/pages', icon: FileText, permission: 'content' },
 ];
 
 const operationsItems: NavItem[] = [
