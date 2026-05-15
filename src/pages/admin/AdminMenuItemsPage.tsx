@@ -21,9 +21,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, ExternalLink, Eye, EyeOff, Filter } from 'lucide-react';
 import api from '@/service/api';
 
 // Tipos da API
@@ -68,6 +67,8 @@ interface MenuFormData {
   isVisible: boolean;
 }
 
+type ActiveFilter = 'all' | 'active' | 'inactive';
+
 // Função para obter label por idioma
 const getLabel = (item: MenuItem, lang: number): string => {
   const content = item.contents?.find(c => c.lang === lang);
@@ -79,6 +80,7 @@ export default function AdminMenuItemsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MenuItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all');
   const [formData, setFormData] = useState<MenuFormData>({
     group: 'main',
     url: '',
@@ -91,37 +93,85 @@ export default function AdminMenuItemsPage() {
     isVisible: true,
   });
 
-  // Buscar menus da API
-  const { data: menusResponse, isLoading } = useQuery({
-    queryKey: ['admin-menus'],
+  // Buscar menus ACTIVOS — sempre activa (sem enabled condicional)
+  const { data: activeData, isLoading: activeLoading, refetch: refetchActive } = useQuery({
+    queryKey: ['admin-menus-active'],
     queryFn: async () => {
       const response = await api.get<MenusResponse>('/cms/menus', {
-        params: { Page: 1, PageSize: 100 }
+        params: { PageSize: 100, IsActive: true }
       });
       return response.data;
-    }
+    },
   });
 
-  const items = menusResponse?.items || [];
+  // Buscar menus INACTIVOS — sempre activa (sem enabled condicional)
+  const { data: inactiveData, isLoading: inactiveLoading, refetch: refetchInactive } = useQuery({
+    queryKey: ['admin-menus-inactive'],
+    queryFn: async () => {
+      const response = await api.get<MenusResponse>('/cms/menus', {
+        params: { PageSize: 100, IsActive: false }
+      });
+      return response.data;
+    },
+  });
+
+  // Combinar resultados para o filtro "Todos"
+  const getAllItems = (): MenuItem[] => {
+    const active = activeData?.items || [];
+    const inactive = inactiveData?.items || [];
+    return [...active, ...inactive];
+  };
+
+  const getItemsByFilter = (): MenuItem[] => {
+    if (activeFilter === 'active') return activeData?.items || [];
+    if (activeFilter === 'inactive') return inactiveData?.items || [];
+    return getAllItems();
+  };
+
+  const items = getItemsByFilter();
   
-  // Função recursiva para construir árvore de menus
-  const buildMenuTree = (parentId: string | null = null): MenuItem[] => {
-    return items
-      .filter(item => item.parentId === parentId)
-      .sort((a, b) => a.displayOrder - b.displayOrder)
-      .map(item => ({
-        ...item,
-        children: buildMenuTree(item.id)
-      }));
+  const isLoading = activeLoading || inactiveLoading;
+
+  const totalActive = activeData?.totalCount || 0;
+  const totalInactive = inactiveData?.totalCount || 0;
+  const totalCount = totalActive + totalInactive;
+
+  const refetchAll = () => {
+    refetchActive();
+    refetchInactive();
   };
 
-  // Construir árvore de menus
-  const menuTree = buildMenuTree(null);
+  // Mutation para ativar menu
+  const enableMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.put(`/cms/menus/enable/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetchAll();
+      toast.success('Menu ativado com sucesso');
+    },
+    onError: (error: any) => {
+      console.error('Erro ao ativar menu:', error);
+      toast.error(error.response?.data?.message || 'Erro ao ativar menu');
+    },
+  });
 
-  // Agrupar por grupo para exibição separada
-  const getItemsByGroup = (group: string) => {
-    return items.filter(item => item.group === group);
-  };
+  // Mutation para desativar menu
+  const disableMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.put(`/cms/menus/disable/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetchAll();
+      toast.success('Menu desativado com sucesso');
+    },
+    onError: (error: any) => {
+      console.error('Erro ao desativar menu:', error);
+      toast.error(error.response?.data?.message || 'Erro ao desativar menu');
+    },
+  });
 
   // Criar mutation
   const createMutation = useMutation({
@@ -141,7 +191,7 @@ export default function AdminMenuItemsPage() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-menus'] });
+      refetchAll();
       toast.success('Item criado com sucesso');
       handleClose();
     },
@@ -169,7 +219,7 @@ export default function AdminMenuItemsPage() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-menus'] });
+      refetchAll();
       toast.success('Item actualizado com sucesso');
       handleClose();
     },
@@ -186,7 +236,7 @@ export default function AdminMenuItemsPage() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-menus'] });
+      refetchAll();
       toast.success('Item eliminado com sucesso');
       setDeleteItem(null);
     },
@@ -228,6 +278,14 @@ export default function AdminMenuItemsPage() {
     setIsDialogOpen(true);
   };
 
+  const handleToggleActive = (item: MenuItem) => {
+    if (item.isActive) {
+      disableMutation.mutate(item.id);
+    } else {
+      enableMutation.mutate(item.id);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.labelPt) {
@@ -243,23 +301,31 @@ export default function AdminMenuItemsPage() {
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isToggling = enableMutation.isPending || disableMutation.isPending;
 
   // Opções de grupo
   const groupOptions = [
     { value: 'main', label: 'Principal' },
     { value: 'footer-institutional', label: 'Rodapé - Institucional' },
     { value: 'footer-investors', label: 'Rodapé - Investidores' },
-    { value: 'Administração', label: 'Administração' },
   ];
 
-  // Componente para renderizar item de menu recursivamente
-  const renderMenuItem = (item: MenuItem, level: number = 0, isChild: boolean = false) => {
+  // Agrupar itens por grupo
+  const getItemsByGroup = (group: string) => {
+    return items.filter(item => item.group === group);
+  };
+
+  // Obter grupos únicos dos itens
+  const uniqueGroups = Array.from(new Set(items.map(item => item.group)));
+
+  // Função recursiva para renderizar menu com hierarquia
+  const renderMenuItemWithChildren = (item: MenuItem, level: number = 0) => {
     const children = items.filter(child => child.parentId === item.id);
     const indent = level * 20;
     
     return (
       <React.Fragment key={item.id}>
-        <TableRow className={isChild ? "bg-muted/30" : ""}>
+        <TableRow className={level > 0 ? "bg-muted/30" : ""}>
           <TableCell className="font-medium" style={{ paddingLeft: indent + 16 }}>
             {level > 0 && "↳ "}{getLabel(item, 1)}
           </TableCell>
@@ -276,7 +342,19 @@ export default function AdminMenuItemsPage() {
             </Badge>
           </TableCell>
           <TableCell className="text-right">
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => handleToggleActive(item)}
+                disabled={isToggling}
+                title={item.isActive ? 'Desativar' : 'Ativar'}
+              >
+                {item.isActive ? 
+                  <EyeOff className="h-4 w-4" /> : 
+                  <Eye className="h-4 w-4" />
+                }
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -286,7 +364,7 @@ export default function AdminMenuItemsPage() {
             </div>
           </TableCell>
         </TableRow>
-        {children.map(child => renderMenuItem(child, level + 1, true))}
+        {children.map(child => renderMenuItemWithChildren(child, level + 1))}
       </React.Fragment>
     );
   };
@@ -307,210 +385,140 @@ export default function AdminMenuItemsPage() {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Filtro de estado */}
+            <div className="mb-6 p-4 border rounded-lg bg-muted/10">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Filtrar por estado:</span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={activeFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveFilter('all')}
+                      className="gap-2"
+                    >
+                      Todos
+                      <Badge variant="secondary" className="ml-1 px-1 text-xs">
+                        {totalCount}
+                      </Badge>
+                    </Button>
+                    <Button
+                      variant={activeFilter === 'active' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveFilter('active')}
+                      className="gap-2"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Activos
+                      <Badge variant="secondary" className="ml-1 px-1 text-xs bg-green-100 text-green-800">
+                        {totalActive}
+                      </Badge>
+                    </Button>
+                    <Button
+                      variant={activeFilter === 'inactive' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setActiveFilter('inactive')}
+                      className="gap-2"
+                    >
+                      <EyeOff className="h-3 w-3" />
+                      Inactivos
+                      <Badge variant="secondary" className="ml-1 px-1 text-xs">
+                        {totalInactive}
+                      </Badge>
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {activeFilter === 'all' && `Total: ${items.length} item(s)`}
+                  {activeFilter === 'active' && `${items.length} menu(s) activo(s)`}
+                  {activeFilter === 'inactive' && `${items.length} menu(s) inactivo(s)`}
+                </div>
+              </div>
+            </div>
+
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
+            ) : items.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground border rounded-md">
+                {activeFilter === 'active' && 'Nenhum menu activo encontrado'}
+                {activeFilter === 'inactive' && 'Nenhum menu inactivo encontrado'}
+                {activeFilter === 'all' && 'Nenhum menu encontrado'}
+              </div>
             ) : (
               <div className="space-y-8">
-                {/* Menu Principal */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Menu Principal</h3>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Label (PT)</TableHead>
-                          <TableHead>Label (EN)</TableHead>
-                          <TableHead>URL</TableHead>
-                          <TableHead>Ícone</TableHead>
-                          <TableHead>Ordem</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead className="text-right">Acções</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {getItemsByGroup('main')
-                          .filter(item => !item.parentId)
-                          .sort((a, b) => a.displayOrder - b.displayOrder)
-                          .map(item => renderMenuItem(item, 0, false))}
-                        {getItemsByGroup('main').filter(item => !item.parentId).length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                              Nenhum item no menu principal
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-
-                {/* Rodapé - Institucional */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Rodapé - Institucional</h3>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Label (PT)</TableHead>
-                          <TableHead>Label (EN)</TableHead>
-                          <TableHead>URL</TableHead>
-                          <TableHead>Ordem</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead className="text-right">Acções</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {getItemsByGroup('footer-institutional')
-                          .sort((a, b) => a.displayOrder - b.displayOrder)
-                          .map(item => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-medium">{getLabel(item, 1)}</TableCell>
-                              <TableCell>{getLabel(item, 2) || '—'}</TableCell>
-                              <TableCell>{item.url || '—'}</TableCell>
-                              <TableCell>{item.displayOrder}</TableCell>
-                              <TableCell>
-                                <Badge variant={item.isActive ? 'default' : 'secondary'}>
-                                  {item.isActive ? 'Activo' : 'Inactivo'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </TableCell>
+                {/* Renderizar cada grupo separadamente */}
+                {uniqueGroups.map(group => {
+                  const groupItems = getItemsByGroup(group);
+                  if (groupItems.length === 0) return null;
+                  
+                  // Obter nome amigável do grupo
+                  let groupTitle = group;
+                  const groupOption = groupOptions.find(opt => opt.value === group);
+                  if (groupOption) groupTitle = groupOption.label;
+                  
+                  return (
+                    <div key={group}>
+                      <h3 className="text-lg font-semibold mb-4">{groupTitle}</h3>
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Label (PT)</TableHead>
+                              <TableHead>Label (EN)</TableHead>
+                              <TableHead>URL</TableHead>
+                              <TableHead>Ícone</TableHead>
+                              <TableHead>Ordem</TableHead>
+                              <TableHead>Estado</TableHead>
+                              <TableHead className="text-right">Acções</TableHead>
                             </TableRow>
-                          ))}
-                        {getItemsByGroup('footer-institutional').length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                              Nenhum item no rodapé institucional
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-
-                {/* Rodapé - Investidores */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Rodapé - Investidores</h3>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Label (PT)</TableHead>
-                          <TableHead>Label (EN)</TableHead>
-                          <TableHead>URL</TableHead>
-                          <TableHead>Ordem</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead className="text-right">Acções</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {getItemsByGroup('footer-investors')
-                          .sort((a, b) => a.displayOrder - b.displayOrder)
-                          .map(item => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-medium">{getLabel(item, 1)}</TableCell>
-                              <TableCell>{getLabel(item, 2) || '—'}</TableCell>
-                              <TableCell>{item.url || '—'}</TableCell>
-                              <TableCell>{item.displayOrder}</TableCell>
-                              <TableCell>
-                                <Badge variant={item.isActive ? 'default' : 'secondary'}>
-                                  {item.isActive ? 'Activo' : 'Inactivo'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        {getItemsByGroup('footer-investors').length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                              Nenhum item no rodapé de investidores
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-
-                {/* Outros grupos */}
-                {Object.keys(items.reduce((acc, item) => {
-                  if (!acc[item.group] && !['main', 'footer-institutional', 'footer-investors'].includes(item.group)) {
-                    acc[item.group] = true;
-                  }
-                  return acc;
-                }, {} as Record<string, boolean>)).map(group => (
-                  <div key={group}>
-                    <h3 className="text-lg font-semibold mb-4 capitalize">{group}</h3>
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Label (PT)</TableHead>
-                            <TableHead>Label (EN)</TableHead>
-                            <TableHead>URL</TableHead>
-                            <TableHead>Ícone</TableHead>
-                            <TableHead>Ordem</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Acções</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {items
-                            .filter(item => item.group === group)
-                            .sort((a, b) => a.displayOrder - b.displayOrder)
-                            .map(item => (
-                              <TableRow key={item.id}>
-                                <TableCell className="font-medium">{getLabel(item, 1)}</TableCell>
-                                <TableCell>{getLabel(item, 2) || '—'}</TableCell>
-                                <TableCell>{item.url || '—'}</TableCell>
-                                <TableCell>{item.icon || '—'}</TableCell>
-                                <TableCell>{item.displayOrder}</TableCell>
-                                <TableCell>
-                                  <Badge variant={item.isActive ? 'default' : 'secondary'}>
-                                    {item.isActive ? 'Activo' : 'Inactivo'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setDeleteItem(item)}>
-                                      <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {(() => {
+                              const groupItemIds = new Set(groupItems.map(i => i.id));
+                              // Item é "raiz" se não tem pai OU se o pai não está na lista visível
+                              const rootItems = groupItems
+                                .filter(item => !item.parentId || !groupItemIds.has(item.parentId))
+                                .sort((a, b) => a.displayOrder - b.displayOrder);
+                              return rootItems.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    Nenhum item neste grupo
+                                  </TableCell>
+                                </TableRow>
+                              ) : rootItems.map(item => renderMenuItemWithChildren(item, 0));
+                            })()}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
-            <div className="mt-4 text-sm text-muted-foreground">
-              Total: {items.length} item(s) de menu
+            
+            {/* Resumo estatístico */}
+            <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold">{totalCount}</div>
+                  <div className="text-xs text-muted-foreground">Total de Menus</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{totalActive}</div>
+                  <div className="text-xs text-muted-foreground">Activos</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-red-600">{totalInactive}</div>
+                  <div className="text-xs text-muted-foreground">Inactivos</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{uniqueGroups.length}</div>
+                  <div className="text-xs text-muted-foreground">Grupos</div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
