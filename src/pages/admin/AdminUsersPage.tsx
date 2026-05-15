@@ -1,5 +1,6 @@
+// pages/admin/AdminUsersPage.tsx
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -30,127 +30,249 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Search, Loader2, UserPlus } from 'lucide-react';
+import { Search, Loader2, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-interface User {
+import api from '@/service/api';
+
+// Interfaces baseadas na resposta da API
+interface Contact {
+  email: string;
+  phoneNumber: string;
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  code: string;
+  isActive: boolean;
+}
+
+interface UserProfile {
   id: string;
   fullName: string;
-  email: string;
-  position: string;
-  phoneNumber: string;
-  roles: string[];
-  status: string;
+  firstName: string;
+  lastName: string;
+  birthdate: string | null;
+  gender: string;
+  identification: any | null;
+  contact: Contact;
+  address: any | null;
+  roleId: string;
+  role: Role;
   createdAt: string;
+  createdBy: string | null;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  isDeleted: boolean;
+  isActive: boolean;
 }
 
 interface UsersResponse {
-  pageIndex: number;
+  items: UserProfile[];
+  page: number;
   pageSize: number;
-  count: number;
-  data: User[];
+  totalCount: number;
+  totalActive: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
-const ROLES = [
-  { value: 'admin', label: 'Administrador' },
-  { value: 'editor_comunicacao', label: 'Editor Comunicação' },
-  { value: 'editor_tecnico', label: 'Editor Técnico' },
-  { value: 'gestor_investidores', label: 'Gestor Investidores' },
-  { value: 'viewer', label: 'Visualizador' },
-];
+interface CreateUserRequest {
+  fullName: string;
+  email: string;
+  password: string;
+  phoneNumber: string;
+  roleId: string;
+}
 
-const POSITIONS = [
-  { value: 'gerente', label: 'Gerente' },
-  { value: 'coordenador', label: 'Coordenador' },
-  { value: 'analista', label: 'Analista' },
-  { value: 'tecnico', label: 'Técnico' },
-  { value: 'assistente', label: 'Assistente' },
-];
+interface UpdateUserRequest {
+  fullName?: string;
+  phoneNumber?: string;
+  roleId?: string;
+  isActive?: boolean;
+}
+
+// Buscar roles disponíveis
+const fetchRoles = async (): Promise<Role[]> => {
+  const response = await api.get('/roles', {
+    params: { page: 1, pageSize: 100, IsActive: true }
+  });
+  return response.data?.items || [];
+};
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
-    position: '',
-    phone: '',
-    role: '',
+    phoneNumber: '',
+    roleId: '',
   });
-  const [creating, setCreating] = useState(false);
+  
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
+  // Buscar roles ao carregar
   useEffect(() => {
-    fetchUsers();
+    const loadRoles = async () => {
+      try {
+        const rolesData = await fetchRoles();
+        setRoles(rolesData);
+        if (rolesData.length > 0) {
+          setFormData(prev => ({ ...prev, roleId: rolesData[0].id }));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar roles:', error);
+      }
+    };
+    loadRoles();
   }, []);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      // A API ANPG CMS (v1) não expõe CRUD de utilizadores neste Swagger — apenas auth/me, etc.
-      setUsers([]);
-      setTotalCount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Query para buscar utilizadores
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['users-profiles'],
+    queryFn: async () => {
+      const response = await api.get<UsersResponse>('/users-profiles', {
+        params: { page: 1, pageSize: 100 }
+      });
+      return response.data;
+    },
+  });
 
-  const handleCreateUser = async () => {
-    if (!newUser.fullName || !newUser.email || !newUser.password || !newUser.role) {
+  // Mutation para criar utilizador
+  const createMutation = useMutation({
+    mutationFn: async (userData: CreateUserRequest) => {
+      const response = await api.post('/users-profiles', userData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-profiles'] });
+      setDialogOpen(false);
+      resetForm();
+      toast({
+        title: 'Sucesso',
+        description: 'Utilizador criado com sucesso!',
+      });
+    },
+    onError: (error: any) => {
       toast({
         title: 'Erro',
-        description: 'Por favor preencha todos os campos obrigatórios.',
+        description: error.response?.data?.message || 'Erro ao criar utilizador',
         variant: 'destructive',
       });
-      return;
-    }
+    },
+  });
 
-    setCreating(true);
+  // Mutation para atualizar utilizador (PATCH)
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateUserRequest }) => {
+      const response = await api.patch(`/users-profiles/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-profiles'] });
+      setDialogOpen(false);
+      setEditingUser(null);
+      resetForm();
+      toast({
+        title: 'Sucesso',
+        description: 'Utilizador atualizado com sucesso!',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.response?.data?.message || 'Erro ao atualizar utilizador',
+        variant: 'destructive',
+      });
+    },
+  });
 
-    try {
+  // Mutation para desativar/ativar utilizador
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const response = await api.patch(`/users-profiles/${id}`, { isActive });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-profiles'] });
       toast({
-        title: 'Indisponível',
-        description:
-          'A gestão de utilizadores não está exposta nesta versão da API. Contacte o administrador do backend.',
+        title: 'Sucesso',
+        description: 'Status do utilizador atualizado!',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.response?.data?.message || 'Erro ao atualizar status',
         variant: 'destructive',
       });
-    } catch (error: any) {
-      console.error('Error creating user:', error);
-      toast({
-        title: 'Erro ao criar utilizador',
-        description: error.response?.data?.message || 'Ocorreu um erro ao criar o utilizador.',
-        variant: 'destructive',
-      });
-    } finally {
-      setCreating(false);
-    }
-  };
+    },
+  });
+
+  const users = data?.items || [];
+  const totalCount = data?.totalCount || 0;
 
   const filteredUsers = users.filter(
     (user) =>
       user.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-      user.email?.toLowerCase().includes(search.toLowerCase())
+      user.contact?.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getRoleBadge = (role: string) => {
-    const roleConfig = ROLES.find((r) => r.value === role);
-    const variants: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-      admin: 'destructive',
-      editor_comunicacao: 'default',
-      editor_tecnico: 'secondary',
-      gestor_investidores: 'outline',
-      viewer: 'outline',
-    };
-    return (
-      <Badge variant={variants[role] || 'outline'} className="text-xs">
-        {roleConfig?.label || role}
-      </Badge>
-    );
+  const resetForm = () => {
+    setFormData({
+      fullName: '',
+      email: '',
+      password: '',
+      phoneNumber: '',
+      roleId: roles[0]?.id || '',
+    });
+  };
+
+  const handleEdit = (user: UserProfile) => {
+    setEditingUser(user);
+    setFormData({
+      fullName: user.fullName || '',
+      email: user.contact?.email || '',
+      password: '',
+      phoneNumber: user.contact?.phoneNumber || '',
+      roleId: user.roleId || '',
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (editingUser) {
+      const updateData: UpdateUserRequest = {
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        roleId: formData.roleId,
+      };
+      updateMutation.mutate({ id: editingUser.id, data: updateData });
+    } else {
+      if (!formData.password) {
+        toast({
+          title: 'Erro',
+          description: 'A palavra-passe é obrigatória para novos utilizadores.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      createMutation.mutate(formData);
+    }
+  };
+
+  const getRoleName = (roleId: string) => {
+    const role = roles.find(r => r.id === roleId);
+    return role?.name || role?.code || roleId;
   };
 
   const getInitials = (name: string) => {
@@ -163,22 +285,19 @@ export default function AdminUsersPage() {
       .slice(0, 2);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-      Ativo: { label: 'Ativo', variant: 'default' },
-      Inativo: { label: 'Inativo', variant: 'secondary' },
-      Suspenso: { label: 'Suspenso', variant: 'destructive' },
-    };
-    const config = statusConfig[status] || { label: status, variant: 'outline' };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive ? (
+      <Badge variant="default" className="bg-green-500">Ativo</Badge>
+    ) : (
+      <Badge variant="secondary">Inativo</Badge>
+    );
   };
+
+  const isLoadingData = isLoading || isFetching;
 
   return (
     <AdminLayout title="Gestão de Utilizadores" subtitle="Gerir contas e permissões">
       <main className="container mx-auto px-4 py-8">
-        <p className="text-sm text-muted-foreground mb-6 max-w-3xl">
-          A API publicada (Swagger) não inclui endpoints de listagem ou criação de utilizadores — apenas autenticação (<code className="text-xs">auth/login</code>, <code className="text-xs">auth/me</code>). Os utilizadores devem ser geridos no backoffice servido pela equipa de backend ou quando esses endpoints forem adicionados.
-        </p>
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -190,103 +309,19 @@ export default function AdminUsersPage() {
               className="pl-10"
             />
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Novo Utilizador
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Criar Novo Utilizador</DialogTitle>
-                <DialogDescription>
-                  Adicione um novo utilizador ao backoffice com as permissões adequadas.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Nome Completo *</Label>
-                  <Input
-                    value={newUser.fullName}
-                    onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
-                    placeholder="Nome do utilizador"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="email@dominio.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Palavra-passe *</Label>
-                  <Input
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Role *</Label>
-                  <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione uma role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
-                          {role.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Cargo/Posição</Label>
-                  <Select value={newUser.position} onValueChange={(v) => setNewUser({ ...newUser, position: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione um cargo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {POSITIONS.map((pos) => (
-                        <SelectItem key={pos.value} value={pos.value}>
-                          {pos.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Telefone</Label>
-                  <Input
-                    type="tel"
-                    value={newUser.phone}
-                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                    placeholder="+244 923 456 789"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleCreateUser} disabled={creating}>
-                  {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Criar Utilizador
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => {
+            setEditingUser(null);
+            resetForm();
+            setDialogOpen(true);
+          }}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Novo Utilizador
+          </Button>
         </div>
 
         {/* Users Table */}
         <div className="bg-background rounded-lg border">
-          {loading ? (
+          {isLoadingData ? (
             <div className="flex items-center justify-center p-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
@@ -305,11 +340,12 @@ export default function AdminUsersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Utilizador</TableHead>
-                    <TableHead>Roles</TableHead>
-                    <TableHead>Posição</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Telefone</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Criado em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -322,26 +358,44 @@ export default function AdminUsersPage() {
                           </Avatar>
                           <div>
                             <p className="font-medium">{user.fullName}</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {user.roles?.map((role) => (
-                            <span key={role}>{getRoleBadge(role)}</span>
-                          ))}
-                        </div>
+                        <p className="text-sm">{user.contact?.email || '-'}</p>
                       </TableCell>
-                      <TableCell className="capitalize">
-                        {POSITIONS.find((p) => p.value === user.position)?.label || user.position || '-'}
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {getRoleName(user.roleId)}
+                        </Badge>
                       </TableCell>
-                      <TableCell>{user.phoneNumber || '-'}</TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      <TableCell>{user.contact?.phoneNumber || '-'}</TableCell>
+                      <TableCell>{getStatusBadge(user.isActive)}</TableCell>
                       <TableCell>
                         {user.createdAt
-                          ? format(new Date(user.createdAt), "d MMM yyyy", { locale: pt })
+                          ? format(new Date(user.createdAt), "dd/MM/yyyy", { locale: pt })
                           : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleActiveMutation.mutate({ 
+                              id: user.id, 
+                              isActive: !user.isActive 
+                            })}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -351,6 +405,89 @@ export default function AdminUsersPage() {
           )}
         </div>
       </main>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingUser ? 'Editar Utilizador' : 'Criar Novo Utilizador'}</DialogTitle>
+            <DialogDescription>
+              {editingUser 
+                ? 'Edite as informações do utilizador.' 
+                : 'Preencha os dados para criar um novo utilizador.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome Completo *</Label>
+              <Input
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                placeholder="Nome completo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email *</Label>
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@dominio.com"
+                disabled={!!editingUser}
+              />
+            </div>
+            {!editingUser && (
+              <div className="space-y-2">
+                <Label>Palavra-passe *</Label>
+                <Input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="••••••••"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Telefone</Label>
+              <Input
+                type="tel"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                placeholder="+244 923 456 789"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role *</Label>
+              <Select value={formData.roleId} onValueChange={(v) => setFormData({ ...formData, roleId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione uma role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name} - {role.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {(createMutation.isPending || updateMutation.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              {editingUser ? 'Atualizar' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
