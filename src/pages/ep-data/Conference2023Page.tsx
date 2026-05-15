@@ -17,7 +17,7 @@ export default function Conference2023Page() {
       icon={<Users className="w-8 h-8 text-primary" />}
       breadcrumbs={[
         { labelKey: "nav.media", href: "/media" },
-        { label: "Eventos", href: "/media/events" },
+        { label: "Eventos", href: "/media/eventos" },
         { labelKey: "nav.submenu.dataConference2023" },
       ]}
     >

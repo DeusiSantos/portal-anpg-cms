@@ -17,14 +17,27 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function InvestorPortalPage() {
   const { t } = useTranslation();
-  const { user, roles, loading, signOut } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
 
   // Gate: redirect to login if not authenticated or not an investor/admin
-  const roleNames = roles.map((r) => r.role as string);
-  const isInvestor = roleNames.includes('investor') || roleNames.includes('admin') || roleNames.includes('gestor_investidores');
+  const isInvestor = user?.roleCode === 'investor' || 
+                     user?.roleCode === 'admin' || 
+                     user?.roleCode === 'gestor_investidores';
 
-  if (!loading && (!user || !isInvestor)) {
+  if (!isLoading && (!user || !isInvestor)) {
     return <Navigate to="/investor-portal/login" replace />;
+  }
+
+  // Se ainda está carregando, mostra um loading ou nada
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
   const breadcrumbs = [

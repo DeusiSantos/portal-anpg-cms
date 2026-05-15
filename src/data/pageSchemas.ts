@@ -2112,25 +2112,25 @@ export const PAGE_SCHEMAS: Record<string, any> = {
 export const SITE_PAGES = [
   // ==================== PÁGINAS INSTITUCIONAIS ====================
   { pageKey: 'home', label: 'Página Inicial', labelEn: 'Home Page', url: '/', category: 'pages', sections: ['hero', 'stats', 'about', 'services', 'investment', 'news', 'cta'] },
-  { pageKey: 'exploration', label: 'Exploração', labelEn: 'Exploration', url: '/exploration', category: 'pages', sections: ['content'] },
   { pageKey: 'about', label: 'Sobre a ANPG', labelEn: 'About ANPG', url: '/about', category: 'pages', sections: ['content', 'strategicObjectives', 'values', 'cta'] },
-  { pageKey: 'pcaMessage', label: 'Mensagem do PCA', labelEn: 'Chairman Message', url: '/pca-message', category: 'pages', sections: ['content'] },
-  { pageKey: 'anpg', label: 'ANPG', labelEn: 'ANPG', url: '/anpg', category: 'pages', sections: ['content', 'board', 'supervision', 'institutional'] },
-  { pageKey: 'history', label: 'História', labelEn: 'History', url: '/history', category: 'pages', sections: ['content', 'timeline'] },
-  { pageKey: 'socialResponsibility', label: 'Responsabilidade Social', labelEn: 'Social Responsibility', url: '/social-responsibility', category: 'pages', sections: ['content'] },
+  { pageKey: 'pcaMessage', label: 'Mensagem do PCA', labelEn: 'Chairman Message', url: '/anpg/pca-message', category: 'pages', sections: ['content'] },
+  { pageKey: 'anpg', label: 'ANPG', labelEn: 'ANPG', url: '/about/anpg', category: 'pages', sections: ['content', 'board', 'supervision', 'institutional'] },
+  { pageKey: 'history', label: 'História', labelEn: 'History', url: '/about/history', category: 'pages', sections: ['content', 'timeline'] },
+  { pageKey: 'socialResponsibility', label: 'Responsabilidade Social', labelEn: 'Social Responsibility', url: '/about/social-responsibility', category: 'pages', sections: ['content'] },
   { pageKey: 'contacts', label: 'Contactos', labelEn: 'Contacts', url: '/contacts', category: 'pages', sections: ['content', 'info'] },
-  { pageKey: 'opportunities', label: 'Oportunidades', labelEn: 'Opportunities', url: '/opportunities', category: 'pages', sections: ['content'] },
-  { pageKey: 'gas', label: 'Gás', labelEn: 'Gas', url: '/gas', category: 'pages', sections: ['content'] },
   { pageKey: 'whistleblower', label: 'Canal de Denúncias', labelEn: 'Whistleblower', url: '/whistleblower', category: 'pages', sections: ['content'] },
   { pageKey: 'localContent', label: 'Conteúdo Local', labelEn: 'Local Content', url: '/local-content', category: 'pages', sections: ['content'] },
   { pageKey: 'investorPortal', label: 'Portal do Investidor', labelEn: 'Investor Portal', url: '/investor-portal', category: 'pages', sections: ['content'] },
-  { pageKey: 'energyIntegration', label: 'Integração Energética', labelEn: 'Energy Integration', url: '/energy-integration', category: 'pages', sections: ['content', 'areas', 'timeline'] },
+  { pageKey: 'exploration', label: 'Exploração', labelEn: 'Exploration', url: '/exploration', category: 'pages', sections: ['content'] },
 
   // ==================== OPORTUNIDADES ====================
+  { pageKey: 'opportunities', label: 'Oportunidades', labelEn: 'Opportunities', url: '/opportunities', category: 'opportunities', sections: ['content'] },
   { pageKey: 'tender2025', label: 'Licitação 2025', labelEn: 'Tender 2025', url: '/opportunities/tender-2025', category: 'opportunities', sections: ['content'] },
   { pageKey: 'tender2025Content', label: 'Conteúdo Licitação 2025', labelEn: 'Tender 2025 Content', url: '/opportunities/tender-2025', category: 'opportunities', sections: ['content'] },
   { pageKey: 'permanentOffer', label: 'Oferta Permanente', labelEn: 'Permanent Offer', url: '/opportunities/permanent-offer', category: 'opportunities', sections: ['content', 'blocks', 'advantages'] },
   { pageKey: 'tender2023', label: 'Licitação 2023', labelEn: 'Tender 2023', url: '/opportunities/tender-2023', category: 'opportunities', sections: ['content'] },
+  { pageKey: 'energyIntegration', label: 'Integração Energética', labelEn: 'Energy Integration', url: '/opportunities/energy-integration', category: 'opportunities', sections: ['content', 'areas', 'timeline'] },
+  { pageKey: 'gas', label: 'Gás', labelEn: 'Gas', url: '/opportunities/gas', category: 'opportunities', sections: ['content'] },
 
   // ==================== DADOS DE E&P ====================
   { pageKey: 'epData', label: 'Dados de E&P', labelEn: 'E&P Data', url: '/ep-data', category: 'ep-data', sections: ['content'] },
@@ -2138,25 +2138,28 @@ export const SITE_PAGES = [
   { pageKey: 'oasis', label: 'OASIS', labelEn: 'OASIS', url: '/ep-data/oasis', category: 'ep-data', sections: ['content'] },
   { pageKey: 'dataPackages', label: 'Pacotes de Dados', labelEn: 'Data Packages', url: '/ep-data/packages', category: 'ep-data', sections: ['content'] },
   { pageKey: 'epMaps', label: 'Mapa de Concessões', labelEn: 'Concession Map', url: '/ep-data/maps', category: 'ep-data', sections: ['content'] },
-  { pageKey: 'blockDetails', label: 'Detalhes do Bloco', labelEn: 'Block Details', url: '/ep-data/block/:id', category: 'ep-data', sections: ['content'] },
-  { pageKey: 'conference2021', label: 'Conferência 2021', labelEn: 'Conference 2021', url: '/ep-data/conference/2021', category: 'ep-data', sections: ['content'] },
-  { pageKey: 'conference2023', label: 'Conferência 2023', labelEn: 'Conference 2023', url: '/ep-data/conference/2023', category: 'ep-data', sections: ['content'] },
+  { pageKey: 'blockDetails', label: 'Detalhes do Bloco', labelEn: 'Block Details', url: '/ep-data/blocks/:blockId', category: 'ep-data', sections: ['content'] },
+  { pageKey: 'conference2021', label: 'Conferência 2021', labelEn: 'Conference 2021', url: '/ep-data/conference-2021', category: 'ep-data', sections: ['content'] },
+  { pageKey: 'conference2023', label: 'Conferência 2023', labelEn: 'Conference 2023', url: '/ep-data/conference-2023', category: 'ep-data', sections: ['content'] },
 
   // ==================== MEDIA ====================
   { pageKey: 'media', label: 'Media', labelEn: 'Media', url: '/media', category: 'media', sections: ['content'] },
-  { pageKey: 'events', label: 'Eventos', labelEn: 'Events', url: '/media/events', category: 'media', sections: ['content'] },
+  { pageKey: 'events', label: 'Eventos', labelEn: 'Events', url: '/media/eventos', category: 'media', sections: ['content'] },
+  { pageKey: 'newsArchive', label: 'Arquivo de Notícias', labelEn: 'News Archive', url: '/media/archive', category: 'media', sections: ['content'] },
 
   // ==================== PRODUÇÃO ====================
   { pageKey: 'production', label: 'Produção', labelEn: 'Production', url: '/production', category: 'production', sections: ['content', 'stats', 'charts'] },
   { pageKey: 'productionHistory', label: 'Histórico de Produção', labelEn: 'Production History', url: '/production/history', category: 'production', sections: ['content'] },
   { pageKey: 'productionHistoryContent', label: 'Conteúdo Histórico Produção', labelEn: 'Production History Content', url: '/production/history', category: 'production', sections: ['content'] },
 
-  // ==================== SERVIÇOS ====================
-  { pageKey: 'licensing', label: 'Licenciamento', labelEn: 'Licensing', url: '/licensing', category: 'services', sections: ['content'] },
-  { pageKey: 'oversight', label: 'Fiscalização', labelEn: 'Oversight', url: '/oversight', category: 'services', sections: ['content'] },
-  { pageKey: 'tendersPage', label: 'Licitações', labelEn: 'Tenders', url: '/tenders', category: 'services', sections: ['content'] },
-  { pageKey: 'dataPage', label: 'Dados & Analytics', labelEn: 'Data & Analytics', url: '/data', category: 'services', sections: ['content'] },
+  // ==================== REGULAÇÃO ====================
   { pageKey: 'regulation', label: 'Regulação', labelEn: 'Regulation', url: '/regulation', category: 'services', sections: ['content', 'areas', 'legal', 'principles'] },
+  { pageKey: 'licensing', label: 'Licenciamento', labelEn: 'Licensing', url: '/regulation/licensing', category: 'services', sections: ['content'] },
+  { pageKey: 'oversight', label: 'Fiscalização', labelEn: 'Oversight', url: '/regulation/oversight', category: 'services', sections: ['content'] },
+  { pageKey: 'tendersPage', label: 'Licitações', labelEn: 'Tenders', url: '/regulation/tenders', category: 'services', sections: ['content'] },
+
+  // ==================== SERVIÇOS ====================
+  { pageKey: 'dataPage', label: 'Dados & Analytics', labelEn: 'Data & Analytics', url: '/data', category: 'services', sections: ['content'] },
   { pageKey: 'sustainability', label: 'Sustentabilidade', labelEn: 'Sustainability', url: '/sustainability', category: 'services', sections: ['content', 'stats', 'pillars', 'initiatives', 'sdg'] },
 
   // ==================== LEGAL ====================
@@ -2165,7 +2168,6 @@ export const SITE_PAGES = [
 
   // ==================== OUTRAS PÁGINAS ====================
   { pageKey: 'faq', label: 'FAQ', labelEn: 'FAQ', url: '/faq', category: 'pages', sections: ['content'] },
-  { pageKey: 'newsArchive', label: 'Arquivo de Notícias', labelEn: 'News Archive', url: '/news', category: 'media', sections: ['content'] },
   { pageKey: 'boardMember', label: 'Membro do Conselho', labelEn: 'Board Member', url: '/about/board/:id', category: 'pages', sections: ['content'] },
   { pageKey: 'eventDetail', label: 'Detalhe de Evento', labelEn: 'Event Detail', url: '/events/:id', category: 'media', sections: ['content'] },
   { pageKey: 'newsDetail', label: 'Detalhe de Notícia', labelEn: 'News Detail', url: '/news/:id', category: 'media', sections: ['content'] },

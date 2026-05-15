@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import i18n from '@/i18n';
 import { STATIC_PAGE_DATA } from '@/data/staticPageData';
-import { supabase } from '@/integrations/supabase/client';
+import { useAllApiPages, getBackendUrl, findApiPage } from './useApiPages';
 
 function resolveLanguage(raw: any): any {
   if (!raw) return raw;
@@ -10,6 +9,10 @@ function resolveLanguage(raw: any): any {
   if (!hasLangKeys) return raw;
   const lang = i18n.language === 'en' ? 'en' : 'pt';
   return raw[lang] ?? raw.pt ?? raw;
+}
+
+function safeParseJson(str: string): any {
+  try { return typeof str === 'string' ? JSON.parse(str) : str; } catch { return null; }
 }
 
 interface UsePageDataReturn {
@@ -28,24 +31,22 @@ export function usePageData(pageKey: string): UsePageDataReturn {
     return () => { i18n.off('languageChanged', onLangChange); };
   }, []);
 
-  const { data: supabaseRow } = useQuery({
-    queryKey: ['page-content', pageKey],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('page_content')
-        .select('data')
-        .eq('page_key', pageKey)
-        .maybeSingle();
-      if (error || !data) return null;
-      return data.data as any;
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  const { data: allPages } = useAllApiPages();
 
-  // Supabase tem prioridade; fallback para JSON estático
-  const rawData = supabaseRow ?? STATIC_PAGE_DATA[pageKey] ?? null;
+  const backendUrl = getBackendUrl(pageKey);
+  const apiPage = allPages ? findApiPage(allPages, pageKey, backendUrl) : null;
 
+  let apiRaw: any = null;
+  if (apiPage?.content) {
+    const pt = safeParseJson(apiPage.content.pt);
+    const en = safeParseJson(apiPage.content.en);
+    if (pt && en) apiRaw = { pt, en };
+    else if (pt) apiRaw = pt;
+  }
+
+  const rawData = apiRaw ?? STATIC_PAGE_DATA[pageKey] ?? null;
+
+  // lang em estado força re-render quando o idioma muda
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const data = lang ? resolveLanguage(rawData) : resolveLanguage(rawData);
 

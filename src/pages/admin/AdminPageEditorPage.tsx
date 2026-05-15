@@ -10,50 +10,60 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, ExternalLink, Save, Plus, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Loader2 } from 'lucide-react';
 import { SITE_PAGES, PAGE_SCHEMAS } from '@/data/pageSchemas';
 import { STATIC_PAGE_DATA } from '@/data/staticPageData';
-import { supabase } from '@/integrations/supabase/client';
+import api from '@/service/api';
+import { useAllApiPages, getBackendUrl, findApiPage } from '@/hooks/pages/useApiPages';
+
+function safeParseJson(str: string): any {
+  try { return typeof str === 'string' ? JSON.parse(str) : str; } catch { return null; }
+}
+
+// Normaliza os dados para sempre { pt: {}, en: {} }
+function normalizeData(raw: any): { pt: any; en: any } {
+  if (!raw) return { pt: {}, en: {} };
+  if (raw.pt !== undefined || raw.en !== undefined) {
+    return { pt: raw.pt || {}, en: raw.en || {} };
+  }
+  return { pt: raw, en: {} };
+}
 
 export default function AdminPageEditorPage() {
   const { pageKey } = useParams<{ pageKey: string }>();
   const queryClient = useQueryClient();
   const pageConfig = SITE_PAGES.find(p => p.pageKey === pageKey);
-  const [pageData, setPageData] = useState<any>(null);
+  const [pageData, setPageData] = useState<{ pt: any; en: any }>({ pt: {}, en: {} });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('');
+  const [activeLang, setActiveLang] = useState<'pt' | 'en'>('pt');
 
-  // Carregar dados
+  const { data: allApiPages } = useAllApiPages();
+
+  const backendUrl = pageKey ? getBackendUrl(pageKey) : undefined;
+  const apiPage = pageKey && allApiPages
+    ? findApiPage(allApiPages, pageKey, backendUrl)
+    : null;
+
   useEffect(() => {
     if (!pageKey) return;
+    setIsLoading(true);
 
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // Tentar Supabase primeiro; fallback para JSON estático
-        const { data: row } = await (supabase as any)
-          .from('page_content')
-          .select('data')
-          .eq('page_key', pageKey)
-          .maybeSingle();
+    if (apiPage) {
+      const pt = safeParseJson(apiPage.content?.pt) || {};
+      const en = safeParseJson(apiPage.content?.en) || {};
+      setPageData({ pt, en });
+    } else if (allApiPages !== undefined) {
+      const staticData = STATIC_PAGE_DATA[pageKey] || {};
+      setPageData(normalizeData(staticData));
+    } else {
+      return;
+    }
 
-        if (row?.data) {
-          setPageData(row.data);
-        } else {
-          setPageData(STATIC_PAGE_DATA[pageKey] || {});
-        }
-      } catch {
-        setPageData(STATIC_PAGE_DATA[pageKey] || {});
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [pageKey]);
+    setIsLoading(false);
+  }, [pageKey, apiPage, allApiPages]);
 
   // Definir primeira tab disponível
   useEffect(() => {
@@ -64,63 +74,72 @@ export default function AdminPageEditorPage() {
         Object.values(schema).forEach((field: any) => {
           if (field.group) groups.add(field.group);
         });
-        if (groups.size > 0) {
-          setActiveTab(Array.from(groups)[0]);
-        }
+        if (groups.size > 0) setActiveTab(Array.from(groups)[0]);
       }
     }
   }, [pageData, pageKey, activeTab]);
 
   const handleSave = async () => {
-    if (!pageKey) return;
+    if (!pageKey || !apiPage) {
+      toast.error('Página não registada no backend. Contacta o administrador de sistema.');
+      return;
+    }
     setIsSaving(true);
     try {
-      const { error } = await (supabase as any)
-        .from('page_content')
-        .upsert({ page_key: pageKey, data: pageData, updated_at: new Date().toISOString() });
-
-      if (error) throw error;
-
-      // Invalida cache para todas as páginas verem o conteúdo actualizado
-      queryClient.invalidateQueries({ queryKey: ['page-content', pageKey] });
-
+      await api.patch('/pages/from-json', {
+        id: apiPage.id,
+        pageKey: apiPage.pageKey,
+        pageUrl: apiPage.pageUrl,
+        status: apiPage.status || 'published',
+        seo: apiPage.seo || { pt: '', en: '' },
+        content: {
+          pt: JSON.stringify(pageData.pt || {}),
+          en: JSON.stringify(pageData.en || {}),
+        },
+        attachments: apiPage.attachments || [],
+      });
+      queryClient.invalidateQueries({ queryKey: ['all-api-pages'] });
       toast.success('Página guardada com sucesso!');
     } catch {
-      toast.error('Erro ao guardar. Verifica a ligação ao Supabase.');
+      toast.error('Erro ao guardar. Verifica a ligação à API.');
     } finally {
       setIsSaving(false);
     }
   };
 
   const updateField = (path: string[], value: any) => {
-    setPageData((prev: any) => {
-      const newData = { ...prev };
-      let current: any = newData;
+    setPageData((prev) => {
+      const next = { ...prev };
+      let cur: any = next;
       for (let i = 0; i < path.length - 1; i++) {
-        if (!current[path[i]]) current[path[i]] = {};
-        current = current[path[i]];
+        cur[path[i]] = typeof cur[path[i]] === 'object' && cur[path[i]] !== null
+          ? { ...cur[path[i]] }
+          : {};
+        cur = cur[path[i]];
       }
-      current[path[path.length - 1]] = value;
-      return newData;
+      cur[path[path.length - 1]] = value;
+      return next;
     });
   };
 
   const addArrayItem = (path: string[], itemSchema: any) => {
-    const currentArray = path.reduce((obj, key) => obj?.[key], pageData) || [];
-    const newItem = itemSchema?.type === 'object' 
+    const currentArray = path.reduce((obj: any, key) => obj?.[key], pageData) || [];
+    const newItem = itemSchema?.type === 'object'
       ? Object.keys(itemSchema.properties || {}).reduce((acc: any, key) => ({ ...acc, [key]: '' }), {})
       : '';
     updateField(path, [...currentArray, newItem]);
   };
 
   const removeArrayItem = (path: string[], index: number) => {
-    const currentArray = path.reduce((obj, key) => obj?.[key], pageData) || [];
+    const currentArray = path.reduce((obj: any, key) => obj?.[key], pageData) || [];
     updateField(path, currentArray.filter((_: any, i: number) => i !== index));
   };
 
   const renderField = (fieldKey: string, fieldSchema: any, currentPath: string[] = [], parentValue?: any) => {
     const fullPath = [...currentPath, fieldKey];
-    const value = parentValue !== undefined ? parentValue[fieldKey] : fullPath.reduce((obj, key) => obj?.[key], pageData);
+    const value = parentValue !== undefined
+      ? parentValue[fieldKey]
+      : fullPath.reduce((obj: any, key) => obj?.[key], pageData);
     const isRequired = fieldSchema.required;
     const type = fieldSchema.type || 'string';
     const label = fieldSchema.label || fieldKey;
@@ -139,7 +158,6 @@ export default function AdminPageEditorPage() {
     if (type === 'array') {
       const arrayValue = Array.isArray(value) ? value : [];
       const itemSchema = fieldSchema.items;
-
       return (
         <div key={fieldKey} className="space-y-3 mb-4">
           <Label className="text-sm font-medium">
@@ -188,20 +206,12 @@ export default function AdminPageEditorPage() {
                     className="flex-1"
                   />
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeArrayItem(fullPath, idx)}
-                >
+                <Button variant="ghost" size="icon" onClick={() => removeArrayItem(fullPath, idx)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addArrayItem(fullPath, itemSchema)}
-            >
+            <Button variant="outline" size="sm" onClick={() => addArrayItem(fullPath, itemSchema)}>
               <Plus className="h-4 w-4 mr-1" /> Adicionar {label.slice(0, -1)}
             </Button>
           </div>
@@ -209,10 +219,8 @@ export default function AdminPageEditorPage() {
       );
     }
 
-    // Campo simples
     const isLongText = fieldSchema.isLongText || (typeof value === 'string' && value?.length > 100);
     const InputComponent = isLongText ? Textarea : Input;
-
     return (
       <div key={fieldKey} className="space-y-1 mb-4">
         <Label className="text-sm font-medium">
@@ -254,7 +262,10 @@ export default function AdminPageEditorPage() {
   }
 
   const schema = PAGE_SCHEMAS[pageKey || ''] || {};
-  
+
+  // Schemas com 'pt'/'en' como chaves de topo já têm suporte bilingue via grupos
+  const isBilingualSchema = 'pt' in schema || 'en' in schema;
+
   // Agrupar campos por grupo
   const groups: Record<string, string[]> = {};
   Object.entries(schema).forEach(([key, config]: [string, any]) => {
@@ -263,65 +274,70 @@ export default function AdminPageEditorPage() {
     groups[group].push(key);
   });
 
-  // Mapeamento de nomes dos grupos para português
   const groupLabels: Record<string, string> = {
-    main: 'Principal',
-    pt: 'Português',
-    en: 'English',
-    header: 'Cabeçalho',
-    content: 'Conteúdo',
-    objectives: 'Objectivos Estratégicos',
-    values: 'Valores',
-    cta: 'Chamada para Ação',
-    seismic: 'Campanhas Sísmicas',
-    processing: 'Processamento',
-    newAreas: 'Novas Áreas',
-    maps: 'Mapas',
-    board: 'Conselho de Administração',
-    supervision: 'Fiscalização',
-    institutional: 'Institucional',
-    timeline: 'Linha do Tempo',
-    stats: 'Estatísticas',
-    info: 'Informações',
-    blocks: 'Blocos',
-    advantages: 'Vantagens',
-    areas: 'Áreas',
-    features: 'Características',
-    tabs: 'Tabs',
-    dateFilters: 'Filtros de Data',
-    sort: 'Ordenação',
-    categories: 'Categorias',
-    empty: 'Mensagens Vazias',
-    defaultStats: 'Estatísticas Padrão',
-    statsLabels: 'Labels Estatísticas',
-    chartLabels: 'Labels Gráfico',
-    decadeLabels: 'Labels Década',
-    milestones: 'Marcos',
-    sections: 'Secções Legais',
-    dpo: 'Encarregado Dados',
-    updates: 'Actualizações',
-    contactFields: 'Campos do Formulário',
-    interestOptions: 'Opções de Interesse',
-    licenseTypes: 'Tipos de Licença',
-    processSteps: 'Passos do Processo',
-    phases: 'Fases',
-    documents: 'Documentos',
-    resources: 'Recursos',
-    publications: 'Publicações',
-    metrics: 'Métricas',
-    activeTenders: 'Licitações Activas',
-    pastTenders: 'Licitações Anteriores',
+    main: 'Principal', pt: 'Português', en: 'English',
+    header: 'Cabeçalho', content: 'Conteúdo',
+    objectives: 'Objectivos Estratégicos', values: 'Valores',
+    cta: 'Chamada para Ação', seismic: 'Campanhas Sísmicas',
+    processing: 'Processamento', newAreas: 'Novas Áreas', maps: 'Mapas',
+    board: 'Conselho de Administração', supervision: 'Fiscalização',
+    institutional: 'Institucional', timeline: 'Linha do Tempo',
+    stats: 'Estatísticas', info: 'Informações', blocks: 'Blocos',
+    advantages: 'Vantagens', areas: 'Áreas', features: 'Características',
+    tabs: 'Tabs', dateFilters: 'Filtros de Data', sort: 'Ordenação',
+    categories: 'Categorias', empty: 'Mensagens Vazias',
+    defaultStats: 'Estatísticas Padrão', statsLabels: 'Labels Estatísticas',
+    chartLabels: 'Labels Gráfico', decadeLabels: 'Labels Década',
+    milestones: 'Marcos', sections: 'Secções Legais', dpo: 'Encarregado Dados',
+    updates: 'Actualizações', contactFields: 'Campos do Formulário',
+    interestOptions: 'Opções de Interesse', licenseTypes: 'Tipos de Licença',
+    processSteps: 'Passos do Processo', phases: 'Fases', documents: 'Documentos',
+    resources: 'Recursos', publications: 'Publicações', metrics: 'Métricas',
+    activeTenders: 'Licitações Activas', pastTenders: 'Licitações Anteriores',
+  };
+
+  const renderSchemaFields = (langPrefix?: 'pt' | 'en') => {
+    const basePath: string[] = langPrefix ? [langPrefix] : [];
+    if (Object.keys(groups).length > 1) {
+      return (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4 flex flex-wrap h-auto">
+            {Object.keys(groups).map(group => (
+              <TabsTrigger key={group} value={group} className="text-sm">
+                {groupLabels[group] || group}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {Object.entries(groups).map(([group, fields]) => (
+            <TabsContent key={group} value={group} className="space-y-4">
+              {fields.map(fieldKey => renderField(fieldKey, schema[fieldKey], basePath))}
+            </TabsContent>
+          ))}
+        </Tabs>
+      );
+    }
+    return (
+      <div className="space-y-4">
+        {Object.entries(schema).map(([fieldKey, fieldSchema]: [string, any]) =>
+          renderField(fieldKey, fieldSchema, basePath)
+        )}
+      </div>
+    );
   };
 
   return (
     <AdminLayout title={pageConfig.label} subtitle={`Editar conteúdo da página ${pageConfig.url}`}>
       <div className="p-6 space-y-4">
-        {/* Top bar */}
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="outline" size="sm" asChild>
             <Link to="/admin/site-pages"><ArrowLeft className="h-4 w-4 mr-1" /> Voltar</Link>
           </Button>
           <div className="flex-1" />
+          {!apiPage && (
+            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              Sem dados no backend — a editar localmente
+            </span>
+          )}
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
             {isSaving ? 'A guardar...' : 'Guardar'}
@@ -333,27 +349,23 @@ export default function AdminPageEditorPage() {
             <CardTitle className="text-base">Conteúdo da Página</CardTitle>
           </CardHeader>
           <CardContent>
-            {Object.keys(groups).length > 1 ? (
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-4 flex flex-wrap h-auto">
-                  {Object.keys(groups).map(group => (
-                    <TabsTrigger key={group} value={group} className="text-sm">
-                      {groupLabels[group] || group}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {Object.entries(groups).map(([group, fields]) => (
-                  <TabsContent key={group} value={group} className="space-y-4">
-                    {fields.map(fieldKey => renderField(fieldKey, schema[fieldKey]))}
-                  </TabsContent>
-                ))}
-              </Tabs>
+            {isBilingualSchema ? (
+              // Esquema já tem pt/en como grupos de topo — renderização existente funciona
+              renderSchemaFields()
             ) : (
-              <div className="space-y-4">
-                {Object.entries(schema).map(([fieldKey, fieldSchema]: [string, any]) => 
-                  renderField(fieldKey, fieldSchema)
-                )}
-              </div>
+              // Esquema plano — adicionar tabs de idioma PT/EN
+              <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as 'pt' | 'en')}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="pt">🇵🇹 Português</TabsTrigger>
+                  <TabsTrigger value="en">🇬🇧 English</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pt">
+                  {renderSchemaFields('pt')}
+                </TabsContent>
+                <TabsContent value="en">
+                  {renderSchemaFields('en')}
+                </TabsContent>
+              </Tabs>
             )}
           </CardContent>
         </Card>

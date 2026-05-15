@@ -114,7 +114,7 @@ function AnimatedRoutes() {
 
           {/* About Us */}
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/about/pca-message" element={<PcaMessagePage />} />
+          <Route path="/anpg/pca-message" element={<PcaMessagePage />} />
           <Route path="/about/anpg" element={<AnpgPage />} />
           <Route path="/about/board/:id" element={<BoardMemberPage />} />
           <Route path="/about/history" element={<HistoryPage />} />
@@ -156,7 +156,7 @@ function AnimatedRoutes() {
 
           {/* Other pages */}
           <Route path="/media" element={<MediaPage />} />
-          <Route path="/media/events" element={<EventsPage />} />
+          <Route path="/media/eventos" element={<EventsPage />} />
           <Route path="/media/archive" element={<NewsArchivePage />} />
           <Route path="/news/:newsId" element={<NewsDetailPage />} />
           <Route path="/events/:id" element={<EventDetailPage />} />

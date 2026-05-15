@@ -114,7 +114,7 @@ function AnimatedRoutes() {
 
           {/* About Us */}
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/about/pca-message" element={<PcaMessagePage />} />
+          <Route path="/anpg/pca-message" element={<PcaMessagePage />} />
           <Route path="/about/anpg" element={<AnpgPage />} />
           <Route path="/about/board/:id" element={<BoardMemberPage />} />
           <Route path="/about/history" element={<HistoryPage />} />
