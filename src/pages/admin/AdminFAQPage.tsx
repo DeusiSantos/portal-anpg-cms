@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -23,10 +25,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Loader2, HelpCircle, PlusCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Plus, Pencil, Trash2, Loader2, PlusCircle, Edit, X } from 'lucide-react';
 import api, { getFullImageUrl } from '@/service/api';
-import { DialogTrigger } from '@radix-ui/react-dialog';
 
 // Tipos da API
 interface FAQContent {
@@ -102,13 +102,6 @@ interface FAQFormData {
   isActive: boolean;
 }
 
-interface CategoryFormData {
-  displayOrder: number;
-  namePt: string;
-  nameEn: string;
-  isActive: boolean;
-}
-
 // Função para obter nome da categoria em português
 const getCategoryName = (category: FAQCategory | undefined): string => {
   if (!category) return 'Sem categoria';
@@ -122,125 +115,306 @@ const getQuestionPt = (contents: FAQContent[]): string => {
   return ptContent?.question || 'Sem pergunta';
 };
 
-// Modal de criação de categoria
-function CreateCategoryModal({ onCategoryCreated }: { onCategoryCreated: (category: FAQCategory) => void }) {
+// Modal de gestão de categorias (CRUD completo)
+function CategoriesManagerModal({ onCategoryChanged }: { onCategoryChanged: () => void }) {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState<CategoryFormData>({
-    displayOrder: 0,
-    namePt: '',
-    nameEn: '',
-    isActive: true,
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<FAQCategory | null>(null);
+  const [deleteCategory, setDeleteCategory] = useState<FAQCategory | null>(null);
+  const [displayOrder, setDisplayOrder] = useState(0);
+  const [isActive, setIsActive] = useState(true);
+  const [nameEn, setNameEn] = useState('');
 
-  const handleSubmit = async () => {
-    if (!formData.namePt.trim()) {
+  const { data: categoriesResponse, refetch } = useQuery({
+    queryKey: ['categories-manager'],
+    queryFn: async () => {
+      const response = await api.get<FAQCategoryResponse>('/faq-categories', {
+        params: { Page: 1, PageSize: 100 }
+      });
+      return response.data;
+    },
+  });
+
+  const categories = categoriesResponse?.items || [];
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { namePt: string; nameEn: string; displayOrder: number; isActive: boolean }) => {
+      const response = await api.post<FAQCategory>('/faq-categories', {
+        displayOrder: data.displayOrder,
+        namePt: data.namePt,
+        nameEn: data.nameEn,
+        isActive: data.isActive,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onCategoryChanged();
+      toast.success('Categoria criada com sucesso');
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar categoria');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { namePt: string; nameEn: string; displayOrder: number; isActive: boolean } }) => {
+      const response = await api.patch(`/faq-categories/${id}`, {
+        displayOrder: data.displayOrder,
+        namePt: data.namePt,
+        nameEn: data.nameEn,
+        isActive: data.isActive,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onCategoryChanged();
+      toast.success('Categoria actualizada com sucesso');
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao actualizar categoria');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/faq-categories/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      refetch();
+      onCategoryChanged();
+      toast.success('Categoria eliminada com sucesso');
+      setDeleteCategory(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao eliminar categoria');
+    },
+  });
+
+  const resetForm = () => {
+    setName('');
+    setNameEn('');
+    setDisplayOrder(0);
+    setIsActive(true);
+    setEditingCategory(null);
+  };
+
+  const handleEdit = (category: FAQCategory) => {
+    const ptContent = category.contents?.find(c => c.lang === 1);
+    const enContent = category.contents?.find(c => c.lang === 2);
+    setEditingCategory(category);
+    setName(ptContent?.name || '');
+    setNameEn(enContent?.name || '');
+    setDisplayOrder(category.displayOrder);
+    setIsActive(category.isActive);
+  };
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
       toast.error('Nome da categoria em português é obrigatório');
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const response = await api.post<FAQCategory>('/faq-categories', {
-        displayOrder: formData.displayOrder,
-        namePt: formData.namePt.trim(),
-        nameEn: formData.nameEn.trim() || '',
-        isActive: formData.isActive,
-      });
-      toast.success('Categoria criada com sucesso!');
-      onCategoryCreated(response.data);
-      setOpen(false);
-      setFormData({
-        displayOrder: 0,
-        namePt: '',
-        nameEn: '',
-        isActive: true,
-      });
-    } catch (error: any) {
-      console.error('Erro ao criar categoria:', error);
-      toast.error(error.response?.data?.message || 'Erro ao criar categoria');
-    } finally {
-      setIsLoading(false);
+    const submitData = {
+      namePt: name.trim(),
+      nameEn: nameEn.trim() || '',
+      displayOrder,
+      isActive,
+    };
+
+    if (editingCategory) {
+      updateMutation.mutate({ id: editingCategory.id, data: submitData });
+    } else {
+      createMutation.mutate(submitData);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="gap-1">
-          <PlusCircle className="h-4 w-4" />
-          Nova Categoria
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Criar Nova Categoria de FAQ</DialogTitle>
-          <DialogDescription>
-            Adicione uma nova categoria para organizar as perguntas frequentes.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Tabs defaultValue="pt" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="pt">Português</TabsTrigger>
-              <TabsTrigger value="en">English</TabsTrigger>
-            </TabsList>
-            <TabsContent value="pt" className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="namePt">Nome da Categoria (Português) *</Label>
-                <Input
-                  id="namePt"
-                  value={formData.namePt}
-                  onChange={(e) => setFormData({ ...formData, namePt: e.target.value })}
-                  placeholder="Ex: Geral, Suporte, etc."
-                />
+    <>
+      <Dialog open={open} onOpenChange={(newOpen) => {
+        setOpen(newOpen);
+        if (!newOpen) resetForm();
+      }}>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Gerir Categorias
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gestão de Categorias de FAQ</DialogTitle>
+            <DialogDescription>
+              Adicione, edite ou remova categorias para organizar as perguntas frequentes.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Formulário de criação/edição */}
+            <div className="space-y-4 p-4 rounded-lg border border-border bg-secondary/30">
+              <h3 className="font-medium text-foreground">
+                {editingCategory ? 'Editar Categoria' : 'Criar Nova Categoria'}
+              </h3>
+              
+              <Tabs defaultValue="pt" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="pt">Português *</TabsTrigger>
+                  <TabsTrigger value="en">English</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pt" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label>Nome da Categoria (Português) *</Label>
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Ex: Geral, Suporte, Dúvidas Frequentes"
+                    />
+                  </div>
+                </TabsContent>
+                <TabsContent value="en" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label>Category Name (English)</Label>
+                    <Input
+                      value={nameEn}
+                      onChange={(e) => setNameEn(e.target.value)}
+                      placeholder="Ex: General, Support, FAQs"
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Ordem de Exibição</Label>
+                  <Input
+                    type="number"
+                    value={displayOrder}
+                    onChange={(e) => setDisplayOrder(Number(e.target.value))}
+                  />
+                </div>
+                <div className="flex items-end gap-2 pb-1">
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={setIsActive}
+                  />
+                  <Label>Activo</Label>
+                </div>
               </div>
-            </TabsContent>
-            <TabsContent value="en" className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="nameEn">Category Name (English)</Label>
-                <Input
-                  id="nameEn"
-                  value={formData.nameEn}
-                  onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                  placeholder="Ex: General, Support, etc."
-                />
+
+              <div className="flex gap-2">
+                <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+                  {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {editingCategory ? 'Actualizar Categoria' : 'Adicionar Categoria'}
+                </Button>
+                {editingCategory && (
+                  <Button variant="ghost" onClick={resetForm}>
+                    <X className="h-4 w-4 mr-1" />
+                    Cancelar
+                  </Button>
+                )}
               </div>
-            </TabsContent>
-          </Tabs>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Ordem de Exibição</Label>
-              <Input
-                type="number"
-                value={formData.displayOrder}
-                onChange={(e) => setFormData({ ...formData, displayOrder: Number(e.target.value) })}
-              />
             </div>
+
+            {/* Lista de categorias existentes */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="rounded border-gray-300"
-                />
-                Activo
-              </Label>
+              <h3 className="font-medium text-foreground">Categorias Existentes</h3>
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome (PT)</TableHead>
+                      <TableHead>Ordem</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="w-24 text-right">Acções</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          Nenhuma categoria cadastrada
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      categories.map((category) => {
+                        const ptContent = category.contents?.find(c => c.lang === 1);
+                        return (
+                          <TableRow key={category.id}>
+                            <TableCell className="font-medium">
+                              {ptContent?.name || 'Sem nome'}
+                            </TableCell>
+                            <TableCell>{category.displayOrder}</TableCell>
+                            <TableCell>
+                              <Badge variant={category.isActive ? 'default' : 'secondary'}>
+                                {category.isActive ? 'Activa' : 'Inactiva'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleEdit(category)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteCategory(category)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-            Criar Categoria
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Confirmation */}
+      <AlertDialog open={!!deleteCategory} onOpenChange={() => setDeleteCategory(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar Categoria</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja eliminar a categoria "
+              {deleteCategory && (deleteCategory.contents?.find(c => c.lang === 1)?.name || 'Sem nome')}"?
+              Esta acção não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteCategory && deleteMutation.mutate(deleteCategory.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -261,7 +435,7 @@ export default function AdminFAQPage() {
   });
 
   // Buscar categorias de FAQ
-  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
+  const { data: categoriesData, isLoading: categoriesLoading, refetch: refetchCategories } = useQuery({
     queryKey: ['admin-faq-categories'],
     queryFn: async () => {
       const response = await api.get<FAQCategoryResponse>('/faq-categories', {
@@ -272,7 +446,7 @@ export default function AdminFAQPage() {
   });
 
   // Buscar FAQs
-  const { data: faqsData, isLoading, error } = useQuery({
+  const { data: faqsData, isLoading, error, refetch: refetchFaqs } = useQuery({
     queryKey: ['admin-faq-items'],
     queryFn: async () => {
       const response = await api.get<FAQResponse>('/faqs', {
@@ -298,7 +472,7 @@ export default function AdminFAQPage() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-faq-items'] });
+      refetchFaqs();
       toast.success('FAQ criada com sucesso');
       handleClose();
     },
@@ -325,7 +499,7 @@ export default function AdminFAQPage() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-faq-items'] });
+      refetchFaqs();
       toast.success('FAQ actualizada com sucesso');
       handleClose();
     },
@@ -342,7 +516,7 @@ export default function AdminFAQPage() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-faq-items'] });
+      refetchFaqs();
       toast.success('FAQ eliminada com sucesso');
       setDeleteItem(null);
     },
@@ -403,10 +577,16 @@ export default function AdminFAQPage() {
     }
   };
 
-  const handleCategoryCreated = (newCategory: FAQCategory) => {
-    queryClient.invalidateQueries({ queryKey: ['admin-faq-categories'] });
-    setFormData(prev => ({ ...prev, faqCategoryId: newCategory.id }));
-    toast.success(`Categoria "${getCategoryName(newCategory)}" adicionada e selecionada!`);
+  const handleCategoryChanged = () => {
+    refetchCategories();
+    // Se a categoria selecionada foi removida, limpar a seleção
+    if (filterCategoryId !== 'all' && !categoriesData?.items.find(c => c.id === filterCategoryId)) {
+      setFilterCategoryId('all');
+    }
+    // Limpar a categoria selecionada no formulário se foi removida
+    if (formData.faqCategoryId && !categoriesData?.items.find(c => c.id === formData.faqCategoryId)) {
+      setFormData(prev => ({ ...prev, faqCategoryId: '' }));
+    }
   };
 
   const categories = categoriesData?.items || [];
@@ -427,7 +607,7 @@ export default function AdminFAQPage() {
               <div className="text-center text-red-500">
                 <p>Erro ao carregar FAQs: {(error as any)?.message}</p>
                 <Button 
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-faq-items'] })}
+                  onClick={() => refetchFaqs()}
                   className="mt-4"
                 >
                   Tentar novamente
@@ -451,7 +631,7 @@ export default function AdminFAQPage() {
                 <CardDescription>Gerir perguntas e respostas frequentes do website</CardDescription>
               </div>
               <div className="flex gap-2">
-                <CreateCategoryModal onCategoryCreated={handleCategoryCreated} />
+                <CategoriesManagerModal onCategoryChanged={handleCategoryChanged} />
                 <Button onClick={() => { handleClose(); setIsDialogOpen(true); }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova FAQ
@@ -625,16 +805,14 @@ export default function AdminFAQPage() {
                     onChange={e => setFormData({ ...formData, displayOrder: Number(e.target.value) })} 
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 pt-6">
-                    <input
-                      type="checkbox"
-                      checked={formData.isActive}
-                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                      className="rounded border-gray-300"
-                    />
-                    Activo
-                  </Label>
+                <div className="flex items-center gap-2 pt-6">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    className="rounded border-gray-300"
+                  />
+                  <Label>Activo</Label>
                 </div>
               </div>
             </div>
