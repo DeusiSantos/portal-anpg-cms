@@ -69,6 +69,7 @@ const contentItems: NavItem[] = [
   { title: 'Central de Media', href: '/admin/media', icon: Image, permission: 'content' },
   { title: 'Linha do Tempo', href: '/admin/history-events', icon: Clock, permission: 'content' },
   { title: 'Base Conhecimento', href: '/admin/knowledge-base', icon: BookOpen, permission: 'content' },
+  { title: 'Rodapé', href: '/admin/footer', icon: FileText, permission: 'content' },
   //{ title: 'Páginas CMS', href: '/admin/pages', icon: FileText, permission: 'content' },
 ];
 

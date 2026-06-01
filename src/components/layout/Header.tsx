@@ -209,10 +209,10 @@ export function Header() {
   // Loading state
   if (isLoading) {
     return (
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background shadow-md py-4">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background shadow-md py-3">
         <div className="container mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="h-16 w-32 bg-muted animate-pulse rounded" />
+            <div className="h-10 md:h-14 w-24 md:w-32 bg-muted animate-pulse rounded" />
             <div className="hidden lg:flex items-center gap-4">
               <div className="w-20 h-8 bg-muted animate-pulse rounded" />
               <div className="w-20 h-8 bg-muted animate-pulse rounded" />
@@ -228,7 +228,7 @@ export function Header() {
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-        isScrolled ? "bg-background/95 backdrop-blur-md shadow-md py-4" : "bg-transparent py-8"
+        isScrolled ? "bg-background/95 backdrop-blur-md shadow-md py-3" : "bg-transparent py-4 md:py-6 lg:py-8"
       )}
     >
       <div className="container mx-auto px-6 lg:px-8">
@@ -238,7 +238,7 @@ export function Header() {
             <motion.img
               src={isScrolled ? logoRed : logoWhite}
               alt="ANPG - Agência Nacional de Petróleo, Gás e Biocombustíveis"
-              className="h-16 md:h-20 w-auto transition-all duration-300"
+              className="h-10 md:h-14 lg:h-16 w-auto transition-all duration-300"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}

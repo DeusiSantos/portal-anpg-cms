@@ -146,7 +146,7 @@ export default function MediaPage() {
 
   // API
   const { data: apiNewsData, isLoading: isLoadingNews } = useApiNews(1, 100, 2);
-  const { data: apiEvents, isLoading: isLoadingEvents } = useApiEvents(1, 100, 1);
+  const { data: apiEvents, isLoading: isLoadingEvents } = useApiEvents(1, 100, 2);
   const { data: eventCategories, isLoading: isLoadingCategories } = useEventCategories();
   const { data: publications, isLoading: isLoadingPubs } = useApiPublications(2);
   const { data: videos, isLoading: isLoadingVids } = useApiVideos(isEn);

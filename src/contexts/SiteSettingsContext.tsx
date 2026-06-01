@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import api from '@/service/api';
 
 interface LogoSettings {
   light: string;
@@ -26,7 +26,7 @@ interface FooterSettings {
   tagline: string;
 }
 
-interface SiteSettings {
+export interface SiteSettings {
   logo: LogoSettings;
   contact: ContactSettings;
   social: SocialSettings;
@@ -39,7 +39,7 @@ interface SiteSettingsContextType {
   refetch: () => Promise<void>;
 }
 
-const defaultSettings: SiteSettings = {
+export const defaultSettings: SiteSettings = {
   logo: { light: '', dark: '' },
   contact: {
     address: 'Edifício Torres do Carmo - Torre 2, Avenida de Portugal, Rua Lopes de Lima, Município de Luanda, Angola',
@@ -54,6 +54,17 @@ const defaultSettings: SiteSettings = {
   },
 };
 
+const STORAGE_KEY = 'site_settings';
+
+function mergeSettings(partial: Partial<SiteSettings>): SiteSettings {
+  return {
+    logo: { ...defaultSettings.logo, ...(partial.logo || {}) },
+    contact: { ...defaultSettings.contact, ...(partial.contact || {}) },
+    social: { ...defaultSettings.social, ...(partial.social || {}) },
+    footer: { ...defaultSettings.footer, ...(partial.footer || {}) },
+  };
+}
+
 const SiteSettingsContext = createContext<SiteSettingsContextType>({
   settings: defaultSettings,
   isLoading: true,
@@ -65,28 +76,28 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSettings = async () => {
+    // 1. localStorage override (saved by admin)
     try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('setting_key, setting_value');
-
-      if (error) throw error;
-
-      if (data) {
-        const newSettings = { ...defaultSettings };
-        data.forEach((row) => {
-          const key = row.setting_key as keyof SiteSettings;
-          if (key in newSettings) {
-            newSettings[key] = row.setting_value as any;
-          }
-        });
-        setSettings(newSettings);
+      const local = localStorage.getItem(STORAGE_KEY);
+      if (local) {
+        setSettings(mergeSettings(JSON.parse(local)));
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching site settings:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch {}
+
+    // 2. API endpoint (optional, silent fail)
+    try {
+      const res = await api.get('/settings');
+      if (res.data && typeof res.data === 'object') {
+        setSettings(mergeSettings(res.data));
+        setIsLoading(false);
+        return;
+      }
+    } catch {}
+
+    // 3. Static defaults
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -106,4 +117,15 @@ export function useSiteSettings() {
     throw new Error('useSiteSettings must be used within a SiteSettingsProvider');
   }
   return context;
+}
+
+/** Guardar secção de settings e sincronizar contexto */
+export function saveSettings(section: keyof SiteSettings, value: any): void {
+  try {
+    const existing: Partial<SiteSettings> = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    const updated = { ...existing, [section]: value };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    // Tentativa silenciosa de sincronizar com a API
+    api.patch('/settings', updated).catch(() => {});
+  } catch {}
 }

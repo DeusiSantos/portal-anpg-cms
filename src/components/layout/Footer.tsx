@@ -1,12 +1,11 @@
-// Footer.tsx - CORRIGIDO
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Linkedin, 
-  Twitter, 
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Linkedin,
+  Twitter,
   Youtube,
   Facebook,
   Instagram
@@ -14,36 +13,45 @@ import {
 import logoWhite from "@/assets/logo-white.svg";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { useMenuItemsByGroup } from "@/hooks/useCMSData";
+import { useApiPageByKey } from "@/hooks/pages/useApiPages";
+
+function safeParseJson(raw: any): any {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try { return JSON.parse(raw); } catch { return null; }
+}
 
 export function Footer() {
   const { t, i18n } = useTranslation();
   const { settings } = useSiteSettings();
   const isEn = i18n.language === "en";
-  
+  const lang = isEn ? 'en' : 'pt';
+
+  // Dados do backend (página /footer)
+  const footerPage = useApiPageByKey('footer');
+  const apiData: Record<string, string> | null = footerPage
+    ? safeParseJson(footerPage.content?.[lang as 'pt' | 'en'])
+    : null;
+
   // Buscar menus para o rodapé - grupo "footer"
-  const { data: footerMenus, isLoading } = useMenuItemsByGroup("footer", isEn);
+  const { data: footerMenus } = useMenuItemsByGroup("footer", isEn);
 
   // Organizar menus por parentId para criar hierarquia
   const organizeFooterMenus = () => {
     if (!footerMenus || footerMenus.length === 0) return { institutional: [], investors: [], resources: [], services: [] };
-    
-    // Encontrar itens de topo (sem parentId)
+
     const topLevelItems = footerMenus.filter(item => !item.parentId);
-    
     const result: { [key: string]: any[] } = {
       institutional: [],
       investors: [],
       resources: [],
       services: []
     };
-    
-    // Mapear top level items para suas seções baseado no label
+
     topLevelItems.forEach(parent => {
       const children = footerMenus.filter(item => item.parentId === parent.id);
-      
-      // Identificar a seção pelo label do parent
       const parentLabel = parent.label.toLowerCase();
-      
+
       if (parentLabel.includes('institucional') || parentLabel.includes('institutional')) {
         result.institutional = children;
       } else if (parentLabel.includes('investidor') || parentLabel.includes('investor')) {
@@ -54,29 +62,30 @@ export function Footer() {
         result.services = children;
       }
     });
-    
+
     return result;
   };
-  
+
   const footerSections = organizeFooterMenus();
 
-  // Get dynamic settings with fallbacks
-  const logoUrl = settings.logo?.dark || logoWhite;
+  // Prioridade: backend API → SiteSettings → fallback estático
+  const logoUrl = apiData?.logoLight || apiData?.logoDark || settings.logo?.dark || logoWhite;
   const contact = {
-    address: settings.contact?.address || "Edifício Torres do Carmo - Torre 2\nAv. de Portugal, Rua Lopes de Lima\nMunicípio de Luanda, Angola",
-    phone: settings.contact?.phone || "+244 226 428 000",
-    email: settings.contact?.email || "info@anpg.co.ao"
+    address: apiData?.address || settings.contact?.address || "Edifício Torres do Carmo - Torre 2\nAv. de Portugal, Rua Lopes de Lima\nMunicípio de Luanda, Angola",
+    phone:   apiData?.phone   || settings.contact?.phone   || "+244 226 428 000",
+    email:   apiData?.email   || settings.contact?.email   || "info@anpg.co.ao",
+    hours:   apiData?.hours   || settings.contact?.hours   || "",
   };
   const social = {
-    linkedin: settings.social?.linkedin || "https://linkedin.com",
-    twitter: settings.social?.twitter || "https://twitter.com",
-    youtube: settings.social?.youtube || "https://youtube.com",
-    facebook: settings.social?.facebook || "",
-    instagram: settings.social?.instagram || ""
+    linkedin:  apiData?.linkedin  || settings.social?.linkedin  || "https://linkedin.com",
+    twitter:   apiData?.twitter   || settings.social?.twitter   || "https://twitter.com",
+    youtube:   apiData?.youtube   || settings.social?.youtube   || "https://youtube.com",
+    facebook:  apiData?.facebook  || settings.social?.facebook  || "",
+    instagram: apiData?.instagram || settings.social?.instagram || "",
   };
   const footerText = {
-    copyright: settings.footer?.copyright || "",
-    tagline: settings.footer?.tagline || ""
+    copyright: apiData?.copyright  || settings.footer?.copyright || "",
+    tagline:   apiData?.description || settings.footer?.tagline  || "",
   };
 
   return (

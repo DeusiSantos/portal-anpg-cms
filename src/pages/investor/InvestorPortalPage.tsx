@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { 
-  Briefcase, FileText, MapPin, TrendingUp, Download, Calendar, ArrowRight, 
-  Database, Shield, Users, Building2, BarChart3, Globe2, Lock, CalendarDays, LogOut
+  Briefcase, FileText, TrendingUp, ArrowRight, 
+  Database, Shield, Users, Building2, BarChart3, Globe2, Lock, CalendarDays
 } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,21 +13,9 @@ import { StaggerContainer } from "@/components/layout/StaggerContainer";
 import { OpportunitiesDashboard } from "@/components/investor/OpportunitiesDashboard";
 import { DocumentCenter } from "@/components/investor/DocumentCenter";
 import { MeetingScheduler } from "@/components/investor/MeetingScheduler";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePageData } from "@/hooks/pages/usePageData";
 
 export default function InvestorPortalPage() {
   const { t } = useTranslation();
-  const { user, roles, loading, signOut } = useAuth();
-  const { data: pageData } = usePageData("investorPortal");
-
-  // Gate: redirect to login if not authenticated or not an investor/admin
-  const roleNames = roles.map((r) => r.role as string);
-  const isInvestor = roleNames.includes('investor') || roleNames.includes('admin') || roleNames.includes('gestor_investidores');
-
-  if (!loading && (!user || !isInvestor)) {
-    return <Navigate to="/investor-portal/login" replace />;
-  }
 
   const breadcrumbs = [
     { labelKey: "nav.investorPortal" },
@@ -82,13 +70,14 @@ export default function InvestorPortalPage() {
   return (
     <PageLayout
       pageKey="investor-portal"
-      title={pageData?.title}
-      subtitle={pageData?.subtitle}
-      description={pageData?.description}
+      titleKey="pages.investorPortal.title"
+      subtitleKey="pages.investorPortal.subtitle"
+      descriptionKey="pages.investorPortal.description"
+      
       icon={<Briefcase className="w-6 h-6" />}
       breadcrumbs={breadcrumbs}
     >
-      {/* Welcome bar */}
+      {/* Welcome bar - estático */}
       <div className="flex items-center justify-between mb-8 p-4 bg-primary/5 rounded-lg border border-primary/10">
         <div className="flex items-center gap-3">
           <Shield className="w-5 h-5 text-primary" />
@@ -96,10 +85,6 @@ export default function InvestorPortalPage() {
             {t("investorPortal.welcome", "Bem-vindo ao Portal do Investidor")}
           </span>
         </div>
-        <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
-          <LogOut className="w-4 h-4" />
-          Sair
-        </Button>
       </div>
 
       {/* Investment Highlights */}

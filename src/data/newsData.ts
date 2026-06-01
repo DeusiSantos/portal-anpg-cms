@@ -385,6 +385,7 @@ export const getCategoryLabel = (category: string) => {
     case "tender": return "Licitação";
     case "highlight": return "Destaque";
     case "production": return "Produção";
+    case "imprensa": return "Imprensa";
     default: return category;
   }
 };
@@ -395,6 +396,7 @@ export const getCategoryColor = (category: string) => {
     case "tender": return "bg-status-warning/10 text-status-warning-foreground border-status-warning/20";
     case "highlight": return "bg-primary/10 text-primary border-primary/20";
     case "production": return "bg-status-success/10 text-status-success-foreground border-status-success/20";
+    case "imprensa": return "bg-purple-50 text-purple-700 border-purple-200";
     default: return "bg-muted text-muted-foreground";
   }
 };

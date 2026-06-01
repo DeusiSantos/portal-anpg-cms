@@ -15,6 +15,7 @@ export interface ApiPage {
 // Excepções onde o url do frontend diverge do pageUrl do backend
 const BACKEND_URL_OVERRIDES: Record<string, string> = {
   home: '/homepage', // frontend '/' → backend '/homepage'
+  footer: '/footer', // footer é global, não tem rota própria no frontend
 };
 
 // Resolve o pageUrl do backend a partir do pageKey do frontend

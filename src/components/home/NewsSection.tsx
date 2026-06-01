@@ -1,33 +1,52 @@
+// components/NewsSection.tsx
 import { useRef, useState, useMemo } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { ArrowRight, Calendar, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-import { useApiNews } from "@/hooks/useApiNews";
-import { newsItems as fallbackNewsItems, getCategoryLabel } from "@/data/newsData";
-import { usePageData } from "@/hooks/pages/usePageData";
+import { useApiNews, FormattedNewsItem } from "@/hooks/useApiNews";
 
 const defaultCategories = [
   { id: "all", label: "Todos" },
-  { id: "highlight", label: "Destaques" },
-  { id: "press", label: "Comunicados" },
-  { id: "production", label: "Produção" },
-  { id: "tender", label: "Licitações" },
+  { id: "geral", label: "Geral" },
+  { id: "producao", label: "Produção" },
+  { id: "exploracao", label: "Exploração" },
+  { id: "licitacao", label: "Licitações" },
+  { id: "institucional", label: "Institucional" },
+  { id: "sustentabilidade", label: "Sustentabilidade" },
 ];
 
+const getCategoryLabel = (category: string): string => {
+  const categories: Record<string, string> = {
+    geral: "Geral",
+    producao: "Produção",
+    exploracao: "Exploração",
+    licitacao: "Licitação",
+    institucional: "Institucional",
+    sustentabilidade: "Sustentabilidade",
+  };
+  return categories[category] || category;
+};
+
 export function NewsSection() {
-  const { data: homeData } = usePageData("home");
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const [activeCategory, setActiveCategory] = useState("all");
 
-  const categories = defaultCategories;
+  // Buscar notícias da API
+  const { data: apiNews, isLoading, isError } = useApiNews(1, 20, 2);
 
-  const { data: apiNews, isLoading } = useApiNews(1, 20);
-  const newsSource = apiNews?.length ? apiNews : fallbackNewsItems;
+  // Mapear notícias da API para o formato esperado
+  const newsSource: FormattedNewsItem[] = useMemo(() => {
+    if (apiNews?.news) return apiNews.news;
+    return [];
+  }, [apiNews]);
 
+  // Filtrar notícias por categoria
   const filteredNews = useMemo(() => {
     if (activeCategory === "all") {
       return newsSource.slice(0, 8);
@@ -38,6 +57,18 @@ export function NewsSection() {
   const featuredNews = filteredNews[0];
   const secondaryNews = filteredNews.slice(1, 4);
   const compactNews = filteredNews.slice(4, 8);
+
+  if (isError) {
+    return (
+      <section ref={ref} className="section-padding bg-secondary/30 overflow-hidden">
+        <div className="container mx-auto px-6 lg:px-8">
+          <div className="text-center py-16 bg-background rounded-xl shadow-card">
+            <p className="text-muted-foreground">Erro ao carregar notícias. Tente novamente mais tarde.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section ref={ref} className="section-padding bg-secondary/30 overflow-hidden">
@@ -51,15 +82,15 @@ export function NewsSection() {
         >
           <div>
             <span className="text-sm font-semibold text-primary uppercase tracking-widest mb-4 block">
-              {homeData?.news?.label || "Últimas Notícias"}
+              {t("news.label") || "Notícias"}
             </span>
             <h2 className="section-title">
-              {homeData?.news?.title || "Notícias & Comunicados"}
+              {t("news.title") || "Últimas Notícias"}
             </h2>
           </div>
           <Link to="/media">
             <Button variant="heroOutlineLight" size="default" className="mt-6 md:mt-0 group">
-              {homeData?.news?.viewAll || "Ver Todas as Notícias"}
+              {t("news.viewAll") || "Ver todas"}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
@@ -72,7 +103,7 @@ export function NewsSection() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex flex-wrap gap-2 mb-8"
         >
-          {categories.map((category) => (
+          {defaultCategories.map((category) => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
@@ -128,7 +159,7 @@ export function NewsSection() {
                 <div className="grid lg:grid-cols-12 gap-6 mb-6">
                   {/* Featured News - Large Card */}
                   {featuredNews && (
-                    <Link to={`/news/${featuredNews.slug || featuredNews.id}`} className="lg:col-span-6">
+                    <Link to={`/news/${featuredNews.id}`} className="lg:col-span-6">
                       <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -141,6 +172,7 @@ export function NewsSection() {
                               src={featuredNews.image} 
                               alt={featuredNews.title}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              onError={(e) => { e.currentTarget.src = '/placeholder-image.jpg'; }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/30 to-transparent" />
                             <div className="absolute bottom-4 left-4 right-4">
@@ -171,27 +203,28 @@ export function NewsSection() {
                   {/* Secondary News Grid - 3 Medium Cards */}
                   <div className="lg:col-span-6 grid sm:grid-cols-2 lg:grid-cols-1 gap-4">
                     {secondaryNews.map((item, index) => (
-                      <Link key={item.id} to={`/news/${item.slug || item.id}`}>
+                      <Link key={item.id} to={`/news/${item.id}`}>
                         <motion.div
                           initial={{ opacity: 0, x: 30 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.5, delay: 0.15 + index * 0.08 }}
-                          className="h-full group flex gap-4 p-3 bg-background rounded-xl shadow-card hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 border border-transparent relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-primary/10 before:to-transparent before:-translate-x-full hover:before:translate-x-full before:transition-transform before:duration-500 before:ease-out before:pointer-events-none"
+                          className="h-full group flex gap-0 bg-background rounded-xl shadow-card hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 border border-transparent relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-primary/10 before:to-transparent before:-translate-x-full hover:before:translate-x-full before:transition-transform before:duration-500 before:ease-out before:pointer-events-none"
                         >
                           {/* Thumbnail */}
-                          <div className="flex-shrink-0 w-28 h-20 rounded-lg overflow-hidden">
-                            <img 
-                              src={item.image} 
+                          <div className="flex-shrink-0 w-2/5 min-h-[110px] overflow-hidden rounded-l-xl">
+                            <img
+                              src={item.image}
                               alt={item.title}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={(e) => { e.currentTarget.src = '/placeholder-image.jpg'; }}
                             />
                           </div>
-                          
-                          <div className="flex-1 min-w-0 flex flex-col justify-center">
+
+                          <div className="flex-1 min-w-0 flex flex-col justify-center p-4">
                             <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
                               {getCategoryLabel(item.category)}
                             </span>
-                            <h4 className="font-semibold text-foreground mt-0.5 mb-1.5 group-hover:text-primary transition-colors line-clamp-2 text-sm leading-tight">
+                            <h4 className="font-semibold text-foreground mt-1 mb-2 group-hover:text-primary transition-colors line-clamp-2 text-sm leading-tight">
                               {item.title}
                             </h4>
                             <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
@@ -211,7 +244,7 @@ export function NewsSection() {
                 {compactNews.length > 0 && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {compactNews.map((item, index) => (
-                      <Link key={item.id} to={`/news/${item.slug || item.id}`}>
+                      <Link key={item.id} to={`/news/${item.id}`}>
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -225,6 +258,7 @@ export function NewsSection() {
                                 src={item.image} 
                                 alt={item.title}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                onError={(e) => { e.currentTarget.src = '/placeholder-image.jpg'; }}
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 to-transparent" />
                               <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded-pill">
@@ -252,7 +286,6 @@ export function NewsSection() {
             )}
           </motion.div>
         </AnimatePresence>
-
       </div>
     </section>
   );

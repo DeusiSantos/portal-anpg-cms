@@ -29,7 +29,7 @@ export function AboutSection() {
   const values = homeData?.about?.values?.length ? homeData.about.values : defaultValuesData;
 
   return (
-    <section ref={ref} className="section-padding bg-background overflow-hidden">
+    <section ref={ref} className="relative section-padding bg-background overflow-hidden">
       <div className="container mx-auto px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Image Column */}

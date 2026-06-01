@@ -146,7 +146,7 @@ export function HeroSection() {
       {/* Content */}
       <motion.div
         style={{ opacity, y: contentY }}
-        className="relative z-10 container mx-auto px-6 lg:px-8 pt-24"
+        className="relative z-10 container mx-auto px-6 lg:px-8 pt-32 md:pt-28 lg:pt-24"
       >
         <div className="max-w-4xl">
           {/* Badge */}
@@ -154,7 +154,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-4 md:mb-8"
           >
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse-slow" />
             <span className="text-sm text-primary-foreground font-medium">
@@ -167,7 +167,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="hero-title text-primary-foreground mb-6"
+            className="hero-title text-primary-foreground mb-3 md:mb-6"
           >
             {homeData?.hero?.title || t("hero.title")}<br />
             <span className="text-primary">{homeData?.hero?.titleHighlight || t("hero.titleHighlight")}</span>
@@ -178,7 +178,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="hero-subtitle text-primary-foreground/80 max-w-2xl mb-10"
+            className="hero-subtitle text-primary-foreground/80 max-w-2xl mb-5 md:mb-10 line-clamp-3 sm:line-clamp-none"
           >
             {homeData?.hero?.description || t("hero.description")}
           </motion.p>
@@ -206,7 +206,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="mt-16 lg:mt-24 grid grid-cols-1 md:grid-cols-3 gap-4"
+          className="mt-8 md:mt-16 lg:mt-24 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4"
         >
           {quickAccessItems.map((item: any, idx: number) => (
             <QuickAccessCard
@@ -309,10 +309,10 @@ function QuickAccessCard({ icon, titleKey, title, descriptionKey, description, h
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       transition={{ duration: 0.5, delay }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="group glass-dark rounded-sm p-6 hover:bg-primary-foreground/5 transition-all duration-300 cursor-pointer"
+      className="group glass-dark rounded-sm p-4 md:p-6 hover:bg-primary-foreground/5 transition-all duration-300 cursor-pointer"
     >
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-12 h-12 rounded-sm bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+        <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-sm bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
           {icon}
         </div>
         <div>

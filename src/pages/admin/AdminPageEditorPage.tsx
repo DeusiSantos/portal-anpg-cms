@@ -174,7 +174,7 @@ export default function AdminPageEditorPage() {
                         <Label className="text-xs">{propSchema.label || propKey}</Label>
                         {propSchema.isLongText ? (
                           <Textarea
-                            value={item[propKey] || ''}
+                            value={item[propKey] ?? ''}
                             onChange={(e) => {
                               const newArray = [...arrayValue];
                               newArray[idx] = { ...item, [propKey]: e.target.value };
@@ -184,10 +184,14 @@ export default function AdminPageEditorPage() {
                           />
                         ) : (
                           <Input
-                            value={item[propKey] || ''}
+                            type={propSchema.type === 'number' ? 'number' : 'text'}
+                            value={item[propKey] ?? ''}
                             onChange={(e) => {
                               const newArray = [...arrayValue];
-                              newArray[idx] = { ...item, [propKey]: e.target.value };
+                              const val = propSchema.type === 'number'
+                                ? (e.target.value === '' ? undefined : Number(e.target.value))
+                                : e.target.value;
+                              newArray[idx] = { ...item, [propKey]: val };
                               updateField(fullPath, newArray);
                             }}
                           />
@@ -220,6 +224,7 @@ export default function AdminPageEditorPage() {
     }
 
     const isLongText = fieldSchema.isLongText || (typeof value === 'string' && value?.length > 100);
+    const isNumber = fieldSchema.type === 'number';
     const InputComponent = isLongText ? Textarea : Input;
     return (
       <div key={fieldKey} className="space-y-1 mb-4">
@@ -228,8 +233,12 @@ export default function AdminPageEditorPage() {
           {isRequired && <span className="text-red-500 ml-1">*</span>}
         </Label>
         <InputComponent
+          type={isNumber ? 'number' : 'text'}
           value={value ?? ''}
-          onChange={(e) => updateField(fullPath, e.target.value)}
+          onChange={(e) => updateField(fullPath, isNumber
+            ? (e.target.value === '' ? undefined : Number(e.target.value))
+            : e.target.value
+          )}
           placeholder={fieldSchema.placeholder || `Insira ${label.toLowerCase()}`}
           className={isLongText ? 'min-h-[100px]' : ''}
         />
@@ -294,6 +303,7 @@ export default function AdminPageEditorPage() {
     processSteps: 'Passos do Processo', phases: 'Fases', documents: 'Documentos',
     resources: 'Recursos', publications: 'Publicações', metrics: 'Métricas',
     activeTenders: 'Licitações Activas', pastTenders: 'Licitações Anteriores',
+    logo: 'Logo', contact: 'Contactos', social: 'Redes Sociais', texts: 'Textos do Rodapé',
   };
 
   const renderSchemaFields = (langPrefix?: 'pt' | 'en') => {

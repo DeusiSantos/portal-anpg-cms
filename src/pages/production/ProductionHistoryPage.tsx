@@ -276,7 +276,7 @@ export default function ProductionHistoryPage() {
       <SectionTransition delay={0.3}>
         <section>
           <div className="bg-gradient-to-br from-foreground to-foreground/90 rounded-3xl p-8 md:p-12 text-primary-foreground text-center">
-            <h3 className="text-2xl md:text-3xl font-bold mb-4">
+            <h3 className="text-2xl text-primary md:text-3xl font-bold mb-4">
               {pageData?.ctaTitle || "Aceda aos Dados Completos"}
             </h3>
             <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
@@ -286,7 +286,7 @@ export default function ProductionHistoryPage() {
               <Button variant="hero" size="lg" asChild>
                 <Link to="/production">{pageData?.ctaDashboard || "Dashboard de Produção"}</Link>
               </Button>
-              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground hover:text-foreground" asChild>
+              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-foreground hover:bg-primary-foreground hover:text-foreground" asChild>
                 <Link to="/ep-data">{pageData?.ctaData || "Explorar Dados de E&P"}</Link>
               </Button>
             </div>

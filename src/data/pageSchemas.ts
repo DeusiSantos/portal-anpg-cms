@@ -652,18 +652,44 @@ export const PAGE_SCHEMAS: Record<string, any> = {
     mapTitle: { type: 'string', label: 'Título do Mapa' },
     openInMaps: { type: 'string', label: 'Abrir no Google Maps' },
     headquarters: { type: 'string', label: 'Sede' },
+    addressTitle: { type: 'string', label: 'Label Endereço' },
+    address: { type: 'string', label: 'Endereço' },
+    phoneTitle: { type: 'string', label: 'Label Telefone' },
+    phone: { type: 'string', label: 'Telefone' },
+    emailTitle: { type: 'string', label: 'Label Email' },
+    email: { type: 'string', label: 'Email' },
+    hoursTitle: { type: 'string', label: 'Label Horário' },
+    hours: { type: 'string', label: 'Horário' },
     info: {
       type: 'object',
       label: 'Informações',
       properties: {
-        address: { type: 'object', properties: { title: { type: 'string', label: 'Título Endereço' } } },
-        phone: { type: 'object', properties: { title: { type: 'string', label: 'Título Telefone' } } },
-        email: { type: 'object', properties: { title: { type: 'string', label: 'Título Email' } } },
+        address: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', label: 'Título Endereço' },
+            content: { type: 'string', label: 'Endereço (conteúdo)' },
+          },
+        },
+        phone: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', label: 'Título Telefone' },
+            content: { type: 'string', label: 'Telefone (número)' },
+          },
+        },
+        email: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', label: 'Título Email' },
+            content: { type: 'string', label: 'Email (endereço)' },
+          },
+        },
         hours: {
           type: 'object',
           properties: {
             title: { type: 'string', label: 'Título Horário' },
-            content: { type: 'string', label: 'Conteúdo Horário' },
+            content: { type: 'string', label: 'Horário (conteúdo)' },
           },
         },
       },
@@ -1225,6 +1251,67 @@ export const PAGE_SCHEMAS: Record<string, any> = {
         gasProduction: { type: 'string', label: 'Produção Gás' },
         activeBlocks: { type: 'string', label: 'Blocos Activos' },
         intlOperators: { type: 'string', label: 'Operadores Internacionais' },
+      },
+    },
+    keyStats: {
+      type: 'array',
+      label: 'Indicadores Chave',
+      items: {
+        type: 'object',
+        properties: {
+          icon: { type: 'string', label: 'Ícone (fuel/gas/blocks/operators)' },
+          value: { type: 'string', label: 'Valor' },
+          suffix: { type: 'string', label: 'Sufixo' },
+          label: { type: 'string', label: 'Label' },
+          change: { type: 'number', label: 'Variação (%)' },
+        },
+      },
+    },
+    historicalData: {
+      type: 'array',
+      label: 'Dados Históricos',
+      items: {
+        type: 'object',
+        properties: {
+          year: { type: 'string', label: 'Ano' },
+          oil: { type: 'number', label: 'Petróleo (kbbl/dia)' },
+          gas: { type: 'number', label: 'Gás (MMscf/dia)' },
+        },
+      },
+    },
+    monthlyData: {
+      type: 'array',
+      label: 'Dados Mensais',
+      items: {
+        type: 'object',
+        properties: {
+          month: { type: 'string', label: 'Mês' },
+          production: { type: 'number', label: 'Produção (kbbl/dia)' },
+        },
+      },
+    },
+    operatorData: {
+      type: 'array',
+      label: 'Dados por Operador',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', label: 'Nome' },
+          value: { type: 'number', label: 'Quota (%)' },
+          barrels: { type: 'number', label: 'Barris (kbbl/dia)' },
+        },
+      },
+    },
+    basinData: {
+      type: 'array',
+      label: 'Dados por Bacia',
+      items: {
+        type: 'object',
+        properties: {
+          basin: { type: 'string', label: 'Bacia' },
+          production: { type: 'number', label: 'Produção (kbbl/dia)' },
+          percentage: { type: 'number', label: 'Percentagem (%)' },
+        },
       },
     },
   },
@@ -1853,11 +1940,47 @@ export const PAGE_SCHEMAS: Record<string, any> = {
         average: { type: 'string', label: 'Média' },
       },
     },
+    longTermProduction: {
+      type: 'array',
+      label: 'Produção Longo Prazo (1978-2025)',
+      items: {
+        type: 'object',
+        properties: {
+          year: { type: 'string', label: 'Ano' },
+          oil: { type: 'number', label: 'Petróleo (kbbl/dia)' },
+        },
+      },
+    },
+    decadeData: {
+      type: 'array',
+      label: 'Dados por Década',
+      items: {
+        type: 'object',
+        properties: {
+          decade: { type: 'string', label: 'Década' },
+          avgProduction: { type: 'number', label: 'Média (kbbl/dia)' },
+          peakYear: { type: 'string', label: 'Ano de Pico' },
+          peak: { type: 'number', label: 'Pico (kbbl/dia)' },
+        },
+      },
+    },
+    monthlyData2024: {
+      type: 'array',
+      label: 'Dados Mensais (2024-2025)',
+      items: {
+        type: 'object',
+        properties: {
+          month: { type: 'string', label: 'Mês' },
+          oil: { type: 'number', label: 'Petróleo (kbbl/dia)' },
+          gas: { type: 'number', label: 'Gás (MMscf/dia)' },
+        },
+      },
+    },
     milestonesTitle: { type: 'string', label: 'Título Marcos' },
     milestonesSubtitle: { type: 'string', label: 'Subtítulo Marcos' },
     milestones: {
       type: 'array',
-      label: 'Marcos',
+      label: 'Marcos Históricos',
       items: {
         type: 'object',
         properties: {
@@ -2106,6 +2229,30 @@ export const PAGE_SCHEMAS: Record<string, any> = {
     relatedTitle: { type: 'string', label: 'Título Notícias Relacionadas' },
     viewAllButton: { type: 'string', label: 'Botão Ver Todas' },
   },
+
+  // ==================== RODAPÉ (FOOTER) ====================
+  footer: {
+    // --- Logo ---
+    logoLight: { type: 'string', group: 'logo', label: 'Logo Claro (URL ou path)' },
+    logoDark: { type: 'string', group: 'logo', label: 'Logo Escuro (URL ou path)' },
+
+    // --- Contactos ---
+    address: { type: 'string', isLongText: true, group: 'contact', label: 'Morada' },
+    phone: { type: 'string', group: 'contact', label: 'Telefone' },
+    email: { type: 'string', group: 'contact', label: 'Email' },
+    hours: { type: 'string', group: 'contact', label: 'Horário de Funcionamento' },
+
+    // --- Redes Sociais ---
+    facebook: { type: 'string', group: 'social', label: 'Facebook (URL)' },
+    linkedin: { type: 'string', group: 'social', label: 'LinkedIn (URL)' },
+    twitter: { type: 'string', group: 'social', label: 'Twitter / X (URL)' },
+    youtube: { type: 'string', group: 'social', label: 'YouTube (URL)' },
+    instagram: { type: 'string', group: 'social', label: 'Instagram (URL)' },
+
+    // --- Textos do Rodapé ---
+    copyright: { type: 'string', isLongText: true, group: 'texts', label: 'Texto de Copyright' },
+    description: { type: 'string', isLongText: true, group: 'texts', label: 'Tagline / Slogan' },
+  },
 };
 
 // ==================== SITE PAGES ====================
@@ -2171,6 +2318,9 @@ export const SITE_PAGES = [
   { pageKey: 'boardMember', label: 'Membro do Conselho', labelEn: 'Board Member', url: '/about/board/:id', category: 'pages', sections: ['content'] },
   { pageKey: 'eventDetail', label: 'Detalhe de Evento', labelEn: 'Event Detail', url: '/events/:id', category: 'media', sections: ['content'] },
   { pageKey: 'newsDetail', label: 'Detalhe de Notícia', labelEn: 'News Detail', url: '/news/:id', category: 'media', sections: ['content'] },
+
+  // ==================== GLOBAL ====================
+  { pageKey: 'footer', label: 'Rodapé', labelEn: 'Footer', url: '/', category: 'global', sections: ['logo', 'contact', 'social', 'texts'] },
 ];
 
 export const SITE_PAGE_CATEGORIES = [
@@ -2181,4 +2331,5 @@ export const SITE_PAGE_CATEGORIES = [
   { key: 'production', label: 'Produção' },
   { key: 'services', label: 'Serviços' },
   { key: 'legal', label: 'Legal' },
+  { key: 'global', label: 'Global / Transversal' },
 ];

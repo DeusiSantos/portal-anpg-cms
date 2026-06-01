@@ -83,44 +83,50 @@ const getFullImageUrl = (imageUrl: string | null): string => {
   return `${baseURL}${imageUrl}`;
 };
 
-export function useApiNews(page: number = 1, pageSize: number = 10, state: NewsState = 2) {
+export function useApiNews(page: number = 1, pageSize: number = 100, state: NewsState = 2, langCode: 1 | 2 = 1) {
   return useQuery({
-    queryKey: ['api-news', page, pageSize, state],
+    queryKey: ['api-news', page, pageSize, state, langCode],
     queryFn: async () => {
-      const response = await api.get<NewsApiResponse>('/news', {
-        params: {
-          Page: page,
-          PageSize: pageSize,
-          State: state,
-        },
+      const response = await api.get('/news', {
+        params: { State: state, Page: page, PageSize: pageSize },
       });
-      
-      const formattedNews: FormattedNewsItem[] = response.data.items.map((item) => {
-        // Encontrar conteúdo em português (lang=1) ou inglês
-        const portugueseContent = item.contents.find(c => c.lang === 1);
-        const content = portugueseContent || item.contents[0];
-        
+
+      // A API pode devolver array directo ou objeto paginado { items: [] }
+      const raw = response.data;
+      const items: ApiNewsItem[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.items)
+          ? raw.items
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
+
+      const formattedNews: FormattedNewsItem[] = items.map((item) => {
+        const preferred = item.contents?.find(c => c.lang === langCode);
+        const fallback  = item.contents?.find(c => c.lang === (langCode === 1 ? 2 : 1));
+        const content   = preferred || fallback || item.contents?.[0];
+
         return {
           id: item.id,
           slug: item.slug,
-          title: content?.title || 'Sem título',
+          title:   content?.title   || 'Sem título',
           excerpt: content?.excerpt || '',
           content: content?.content || '',
-          image: getFullImageUrl(item.destaqueImageUrl),
+          image:   getFullImageUrl(item.destaqueImageUrl),
           category: getCategoryFromId(item.newsCategoryId),
-          date: formatDate(item.createdAt),
+          date:    formatDate(item.createdAt),
           rawDate: item.createdAt,
           raw: item,
         };
       });
-      
+
       return {
         news: formattedNews,
-        totalCount: response.data.totalCount,
-        totalPages: response.data.totalPages,
-        currentPage: response.data.page,
+        totalCount:  raw?.totalCount  ?? formattedNews.length,
+        totalPages:  raw?.totalPages  ?? 1,
+        currentPage: raw?.page        ?? page,
       };
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
 }

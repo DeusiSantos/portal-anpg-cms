@@ -34,7 +34,7 @@ export function ServicesSection() {
     : defaultServicesData;
 
   return (
-    <section ref={ref} className="section-padding bg-foreground text-primary-foreground overflow-hidden">
+    <section ref={ref} className="relative section-padding bg-foreground text-primary-foreground overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{

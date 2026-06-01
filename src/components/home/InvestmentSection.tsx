@@ -32,7 +32,7 @@ export function InvestmentSection() {
   ];
 
   return (
-    <section ref={ref} className="section-padding bg-background overflow-hidden">
+    <section ref={ref} className="relative section-padding bg-background overflow-hidden">
       <div className="container mx-auto px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Content Column */}
@@ -86,7 +86,7 @@ export function InvestmentSection() {
             initial={{ opacity: 0, x: 50 }}
             animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
             transition={{ duration: 0.8 }}
-            className="relative"
+            className="relative lg:pb-10"
           >
             <div className="relative aspect-[4/3] overflow-hidden rounded-sm">
               <img src={image} alt="Angola coastline" className="w-full h-full object-cover" />
@@ -102,7 +102,7 @@ export function InvestmentSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="absolute -bottom-8 -left-8 md:left-auto md:-right-8 bg-background rounded-sm p-6 shadow-hero border border-border max-w-xs"
+              className="mt-4 lg:absolute lg:mt-0 lg:-bottom-8 lg:left-auto lg:-right-8 bg-background rounded-sm p-6 shadow-hero border border-border w-full lg:max-w-xs"
             >
               <h4 className="font-semibold text-foreground mb-4">{homeData?.investment?.featuredBlocks || "Blocos em Destaque"}</h4>
               <div className="space-y-3">

@@ -82,6 +82,7 @@ import AdminEOIPage from "./pages/admin/AdminEOIPage";
 import AdminDocumentsPage from "./pages/admin/AdminDocumentsPage";
 import AdminAuditPage from "./pages/admin/AdminAuditPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
+import AdminFooterPage from "./pages/admin/AdminFooterPage";
 import AdminKnowledgeBasePage from "./pages/admin/AdminKnowledgeBasePage";
 import AdminContentBlocksPage from "./pages/admin/AdminContentBlocksPage";
 import AdminMenuItemsPage from "./pages/admin/AdminMenuItemsPage";
@@ -194,6 +195,7 @@ function AnimatedRoutes() {
           <Route path="/admin/users" element={<ProtectedRoute requiredPermission="ADMIN"><AdminUsersPage /></ProtectedRoute>} />
           <Route path="/admin/audit" element={<ProtectedRoute requiredPermission="ADMIN"><AdminAuditPage /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute requiredPermission="ADMIN"><AdminSettingsPage /></ProtectedRoute>} />
+          <Route path="/admin/footer" element={<ProtectedRoute requiredPermission="content"><AdminFooterPage /></ProtectedRoute>} />
           <Route path="/admin/knowledge-base" element={<ProtectedRoute requiredPermission="content"><AdminKnowledgeBasePage /></ProtectedRoute>} />
           <Route path="/admin/content-blocks" element={<ProtectedRoute requiredPermission="content"><AdminContentBlocksPage /></ProtectedRoute>} />
           <Route path="/admin/menu-items" element={<ProtectedRoute requiredPermission="content"><AdminMenuItemsPage /></ProtectedRoute>} />
