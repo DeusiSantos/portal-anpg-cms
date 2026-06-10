@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="space-y-6"
           >
-            <h1 className="text-4xl xl:text-5xl font-bold leading-tight">
+            <h1 className="text-4xl text-primary-foreground xl:text-5xl font-bold leading-tight">
               Redefinir
               <br />
               <span className="text-primary">Palavra-passe</span>
