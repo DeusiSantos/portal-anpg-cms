@@ -295,7 +295,7 @@ export default function AdminNewsPage() {
                             <div className="flex justify-end gap-2">
                               {article.state === 2 && article.isActive && (
                                 <Button variant="ghost" size="icon" asChild>
-                                  <Link to={`/news/${article.slug}`} target="_blank">
+                                  <Link to={`/news/${article?.id}`} target="_blank">
                                     <Eye className="h-4 w-4" />
                                   </Link>
                                 </Button>
