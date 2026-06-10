@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import api from '@/service/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,22 +32,19 @@ export function ForgotPasswordDialog() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/admin/reset-password`,
-      });
-      if (error) {
-        setError(error.message);
-      } else {
-        setSent(true);
-      }
+      await api.post('auth/forgot-password', { email });
+      setSent(true);
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err?.response?.data?.message;
+      setError(msg || 'Erro ao enviar email. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    setOpen(open);
-    if (!open) {
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
       setEmail('');
       setSent(false);
       setError(null);
@@ -57,10 +54,7 @@ export function ForgotPasswordDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button
-          type="button"
-          className="text-sm text-primary hover:underline"
-        >
+        <button type="button" className="text-sm text-primary hover:underline">
           Esqueceu a palavra-passe?
         </button>
       </DialogTrigger>
@@ -112,7 +106,9 @@ export function ForgotPasswordDialog() {
                 Cancelar
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+                {loading
+                  ? <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  : <Mail className="h-4 w-4 mr-2" />}
                 Enviar Link
               </Button>
             </div>

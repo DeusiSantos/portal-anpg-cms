@@ -68,6 +68,8 @@ import TermsPage from "./pages/legal/TermsPage";
 import FAQPage from "./pages/FAQPage";
 import WhistleblowerPage from "./pages/WhistleblowerPage";
 
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+
 // Admin pages
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminResetPasswordPage from "./pages/admin/AdminResetPasswordPage";
@@ -174,6 +176,9 @@ function AnimatedRoutes() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/whistleblower" element={<WhistleblowerPage />} />
+
+          {/* Password recovery */}
+          <Route path="/palavra-passe/redefinir" element={<ResetPasswordPage />} />
 
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
