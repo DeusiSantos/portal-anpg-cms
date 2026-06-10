@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://mwangobrainsa-001-site6.mtempurl.com/api/:path*"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

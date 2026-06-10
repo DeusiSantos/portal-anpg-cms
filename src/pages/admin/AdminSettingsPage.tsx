@@ -170,8 +170,7 @@ export default function AdminSettingsPage() {
   const updatePasswordMutation = useMutation({
   mutationFn: async () => {
     const response = await api.post('auth/change-password', {
-      userId: userAllData?.id,
-      currentPassword: currentPassword,
+      oldPassword: currentPassword,
       newPassword: newPassword
     });
     return response.data;

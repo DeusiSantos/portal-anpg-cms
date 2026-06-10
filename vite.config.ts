@@ -63,6 +63,17 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      "/api": {
+        target: "https://mwangobrainsa-001-site6.mtempurl.com",
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          // Deixar o plugin local tratar /api/save-page
+          if (req.url?.startsWith("/api/save-page")) return req.url;
+        },
+      },
+    },
   },
   plugins: [
     react(),

@@ -2,7 +2,9 @@ import axios from "axios";
 
 /** API JSON + ficheiros (documentação interactiva: /index.html) */
 const BASE_URL = "https://mwangobrainsa-001-site6.mtempurl.com";
-const API_URL = `${BASE_URL}/api/`;
+// URL relativa sempre: Vite proxy (dev) e Vercel rewrite (prod) tratam o encaminhamento.
+// Necessário para iOS — o Safari/WebKit bloqueia cookies SameSite=None de origens cruzadas.
+const API_URL = "/api/";
 
 export const API_SWAGGER_URL = `${BASE_URL}/index.html`;
 
